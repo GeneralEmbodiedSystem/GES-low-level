@@ -1,8 +1,8 @@
-# AGI-low-level
+GES low level development based on OmniGibson.
 
-请在测试时，定义`OPENAI_API_KEY`和`OPENAI_API_PROXY`（如有需要）的环境变量，代码中可以设置`openai.api_key = os.environ["OPENAI_API_KEY"]`，不必将自己的api_key传到仓库中。
+# 开发代码位置
+- 抓取 omnigibson/examples/custom/grasping_mode_example.py
+- ik（TODO） omnigibson/examples/custom/ik_example.py
+- FetchAdvanced omnigibson/robots/fetch_advanced.py (如果需要新加机器人，需要修改omnigibson/robots/__init__.py)
 
-
-
-## low-level part -- skill learning
-
+在FetchAdvanced类里面实现了get_image()来获取RGBD，在 grasping_mode_example.py 有使用样例
