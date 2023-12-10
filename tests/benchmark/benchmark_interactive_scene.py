@@ -14,7 +14,7 @@ from omnigibson.utils.asset_utils import get_og_assets_version
 
 
 # Params to be set as needed.
-SCENES = ["restaurant_hotel"]
+SCENES = ["Beechwood_0_int"]
 OUTPUT_DIR = os.path.join(os.path.expanduser("~"), "Desktop")
 NUM_STEPS = 2000
 gm.DEFAULT_VIEWER_WIDTH = 128
@@ -74,7 +74,7 @@ def benchmark_scene(scene_name, optimized=False, import_robot=True):
         og.sim.step(render=False)
         physics_end = time.time()
 
-        # og.sim.render()
+        og.sim.render()
         end = time.time()
 
         if i % 100 == 0:

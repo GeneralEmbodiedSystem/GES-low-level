@@ -103,7 +103,7 @@ def main(random_selection=False, headless=False, short_exec=False):
     
     log.warning(f"vision_res: {omit_convert_dict(robot.get_image())}")
     
-    return
+    # return
 
     # Update the simulator's viewer camera's pose so it points towards the robot
     og.sim.viewer_camera.set_position_orientation(
