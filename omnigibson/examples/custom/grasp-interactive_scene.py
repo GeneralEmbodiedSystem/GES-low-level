@@ -64,6 +64,7 @@ def main(random_selection=False, headless=False, short_exec=False):
         action_type="continuous",
         action_normalize=True,
         grasping_mode=grasping_mode,
+        position=[-4.0, 0.0, 0.0],
     )
 
     # Define objects to load
@@ -108,7 +109,7 @@ def main(random_selection=False, headless=False, short_exec=False):
             category="water_bottle",
             model="ackxiy",
             size=0.06,
-            position=[1.53, 0.5, 0.97],
+            position=[1.33, -0.5, 0.97],
         ),  # alarm_clock
         {
             "type": "LightObject", 
