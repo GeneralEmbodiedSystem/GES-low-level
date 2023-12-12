@@ -10,6 +10,9 @@ class FetchAdvanced(Fetch):
     
     @property
     def vision_sensor(self):
+        '''
+        @return (VisionSensor, None): FetchAdvanced 上的摄像机的传感器
+        '''
         required_sensor = None
         for sensor_name, sensor in self.sensors.items():
             if isinstance(sensor, VisionSensor):
@@ -18,6 +21,12 @@ class FetchAdvanced(Fetch):
         return required_sensor
     
     def get_image(self) -> Dict:
+        '''
+        @return (dict): FetchAdvanced 上的摄像机的图像{
+            'rgb': np.ndarray,
+            'depth': np.ndarray,
+        }
+        '''
         cam = self.vision_sensor
         vision_res = cam.get_obs()
         return vision_res
