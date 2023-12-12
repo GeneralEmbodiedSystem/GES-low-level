@@ -61,9 +61,10 @@ def get_pos_by_prim_path(prim_path: str):
     return np.array(translate)
 
 class TiagoAdvanced(Tiago):
-    # def _post_load(self):
-    #     super()._post_load()
-    #     self._eyes = get_prim_at_path(f"{self._prim_path}/eyes")
+    def _post_load(self):
+        super()._post_load()
+        # self._eyes = get_prim_at_path(f"{self._prim_path}/eyes")
+        self.focal_length = 10.0 # zoom out
     
     def look_at(self, goal_pos: np.ndarray):
         '''
@@ -73,14 +74,14 @@ class TiagoAdvanced(Tiago):
         # camera pos wrong, should be eyes
         # camera_position, camera_orientation = self.vision_sensor.get_position_orientation()
         camera_position = get_pos_by_prim_path(self.eyes_prim_path)
-        print(f"camera_position: {camera_position}, {type(camera_position)}")
-        print(f"goal_pos: {goal_pos}")
-        print(f"direction: {goal_pos - camera_position}")
+        # print(f"camera_position: {camera_position}, {type(camera_position)}")
+        # print(f"goal_pos: {goal_pos}")
+        # print(f"direction: {goal_pos - camera_position}")
         direction = goal_pos - camera_position
         tilt, pan = calc_tilt_pan_from_direction(direction)
         # camera_joint_position = np.array([tilt, pan])
         camera_joint_position = np.array([pan, tilt])
-        print(f"camera_joint_position: {camera_joint_position}")
+        # print(f"camera_joint_position: {camera_joint_position}")
         # TODO: convert direction to orientation, set camera orientation
         # tgt_camera_orientation = calc_orientation_from_direction(direction)
         # tgt_camera_orientation = calc_orientation_from_tilt_pan(pan, tilt)
@@ -93,6 +94,26 @@ class TiagoAdvanced(Tiago):
         #     indices=self.camera_control_idx,
         #     drive=True,
         # )
+    
+    # https://forums.developer.nvidia.com/t/the-camera-crops-objects-when-i-zoom-in/220278/8
+    # def avoid_crop_when_zoom_in(self):
+    #     pass
+    
+    @property
+    def focal_length(self):
+        return self.vision_sensor.focal_length
+
+    @focal_length.setter
+    def focal_length(self, value):
+        self.vision_sensor.focal_length = value
+    
+    @property
+    def clipping_range(self):
+        return self.vision_sensor.clipping_range
+
+    @clipping_range.setter
+    def clipping_range(self, value):
+        self.vision_sensor.clipping_range = value
     
     @property
     def vision_sensor(self):

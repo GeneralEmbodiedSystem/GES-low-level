@@ -51,7 +51,7 @@ def benchmark_scene(scene_name, optimized=False, import_robot=True, random_selec
     print("assets_version", assets_version)
     scene = InteractiveTraversableScene(
         scene_model=scene_name,
-        load_object_categories=["floors", "walls", "ceilings"],
+        load_object_categories=["floors", "walls", "ceilings"], # use complex scenes will block the arm of the robot
     )
     start = time.time()
     og.sim.import_scene(scene)
@@ -75,10 +75,22 @@ def benchmark_scene(scene_name, optimized=False, import_robot=True, random_selec
     # )
 
     # side view
+    # og.sim.viewer_camera.set_position_orientation(
+    #     position=np.array([1.14539, 1.00671, 0.68562]),
+    #     orientation=np.array([0.21118, 0.65232, 0.69255, 0.22419]), # here is xyzw, in isaac sim wxyz
+    # )
+
+    # full side view simple scene
     og.sim.viewer_camera.set_position_orientation(
-        position=np.array([1.14539, 1.00671, 0.68562]),
-        orientation=np.array([0.21118, 0.65232, 0.69255, 0.22419]), # here is xyzw, in isaac sim wxyz
+        position=np.array([1.40783, 1.2968, 0.50722]),
+        orientation=np.array([0.26595, 0.75386, 0.56658, 0.19987]), # here is xyzw, in isaac sim wxyz
     )
+    
+    # full side view complex scene
+    # og.sim.viewer_camera.set_position_orientation(
+    #     position=np.array([1.3, -1.0, 1.4]),
+    #     orientation=np.array([0.57336, 0.07555, 0.10124, 0.80951]), # here is xyzw, in isaac sim wxyz
+    # )
 
     # # Hide main viewport
     # og.sim.viewer_visibility = False
@@ -119,12 +131,20 @@ def benchmark_scene(scene_name, optimized=False, import_robot=True, random_selec
             )
         og.sim.import_object(robot)
         og.sim.step()
-        if scene_name == "restaurant_hotel":
+        og.log.info(f"clipping_range: {robot.clipping_range}")
+        og.log.info(f"focal_length: {robot.focal_length}")
+        if scene_name == 'Beechwood_0_int':
+            # robot.set_position_orientation(
+            #     position=np.array([0.8, 0.0, 0.0]),
+            #     orientation=np.array([0, 0, 0, 1.0])
+            # )
+            pass
+        elif scene_name == "restaurant_hotel":
             robot.set_position_orientation(
                 position=[-12.2627573, -10.60511875, -3.4790891],
                 orientation=[0, 0, 0, 1.0]
             )
-
+    
     # Make the robot's camera(s) high-res
     for sensor in robot.sensors.values():
         if isinstance(sensor, VisionSensor):
@@ -152,7 +172,7 @@ def benchmark_scene(scene_name, optimized=False, import_robot=True, random_selec
         )
         # Define a helper function for executing specific end-effector commands using the ik solver
         def execute_ik(pos, quat=None, max_iter=100):
-            og.log.info("Querying joint configuration to current marker position")
+            # og.log.info("Querying joint configuration to current marker position")
             # Grab the joint positions in order to reach the desired pose target
             joint_pos = ik_solver.solve(
                 target_pos=pos,
@@ -160,9 +180,11 @@ def benchmark_scene(scene_name, optimized=False, import_robot=True, random_selec
                 max_iterations=max_iter,
             )
             if joint_pos is not None:
-                og.log.info("Solution found. Setting new arm configuration.")
+                # og.log.info("Solution found. Setting new arm configuration.")
+                pass
             else:
-                og.log.info("EE position not reachable.")
+                # og.log.info("EE position not reachable.")
+                pass
             # camera adjust to the goal
             camera_joint_pos, camera_idx = robot.look_at(goal_pos=pos)
             # set joint position
@@ -195,9 +217,8 @@ def benchmark_scene(scene_name, optimized=False, import_robot=True, random_selec
         
         # Get initial EE position and set marker to that location
         # command = robot.get_eef_position()
-        # command = np.array([0.08, 0.05, 0.45])
-        # command = np.array([0.34555, 0.05, 0.56099])
-        command = np.array([0.34555, 0.25, 0.80099])
+        command = np.array([0.34555, 0.25, 0.80099]) # simple scene
+        # command = np.array([1.33247, 0.25, 0.73184]) # complex scene
         marker.set_position(command)
         og.sim.step()
 
@@ -224,7 +245,7 @@ def benchmark_scene(scene_name, optimized=False, import_robot=True, random_selec
                     if delta_cmd is not None:
                         command = command + delta_cmd
                         marker.set_position(command)
-                        print(f"marker pos: {command}")
+                        # print(f"marker pos: {command}")
                         og.sim.step()
 
             # Callback must return True if valid
