@@ -9,4 +9,5 @@ from omnigibson.robots.turtlebot import Turtlebot
 from omnigibson.robots.fetch import Fetch
 from omnigibson.robots.fetch_advanced import FetchAdvanced
 from omnigibson.robots.tiago import Tiago
+from omnigibson.robots.tiago_advanced import TiagoAdvanced
 from omnigibson.robots.two_wheel_robot import TwoWheelRobot
