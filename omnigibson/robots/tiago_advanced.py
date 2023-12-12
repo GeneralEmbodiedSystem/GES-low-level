@@ -1,7 +1,7 @@
+from typing import Dict, Optional, Union
 import os
 
 import numpy as np
-from pxr import Gf
 
 from omnigibson.macros import gm
 import omnigibson.utils.transform_utils as T
@@ -98,6 +98,17 @@ class TiagoAdvanced(Tiago):
     # https://forums.developer.nvidia.com/t/the-camera-crops-objects-when-i-zoom-in/220278/8
     # def avoid_crop_when_zoom_in(self):
     #     pass
+    
+    def get_image(self) -> Dict:
+        '''
+        @return (dict): FetchAdvanced 上的摄像机的图像{
+            'rgb': np.ndarray,
+            'depth': np.ndarray,
+        }
+        '''
+        cam = self.vision_sensor
+        vision_res = cam.get_obs()
+        return vision_res
     
     @property
     def focal_length(self):
