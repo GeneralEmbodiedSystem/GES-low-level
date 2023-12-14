@@ -30,21 +30,21 @@ GES low level development based on OmniGibson.
 1. `move_x(distance: float)`
     - Description: The robot moves forward a distance d. If d is negative, the robot moves backward.
     - Parameter: 
-        1. `distance`: The distance the robot needs to move forward. If it is negative, the robot moves backward.
+        1. `distance`: The distance the robot needs to move forward or backward. `distance` in [-5, -0.1] means move back. `distance` in [0.1, 5] means move forward. The unit of distance is **meters**.
     - Return: 
         1. `success`: a bool indicating whether the operation is successful.
 
 2. `move_y(distance: float)`
     - Description: The robot translates a distance d to the left. If d is negative, the robot translates to the right.
     - Parameter: 
-        1. `distance`: The distance the robot needs to translate to the left. If it is negative, the robot translates to the right.
+        1. `distance`: The distance the robot needs to translate to the left or right. `distance` in [-1, -0.1] means move right. `distance` in [0.1, 1] means move left. The unit of distance is **meters**.
     - Return: 
         1. `success`: a bool indicating whether the operation is successful. 
 
 3. `turn(angle: int)`
     - Description: The robot as a whole rotates counterclockwise by an angle. If the angle is negative, the robot rotates clockwise.
     - Parameter: 
-        1. `angle`: The angle the robot needs to rotate counterclockwise. If it is negative, the robot rotates clockwise.
+        1. `angle`: The angle the robot needs to rotate counterclockwise(a.k.a. turn left). If it is negative, the robot rotates clockwise(a.k.a. turn right). `angle` is an integer in [-180, 180] expressed in **angle system**. `angle` in [-180, -1] means turn right. `angle` in [1, 180] means turn left.
     - Return: 
         1. `success`: a bool indicating whether the operation is successful.
 
