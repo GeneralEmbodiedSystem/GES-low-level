@@ -328,7 +328,7 @@ def run_move_y(buffer: dict, local_vars: dict, sy: float):
     """distance to move along y axis
 
     Args:
-        s (int): distance to move along y axis. [-5, -0.1] means move right. [0.1, 5] means move left.
+        s (int): distance to move along y axis. [-1, -0.1] means move right. [0.1, 1] means move left.
         cur_step (int): _description_
     """
     env, robot = local_vars['env'], local_vars['robot']
