@@ -526,6 +526,7 @@ class KeyboardRobotController:
         self.action_dim = robot.action_dim
         self.controller_info = dict()
         idx = 0
+        print("ui_utils robot._controllers.items()", robot._controllers.items())
         for name, controller in robot._controllers.items():
             self.controller_info[name] = {
                 "name": type(controller).__name__,
@@ -616,6 +617,7 @@ class KeyboardRobotController:
 
         # Iterate over all controller info and populate mapping
         for component, info in self.controller_info.items():
+            print("ui_utils info", info)
             if info["name"] == "JointController":
                 for i in range(info["command_dim"]):
                     cmd_idx = info["start_idx"] + i

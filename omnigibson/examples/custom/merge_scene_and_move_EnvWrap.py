@@ -1,6 +1,7 @@
 """
 Example script demo'ing robot manipulation control with grasping.
 """
+from math import ceil
 from typing import Union, Dict, List
 
 import numpy as np
@@ -144,7 +145,7 @@ def main(random_selection=False, headless=False, short_exec=False):
     # Reset the robot
     robot = env.robots[0]
 
-    robot.set_position([0, 0, 0])
+    robot.set_position([0, -0.5, 0])
     robot.reset()
     # robot.keep_still()
 
@@ -177,12 +178,97 @@ def main(random_selection=False, headless=False, short_exec=False):
     # Loop control until user quits
     max_steps = -1 if not short_exec else 100
     step = 0
-    action_random_selection = True
-    while step != max_steps:
-        action = action_generator.get_random_action() if action_random_selection else action_generator.get_teleop_action()
-        for _ in range(10):
+    action_random_selection = False
+    
+    def turn(deg, cur_step):
+        """degrees to rotate base
+
+        Args:
+            deg (int): -180 ~ 180. [-180, -1] means turn right. [1, 180] means turn left.
+            cur_step (int): current step (start time)
+        """
+        left_or_right = 1 if deg > 0 else -1  # 1 means turn left, -1 means turn right
+        act_2 = left_or_right * 0.341  # 1 degrees per step
+        continue_steps = abs(deg)
+        action = np.zeros(robot.action_dim)
+        for _ in range(continue_steps):
+            action[2] = act_2
             env.step(action)
-            step += 1
+        print("turn", deg, "degree, from step", cur_step, "to", cur_step + continue_steps)
+        return cur_step + continue_steps
+    
+    def movex(s, cur_step):
+        """distance to move along x axis
+
+        Args:
+            s (int): distance to move along x axis. [-5, -0.1] means move back. [0.1, 5] means move forward.
+            cur_step (int): _description_
+        """
+        forward_or_back = 1 if s > 0 else -1
+        act_0 = forward_or_back * 0.1
+        continue_steps = ceil(abs(s) / 0.0024)  # a little far from the real distance
+        action = np.zeros(robot.action_dim)
+        for _ in range(continue_steps):
+            action[0] = act_0
+            env.step(action)
+        print("move", s, "m, from step", cur_step, "to", cur_step + continue_steps)
+        return cur_step + continue_steps
+    
+    def movey(s, cur_step):
+        """distance to move along y axis
+
+        Args:
+            s (int): distance to move along y axis. [-5, -0.1] means move right. [0.1, 5] means move left.
+            cur_step (int): _description_
+        """
+        init_y = robot.get_position()[1]
+        left_or_right = 1 if s > 0 else -1
+        act_1 = left_or_right * 0.2
+        # 这个y轴算不准速度...。 而且有bug，最多走80/130/?步，就走不了了。以下记录了每种速度至多走?步，走多远
+        # 80 * 0.1act -> ~0.172m
+        # 130 * 0.2act -> ~0.618m
+        # 28 * 0.3act -> ~0.172m
+        continue_steps = 0
+        action = np.zeros(robot.action_dim)
+        while True:
+            action[1] = act_1
+            env.step(action)
+            continue_steps += 1
+            print("continue_steps robot.get_position()[1], init_y", continue_steps, robot.get_position()[1], init_y)
+            if left_or_right * (robot.get_position()[1] - init_y) >= abs(s):
+                break
+        print("move", s, "m, from step", cur_step, "to", cur_step + continue_steps)
+        return cur_step + continue_steps
+
+    while step != max_steps:
+        # action = action_generator.get_random_action() if action_random_selection else action_generator.get_teleop_action()
+        # for _ in range(10):
+        #     env.step(action)
+        #     step += 1
+        # if step == 50:  # test turn()
+        #     step = turn(-90, step)
+        # if step == 50: # test movex()
+        #     step = movex(0.4, step)
+        if step == 50: # test movey()
+            step = movey(1.5, step)
+        action = np.zeros(robot.action_dim)
+        # if step < 50:  # measure the distance of 1 step in y axis
+        #     action[1] = 0.1
+        # elif step < 100:
+        #     action[1] = -0.1
+        env.step(action)
+        step += 1
+        print("step", step)
+        print("robot", robot.get_position())
+    """
+    TiagoAdvance action idx:
+    0: base move (x axis), + means forward and - means back. 0.1 * 84 steps ~ 0.2m.  0.1 * 1 step ~ [0.00238, 0.00244]m
+    1: base move (y axis), + means left and - means right. 0.1 * 50 steps ~ 0.1173m.  0.1 * 1 step ~ 0.002346 m
+    2: base rotate (+left/-right). 614 steps * 0.2 = 122.8 ~ 360 degree left;  61.4 ~ 180 degree left;
+        so 90 degree left is 30.7 or 0.1 * 307 steps; or 0.6 * 51 steps (action[2]=0.6 is large enough!)
+    3: head rotate (left/right)
+    5: left hand front/back
+    """
 
     # Always shut down the environment cleanly at the end
     env.close()
