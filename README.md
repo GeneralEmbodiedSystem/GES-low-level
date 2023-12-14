@@ -13,3 +13,38 @@ GES low level development based on OmniGibson.
 
 在FetchAdvanced类里面实现了get_image()来获取RGBD，在 grasping_mode_example.py 有使用样例
 
+## API
+
+### Get Image
+
+1. `get_image()`
+    - Description: Get the visual information of the robot from the current perspective
+    - Parameter: None
+    - Return: a Dict, with these key-value pairs:
+        1. `image_rgb`: Get the RGB image seen by the robot from the current perspective.
+        2. `image_depth`:  Get the depth image seen by the robot from the current perspective.
+
+
+### Move Body
+
+1. `move_x(distance: float)`
+    - Description: The robot moves forward a distance d. If d is negative, the robot moves backward.
+    - Parameter: 
+        1. `distance`: The distance the robot needs to move forward. If it is negative, the robot moves backward.
+    - Return: 
+        1. `success`: a bool indicating whether the operation is successful.
+
+2. `move_y(distance: float)`
+    - Description: The robot translates a distance d to the left. If d is negative, the robot translates to the right.
+    - Parameter: 
+        1. `distance`: The distance the robot needs to translate to the left. If it is negative, the robot translates to the right.
+    - Return: 
+        1. `success`: a bool indicating whether the operation is successful. 
+
+3. `turn(angle: int)`
+    - Description: The robot as a whole rotates counterclockwise by an angle. If the angle is negative, the robot rotates clockwise.
+    - Parameter: 
+        1. `angle`: The angle the robot needs to rotate counterclockwise. If it is negative, the robot rotates clockwise.
+    - Return: 
+        1. `success`: a bool indicating whether the operation is successful.
+
