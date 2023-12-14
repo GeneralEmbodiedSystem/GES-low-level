@@ -51,10 +51,10 @@ manager = mp.Manager()
 def server_process(*args, **kwargs):
     # og.log.info(f"args: {args}")
     buffer, = args
-    start_server(buffer)
+    # start_server(buffer)
     # buffer['message'] = ('get_image',)
     # buffer['message'] = ('move_x', -1)
-    # buffer['message'] = ('turn', 90)
+    buffer['message'] = ('turn', 90)
 
 def main():
     global manager
