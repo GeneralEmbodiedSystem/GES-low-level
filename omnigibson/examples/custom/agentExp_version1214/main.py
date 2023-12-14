@@ -1,15 +1,30 @@
+# -*- coding: UTF-8 -*-
+
+# python ./examples/custom/agentExp_version1214/main.py
+
+# mount tmpfs:
+# mkdir ~/tmpfs
+# sudo mount -t tmpfs -o size=512M tmpfs ~/tmpfs/
+
 """
 Example script demo'ing robot manipulation control with grasping.
 """
+import os
+from os.path import exists, join
+# os.system("bash -c 'source /home/mad0g4/.local/share/ov/pkg/isaac_sim-2022.2.0/setup_conda_env.sh'")
+
 import sys
+sys.path.append('.')
 sys.path.append('..')
 sys.path.append('...')
+sys.path.append('....')
 
 from math import ceil
 from typing import Union, Dict, List
 
-from utils.common import convert_ndarray_in_dict_to_shape
+# from utils.low_level_utils import convert_ndarray_in_dict_to_shape, omit_convert_dict
 
+import pickle
 import numpy as np
 import multiprocessing as mp
 
@@ -23,8 +38,7 @@ from omnigibson.robots import FetchAdvanced, TiagoAdvanced
 from omnigibson.utils.ui_utils import create_module_logger
 log = create_module_logger(module_name=__name__)
 
-from utils.common import omit_convert_dict
-from servers.server import start_server
+# from servers.server import start_server
 
 GRASPING_MODES = dict(
     sticky="Sticky Mitten - Objects are magnetized when they touch the fingers and a CLOSE command is given",
@@ -35,13 +49,40 @@ GRASPING_MODES = dict(
 gm.USE_GPU_DYNAMICS = False
 gm.ENABLE_FLATCACHE = True
 
+# TMPFS_DIR = '~/tmpfs'
+TMPFS_DIR = '/home/mad0g4/tmpfs'
+
+def pipe_read():
+    global TMPFS_DIR
+    while not exists(f'{TMPFS_DIR}/message.pkl'):
+        pass
+    message_path = f'{TMPFS_DIR}/message.pkl'
+    with open(message_path, 'rb') as f:
+        x_bin = f.read()
+    os.remove(message_path)
+    x = pickle.loads(x_bin)
+    
+    return x
+
+def pipe_write(x):
+    global TMPFS_DIR
+    x_bin = pickle.dumps(x)
+    with open(f'{TMPFS_DIR}/response.pkl', 'wb') as f:
+        f.write(x_bin)
 
 manager = mp.Manager()
 
 def server_process(*args, **kwargs):
     # og.log.info(f"args: {args}")
     buffer, = args
-    start_server(buffer)
+    
+    while True:
+        message = pipe_read()
+        buffer['message'] = message
+        while buffer['response'] is None:
+            pass
+        pipe_write(buffer['response'])
+        buffer['response'] = None
 
 def main(random_selection=False, headless=False, short_exec=False):
     """
@@ -51,10 +92,13 @@ def main(random_selection=False, headless=False, short_exec=False):
     # start server process
     global manager
     buffer = manager.dict()
+    init_to_None_keys = ['message', 'response']
+    for init_to_None_key in init_to_None_keys:
+        buffer[init_to_None_key] = None
     P = mp.Process(target=server_process, args=(buffer,))
     P.start()
     
-    og.log.info(f"Demo {__file__}\n    " + "*" * 80 + "\n    Description:\n" + main.__doc__ + "*" * 80)
+    # og.log.info(f"Demo {__file__}\n    " + "*" * 80 + "\n    Description:\n" + main.__doc__ + "*" * 80)
 
     # Choose type of grasping
     # grasping_mode = choose_from_options(options=GRASPING_MODES, name="grasping mode", random_selection=random_selection)
@@ -178,7 +222,7 @@ def main(random_selection=False, headless=False, short_exec=False):
             sensor.image_height = 720
             sensor.image_width = 720
     
-    log.warning(f"vision_res: {omit_convert_dict(robot.get_image())}")
+    # log.warning(f"vision_res: {omit_convert_dict(robot.get_image())}")
     
     # return
 
@@ -233,10 +277,10 @@ def execute_message(buffer: dict, local_vars: dict):
         (move_y, distance)
         (moverz, rotate degree)
     '''
-    if 'message' not in buffer:
+    if buffer['message'] is None:
         return
     message = buffer['message']
-    buffer.pop('message')
+    buffer['message'] = None
     
     message_execute_func_mapping = {
         'get_image': run_get_image,
@@ -250,8 +294,14 @@ def execute_message(buffer: dict, local_vars: dict):
 def run_get_image(buffer: dict, local_vars: dict):
     robot: Union[FetchAdvanced, TiagoAdvanced] = local_vars['robot']
     image_res = robot.get_image()
-    rgb_image, depth_image = image_res['rgb'], image_res['depth']
-    print(convert_ndarray_in_dict_to_shape(image_res))
+    image_rgb, image_depth = image_res['rgb'], image_res['depth']
+    
+    response = {
+        'image_rgb': image_rgb,
+        'image_depth': image_depth,
+    }
+    buffer['response'] = response
+    # print(convert_ndarray_in_dict_to_shape(image_res))
     # write rgb_image & depth_image to shared memory
     # shared_memory = buffer['shared_memory']
     # ...
@@ -320,6 +370,7 @@ def generate_action(buffer: dict, local_vars: dict):
             for key in local_vars['keys_x']:
                 local_vars.pop(key)
             local_vars.pop('keys_x')
+            buffer['response'] = 'success'
     og.log.info(f"act_x2: {'act_x' in local_vars}")
     if 'act_x' in local_vars:
         action[0] = local_vars['act_x']
@@ -330,6 +381,7 @@ def generate_action(buffer: dict, local_vars: dict):
             for key in local_vars['keys_y']:
                 local_vars.pop(key)
             local_vars.pop('keys_y')
+            buffer['response'] = 'success'
     if 'act_y' in local_vars:
         action[1] = local_vars['act_y']
     
@@ -338,6 +390,7 @@ def generate_action(buffer: dict, local_vars: dict):
             for key in local_vars['keys_turn']:
                 local_vars.pop(key)
             local_vars.pop('keys_turn')
+            buffer['response'] = 'success'
         else:
             local_vars['continue_steps'] -= 1
     if 'act_turn' in local_vars:

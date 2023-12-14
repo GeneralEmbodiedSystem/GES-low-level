@@ -2,7 +2,10 @@ import socket
 
 import yaml
 
-from ..utils.socket_utils import SocketManager
+import sys
+sys.path.append('..')
+
+from utils.socket_utils import SocketManager
 from .get_image import get_image
 from .move_x import move_x
 from .move_y import move_y
@@ -50,10 +53,6 @@ def start_server(pipe: dict):
 
         try:
             socket_manager.set_socket(client_socket)
-            # Receive the shared memory name
-            shm_name = socket_manager.recv_shared_memory_name()
-            socket_manager.init_shared_memory(shm_name, create=False)
-
             # Receive the function code
             function_code = socket_manager.recv_int()
             # Call the function according to the function code

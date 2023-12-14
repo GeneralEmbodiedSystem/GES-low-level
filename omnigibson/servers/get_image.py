@@ -1,7 +1,14 @@
-from ..utils.socket_utils import SocketManager
+import sys
+sys.path.append('..')
+
+from utils.socket_utils import SocketManager
 
 
 def get_image(socket_manager: SocketManager, pipe: dict):
+    # Receive the shared memory name
+    shm_name = socket_manager.recv_shared_memory_name()
+    socket_manager.init_shared_memory(shm_name, create=False)
+    
     # Send the message to main process
     pipe['message'] = ("get_image",)
     

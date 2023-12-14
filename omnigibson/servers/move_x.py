@@ -1,4 +1,7 @@
-from ..utils.socket_utils import SocketManager
+import sys
+sys.path.append('..')
+
+from utils.socket_utils import SocketManager
 
 
 REQ_TEMP = {

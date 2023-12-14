@@ -8,7 +8,6 @@ import yaml
 import builtins
 from termcolor import colored
 
-
 # TODO: Need to fix somehow -- omnigibson gets imported first BEFORE we can actually modify the macros
 from omnigibson.macros import gm
 
