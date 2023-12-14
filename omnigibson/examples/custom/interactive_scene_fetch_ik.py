@@ -102,20 +102,20 @@ def benchmark_scene(scene_name, optimized=False, import_robot=True, random_selec
                 prim_path="/World/robot",
                 name="robot",
                 # fixed_base=True,
-                controller_config={
-                    "camera": {
-                        "name": "JointController",
-                        "motor_type": "position",
-                    },
-                    "arm_left": {
-                        "name": "JointController",
-                        "motor_type": "position",
-                    },
-                    "arm_right": {
-                        "name": "JointController",
-                        "motor_type": "position",
-                    }
-                }
+                # controller_config={
+                #     "camera": {
+                #         "name": "JointController",
+                #         "motor_type": "position",
+                #     },
+                #     "arm_left": {
+                #         "name": "JointController",
+                #         "motor_type": "position",
+                #     },
+                #     "arm_right": {
+                #         "name": "JointController",
+                #         "motor_type": "position",
+                #     }
+                # } # no use
             )
         elif robot_choice == 'FetchAdvanced':
             robot = FetchAdvanced(

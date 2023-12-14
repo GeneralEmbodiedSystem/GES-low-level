@@ -150,6 +150,56 @@ class TiagoAdvanced(Tiago):
         return f"{self._prim_path}/eyes"
 
 
+    # @property
+    # def _default_controllers(self):
+    #     # Always call super first
+    #     controllers = super()._default_controllers
 
+    #     # We use multi finger gripper, differential drive, and IK controllers as default
+    #     controllers["base"] = "DifferentialDriveController"
+    #     controllers["camera"] = "JointController"
+    #     for arm in self.arm_names:
+    #         controllers["arm_{}".format(arm)] = "InverseKinematicsController"
+    #         controllers["gripper_{}".format(arm)] = "MultiFingerGripperController"
+    #     return controllers
+
+    # @property
+    # def _default_base_controller_configs(self):
+    #     dic = {
+    #         "name": "DifferentialDriveController",
+    #         "control_freq": self._control_freq,
+    #         "control_limits": self.control_limits,
+    #         "use_delta_commands": False,
+    #         "motor_type": "velocity",
+    #         "compute_delta_in_quat_space": [(3, 4, 5)],
+    #         "dof_idx": self.base_control_idx,
+    #     }
+    #     return dic
+
+    # @property
+    # def _default_controller_config(self):
+    #     # Grab defaults from super method first
+    #     cfg = super()._default_controller_config
+
+    #     # Get default base controller for omnidirectional Tiago
+    #     cfg["base"] = {"DifferentialDriveController": self._default_base_controller_configs}
+
+    #     for arm in self.arm_names:
+    #         for arm_cfg in cfg["arm_{}".format(arm)].values():
+
+    #             if arm == "left":
+    #                 # Need to override joint idx being controlled to include trunk in default arm controller configs
+    #                 arm_cfg["dof_idx"] = np.concatenate([self.trunk_control_idx, self.arm_control_idx[arm]])
+
+    #             # If using rigid trunk, we also clamp its limits
+    #             # TODO: How to handle for right arm which has a fixed trunk internally even though the trunk is moving
+    #             # via the left arm??
+    #             if self.rigid_trunk:
+    #                 arm_cfg["control_limits"]["position"][0][self.trunk_control_idx] = \
+    #                     self.untucked_default_joint_pos[self.trunk_control_idx]
+    #                 arm_cfg["control_limits"]["position"][1][self.trunk_control_idx] = \
+    #                     self.untucked_default_joint_pos[self.trunk_control_idx]
+
+    #     return cfg
     
     
