@@ -178,6 +178,8 @@ def main(random_selection=False, headless=False, short_exec=False):
     max_steps = -1 if not short_exec else 100
     step = 0
     while step != max_steps:
+        # server: 
+        # action[0] 
         action = action_generator.get_random_action() if random_selection else action_generator.get_teleop_action()
         for _ in range(10):
             env.step(action)

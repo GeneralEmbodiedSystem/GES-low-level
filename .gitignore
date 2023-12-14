@@ -88,3 +88,6 @@ coverage.xml
 # Doc
 docs/reference
 site/
+
+# test
+test.ipynb
