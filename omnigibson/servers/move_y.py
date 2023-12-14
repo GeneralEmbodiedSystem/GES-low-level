@@ -6,20 +6,26 @@ REQ_TEMP = {
 }
 
 
-def move_y(socket_manager: SocketManager):
+def move_y(socket_manager: SocketManager, pipe: dict):
     """
     Move the robot in the y direction (left-right)
     """
     try:
         # Receive the request data
-        distance = socket_manager.recv_float()
+        response_data = socket_manager.recv_dict(REQ_TEMP)
+        distance = response_data['distance']
 
     except Exception as e:
         print("Error receive data: ", e)
         print("Closing connection.")
         return
     
-    # Move ...
+    # Execute move
+    pipe['message'] = ("move_y", distance)
+    
+    while pipe['response'] is None:
+        pass
+    pipe['response'] = None
 
     # Send the response
     socket_manager.send_dict({

@@ -1,0 +1,2 @@
+shared_memory_size: 100000000
+server_address: ["localhost", 8700]

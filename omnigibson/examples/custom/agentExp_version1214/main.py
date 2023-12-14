@@ -3,6 +3,7 @@ Example script demo'ing robot manipulation control with grasping.
 """
 import sys
 sys.path.append('..')
+sys.path.append('...')
 
 from math import ceil
 from typing import Union, Dict, List
@@ -23,6 +24,7 @@ from omnigibson.utils.ui_utils import create_module_logger
 log = create_module_logger(module_name=__name__)
 
 from utils.common import omit_convert_dict
+from servers.server import start_server
 
 GRASPING_MODES = dict(
     sticky="Sticky Mitten - Objects are magnetized when they touch the fingers and a CLOSE command is given",
@@ -38,20 +40,8 @@ manager = mp.Manager()
 
 def server_process(*args, **kwargs):
     # og.log.info(f"args: {args}")
-    cache, = args
-    steps = 0
-    while True:
-        # server socket: receive message from llm
-        # ...
-        message = None
-        # message = ('get_image', ) # e.g. get image of the camera
-        if steps == 10:
-            # message = ('movex', -1) # e.g. move forward 1 meter
-            message = ('turn', 90) # e.g. move forward 1 meter
-        # pass message to Isaac Sim
-        if message is not None:
-            cache['message'] = message
-        steps += 1
+    buffer, = args
+    start_server(buffer)
 
 def main(random_selection=False, headless=False, short_exec=False):
     """
@@ -60,8 +50,8 @@ def main(random_selection=False, headless=False, short_exec=False):
     """
     # start server process
     global manager
-    cache = manager.dict()
-    P = mp.Process(target=server_process, args=(cache,))
+    buffer = manager.dict()
+    P = mp.Process(target=server_process, args=(buffer,))
     P.start()
     
     og.log.info(f"Demo {__file__}\n    " + "*" * 80 + "\n    Description:\n" + main.__doc__ + "*" * 80)
@@ -216,8 +206,8 @@ def main(random_selection=False, headless=False, short_exec=False):
     
     while step != max_steps:
         action = np.zeros(robot.action_dim)
-        execute_message(cache, locals())
-        generate_action(cache, locals())
+        execute_message(buffer, locals())
+        generate_action(buffer, locals())
         og.log.info(f"action: {action}")
         env.step(action)
 
@@ -235,38 +225,38 @@ def main(random_selection=False, headless=False, short_exec=False):
     env.close()
     P.terminate()
 
-def execute_message(cache: dict, local_vars: dict):
+def execute_message(buffer: dict, local_vars: dict):
     '''
     @param message(tuple): (CMD, *args)
         (get_image, )
-        (movex, distance)
-        (movey, distance)
+        (move_x, distance)
+        (move_y, distance)
         (moverz, rotate degree)
     '''
-    if 'message' not in cache:
+    if 'message' not in buffer:
         return
-    message = cache['message']
-    cache.pop('message')
+    message = buffer['message']
+    buffer.pop('message')
     
     message_execute_func_mapping = {
         'get_image': run_get_image,
-        'movex': run_movex,
-        'movey': run_movey,
+        'move_x': run_move_x,
+        'move_y': run_move_y,
         'turn': run_turn,
     }
     og.log.info(f"message: {message}")
-    message_execute_func_mapping[message[0]](cache, local_vars, *message[1:])
+    message_execute_func_mapping[message[0]](buffer, local_vars, *message[1:])
 
-def run_get_image(cache: dict, local_vars: dict):
+def run_get_image(buffer: dict, local_vars: dict):
     robot: Union[FetchAdvanced, TiagoAdvanced] = local_vars['robot']
     image_res = robot.get_image()
     rgb_image, depth_image = image_res['rgb'], image_res['depth']
     print(convert_ndarray_in_dict_to_shape(image_res))
     # write rgb_image & depth_image to shared memory
-    # shared_memory = cache['shared_memory']
+    # shared_memory = buffer['shared_memory']
     # ...
 
-def run_movex(cache: dict, local_vars: dict, sx: float):
+def run_move_x(buffer: dict, local_vars: dict, sx: float):
     """distance to move along x axis
 
     Args:
@@ -284,7 +274,7 @@ def run_movex(cache: dict, local_vars: dict, sx: float):
         local_vars[key] = eval(key)
     local_vars['keys_x'] = keys
 
-def run_movey(cache: dict, local_vars: dict, sy: float):
+def run_move_y(buffer: dict, local_vars: dict, sy: float):
     """distance to move along y axis
 
     Args:
@@ -302,7 +292,7 @@ def run_movey(cache: dict, local_vars: dict, sy: float):
         local_vars[key] = eval(key)
     local_vars['keys_y'] = keys
 
-def run_turn(cache: dict, local_vars: dict, deg: float):
+def run_turn(buffer: dict, local_vars: dict, deg: float):
     """degrees to rotate base
 
     Args:
@@ -319,7 +309,7 @@ def run_turn(cache: dict, local_vars: dict, deg: float):
     local_vars['keys_turn'] = keys
     return
 
-def generate_action(cache: dict, local_vars: dict):
+def generate_action(buffer: dict, local_vars: dict):
     env, robot = local_vars['env'], local_vars['robot']
     action = local_vars['action']
     
