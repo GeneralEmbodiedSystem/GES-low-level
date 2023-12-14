@@ -47,6 +47,7 @@ def main(random_selection=False, headless=False, short_exec=False):
     scene_cfg = dict(
         type=scene_type,
         scene_model=scene_model,
+        load_object_categories=["floors", "walls", "ceilings"],
     )
     # if scene_type == "InteractiveTraversableScene":  # 这里我直接默认full了
     #     load_options = {
@@ -176,8 +177,8 @@ def main(random_selection=False, headless=False, short_exec=False):
 
     # Update the simulator's viewer camera's pose so it points towards the robot
     og.sim.viewer_camera.set_position_orientation(
-        position=np.array([-2.39951,  2.26469,  2.66227]),
-        orientation=np.array([-0.23898481,  0.48475231,  0.75464013, -0.37204802]),
+        position=np.array([1.20465,  1.51194,  2.14789]),
+        orientation=np.array([0.144,  0.424,  0.846, 0.28757]),
     )
 
     # Create teleop controller
