@@ -146,7 +146,7 @@ def main(random_selection=False, headless=False, short_exec=False):
 
     robot.set_position([0, 0, 0])
     robot.reset()
-    robot.keep_still()
+    # robot.keep_still()
 
     # Make the robot's camera(s) high-res
     for sensor in robot.sensors.values():
@@ -177,8 +177,9 @@ def main(random_selection=False, headless=False, short_exec=False):
     # Loop control until user quits
     max_steps = -1 if not short_exec else 100
     step = 0
+    action_random_selection = True
     while step != max_steps:
-        action = action_generator.get_random_action() if random_selection else action_generator.get_teleop_action()
+        action = action_generator.get_random_action() if action_random_selection else action_generator.get_teleop_action()
         for _ in range(10):
             env.step(action)
             step += 1
