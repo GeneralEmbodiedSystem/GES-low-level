@@ -22,7 +22,7 @@ sys.path.append('....')
 from math import ceil
 from typing import Union, Dict, List
 
-from utils.low_level_utils import convert_ndarray_in_dict_to_shape, omit_convert_dict
+from omnigibson.utils.low_level_utils import convert_ndarray_in_dict_to_shape, omit_convert_dict
 
 import pickle
 import numpy as np
@@ -293,11 +293,25 @@ def execute_message(buffer: dict, local_vars: dict):
 def run_get_image(buffer: dict, local_vars: dict):
     robot: Union[FetchAdvanced, TiagoAdvanced] = local_vars['robot']
     image_res = robot.get_image()
-    image_rgb, image_depth = image_res['rgb'], image_res['depth']
+    image_rgba, image_depth = image_res['rgb'], image_res['depth']
+    
+    def rgba2rgb(rgba, background=(255,255,255)):
+        row, col, ch = rgba.shape
+        if ch != 4:
+            raise ValueError('RGBA image should have 4 channels.')
+        rgb = np.zeros((row, col, 3), dtype='float32')
+        r, g, b, a = rgba[:,:,0], rgba[:,:,1], rgba[:,:,2], rgba[:,:,3]
+        a = np.asarray(a, dtype='float32') / 255.0
+        R, G, B = background
+        rgb[:,:,0] = r * a + (1.0 - a) * R
+        rgb[:,:,1] = g * a + (1.0 - a) * G
+        rgb[:,:,2] = b * a + (1.0 - a) * B
+
+        return np.asarray(rgb, dtype='uint8')
     
     response = {
-        'image_rgb': image_rgb,
-        'image_depth': image_depth,
+        'image_rgb': rgba2rgb(image_rgba),
+        'image_depth': np.expand_dims(image_depth, axis=-1),
     }
     buffer['response'] = response
     og.log.info(convert_ndarray_in_dict_to_shape(image_res))

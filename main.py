@@ -1,26 +1,29 @@
 # python ./examples/custom/agentExp_version1214/lowLevelServer.py
 # To terminate this process, ctrl+c is not enough, use "killall python" or something similar!
-
-import sys
-sys.path.append('.')
-sys.path.append('..')
-sys.path.append('...')
-sys.path.append('....')
-sys.path.append('.....')
-
 import pickle
 import multiprocessing as mp
-import subprocess
 import shutil
 import os
 from os.path import join, exists, isdir, isfile
-import numpy as np
-import time
 
-from utils.low_level_utils import convert_ndarray_in_dict_to_shape
-
-# from omnigibson.servers.server import start_server
 from servers.server import start_server
+
+# def convert_ndarray_in_dict_to_shape(x: dict):
+#     if isinstance(x, np.ndarray):
+#         return x.shape
+#     if isinstance(x, dict):
+#         res = dict()
+#         for k, v in x.items():
+#             res[k] = convert_ndarray_in_dict_to_shape(v)
+#         return res
+#     if isinstance(x, tuple) or isinstance(x, list):
+#         res = list()
+#         for y in x:
+#             res.append(convert_ndarray_in_dict_to_shape(y))
+#         if isinstance(x, tuple):
+#             res = tuple(res)
+#         return res
+#     return x
 
 # ROOT_DIR = '~/'
 # ISAAC_SIM_VERSION = 'isaac_sim-2022.2.0'
@@ -50,7 +53,7 @@ HOME_DIR = os.environ.get('HOME')
 TMPFS_DIR = join(HOME_DIR, 'tmpfs')
 
 # simulator env
-CONDA_ENV_NAME = 'SIM22'
+CONDA_ENV_NAME = 'sim'
 CONDA_DIR_NAME = 'miniconda3' # or anaconda3
 
 manager = mp.Manager()
@@ -59,6 +62,7 @@ def server_process(*args, **kwargs):
     # og.log.info(f"args: {args}")
     buffer, = args
     start_server(buffer)
+    # the following 3 lines are test code
     # buffer['message'] = ('get_image',)
     # buffer['message'] = ('move_x', -0.5)
     # buffer['message'] = ('turn', 90)
@@ -66,7 +70,7 @@ def server_process(*args, **kwargs):
 def init_tmpfs():
     global TMPFS_DIR
     if not exists(TMPFS_DIR):
-        raise ValueError(f"please run \"sudo mount -t tmpfs -o size=512M tmpfs {TMPFS_DIR}\" to create tmpfs in RAM!")
+        raise ValueError(f"please run \"mkdir -p {TMPFS_DIR} && sudo mount -t tmpfs -o size=512M tmpfs {TMPFS_DIR}\" to create tmpfs in RAM!")
     # delete all files in TMPFS_DIR
     for file in os.listdir(TMPFS_DIR):
         file_path = join(TMPFS_DIR, file)
@@ -82,8 +86,8 @@ def start_simulator():
     bash_components = f'''#!/bin/bash
 source {join(HOME_DIR, CONDA_DIR_NAME, 'bin/activate')} {CONDA_ENV_NAME}
 python --version
-python ./examples/custom/agentExp_version1214/main.py'''
-    bash_path = './examples/custom/agentExp_version1214/start_simulator.sh'
+python omnigibson/examples/custom/agentExp_version1214/simulator.py'''
+    bash_path = 'omnigibson/examples/custom/agentExp_version1214/start_simulator.sh'
     with open(bash_path, 'w') as f:
         f.write(bash_components)
     os.system(f"bash {bash_path}")
@@ -109,7 +113,7 @@ def main():
         while buffer['message'] is None:
             pass
         response = communicate(buffer['message'])
-        print(f"response: {convert_ndarray_in_dict_to_shape(response)}")
+        # print(f"response: {convert_ndarray_in_dict_to_shape(response)}")
         buffer['message'] = None
         buffer['response'] = response
     

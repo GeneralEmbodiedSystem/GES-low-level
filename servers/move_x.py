@@ -1,7 +1,7 @@
 import sys
 sys.path.append('..')
 
-from utils.socket_utils import SocketManager
+from servers.utils import SocketManager
 
 
 REQ_TEMP = {
@@ -9,9 +9,9 @@ REQ_TEMP = {
 }
 
 
-def move_y(socket_manager: SocketManager, pipe: dict):
+def move_x(socket_manager: SocketManager, pipe: dict):
     """
-    Move the robot in the y direction (left-right)
+    Move the robot in the x direction (front-back)
     """
     try:
         # Receive the request data
@@ -24,7 +24,7 @@ def move_y(socket_manager: SocketManager, pipe: dict):
         return
     
     # Execute move
-    pipe['message'] = ("move_y", distance)
+    pipe['message'] = ("move_x", distance)
     
     while pipe['response'] is None:
         pass

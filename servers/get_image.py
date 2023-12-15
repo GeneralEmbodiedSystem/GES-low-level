@@ -1,7 +1,7 @@
 import sys
 sys.path.append('..')
 
-from utils.socket_utils import SocketManager
+from servers.utils import SocketManager
 
 
 def get_image(socket_manager: SocketManager, pipe: dict):

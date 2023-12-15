@@ -1,15 +1,13 @@
 import socket
 
 import yaml
+import psutil
 
-import sys
-sys.path.append('..')
-
-from utils.socket_utils import SocketManager
-from .get_image import get_image
-from .move_x import move_x
-from .move_y import move_y
-from .turn import turn
+from servers.utils import SocketManager
+from servers.get_image import get_image
+from servers.move_x import move_x
+from servers.move_y import move_y
+from servers.turn import turn
 
 
 # Functions
@@ -27,16 +25,46 @@ MOVE_Y = 2
 TURN = 3
 
 
+def check_port_occupied(port):
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.settimeout(1)
+            s.bind(('127.0.0.1', port))
+            s.listen(1)
+            print(f"Port {port} is available.")
+            return False
+    except OSError as e:
+        print(f"Port {port} is already in use.")
+        return True
+
+
+def kill_process_using_port(port):
+    for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
+        try:
+            if proc.info['name'] is None:
+                continue
+            if f':{port}' in ' '.join(proc.info['cmdline']):
+                print(f"Process {proc.info['pid']} is using port {port}. Terminating...")
+                proc.terminate()
+                print("Process terminated.")
+        except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+            pass
+
+
 def start_server(pipe: dict):
     """
     Start server on port_number,
     which is used to communicate with High-Level module
     """
     # Read the configuration file
-    CONFIG_PATH = './configs/server.yaml'
+    CONFIG_PATH = './servers/config.yaml'
     with open(CONFIG_PATH, 'r') as f:
         config = yaml.load(f, Loader=yaml.FullLoader)
     port_number = config['server_address'][1]
+    
+    if check_port_occupied(port_number):
+        kill_process_using_port(port_number)
+        
     shared_memory_size = config['shared_memory_size']
     
     address = ('localhost', port_number)

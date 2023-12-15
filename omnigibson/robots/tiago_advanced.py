@@ -101,7 +101,7 @@ class TiagoAdvanced(Tiago):
     
     def get_image(self) -> Dict:
         '''
-        @return (dict): FetchAdvanced 上的摄像机的图像{
+        @return (dict): TiagoAdvanced 上的摄像机的图像{
             'rgb': np.ndarray,
             'depth': np.ndarray,
         }

@@ -1,30 +1,30 @@
 import sys
 sys.path.append('..')
 
-from utils.socket_utils import SocketManager
+from servers.utils import SocketManager
 
 
 REQ_TEMP = {
-    'angle': 0
+    'distance': 0.0
 }
 
 
-def turn(socket_manager: SocketManager, pipe: dict):
+def move_y(socket_manager: SocketManager, pipe: dict):
     """
-    Turn the robot (left or right)
+    Move the robot in the y direction (left-right)
     """
     try:
         # Receive the request data
         response_data = socket_manager.recv_dict(REQ_TEMP)
-        angle = response_data['angle']
+        distance = response_data['distance']
 
     except Exception as e:
         print("Error receive data: ", e)
         print("Closing connection.")
         return
     
-    # Execute turn
-    pipe['message'] = ("turn", angle)
+    # Execute move
+    pipe['message'] = ("move_y", distance)
     
     while pipe['response'] is None:
         pass

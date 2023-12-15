@@ -14,6 +14,11 @@ GES low level development based on OmniGibson.
 
 在FetchAdvanced类里面实现了get_image()来获取RGBD，在 grasping_mode_example.py 有使用样例
 
+# 运行
+
+新建一个python 3.10的环境，然后在仓库根目录下运行`python main.py`，如果有显存泄露的问题，运行main之前多运行几次`killall python`。
+OmniGibson需要在一个python 3.7的环境下运行。
+
 ## API
 
 ### Get Image
