@@ -1,4 +1,5 @@
 # python ./examples/custom/agentExp_version1214/lowLevelServer.py
+# To terminate this process, ctrl+c is not enough, use "killall python" or something similar!
 
 import sys
 sys.path.append('.')
@@ -10,10 +11,13 @@ sys.path.append('.....')
 import pickle
 import multiprocessing as mp
 import subprocess
+import shutil
 import os
-from os.path import join, exists
+from os.path import join, exists, isdir, isfile
 import numpy as np
 import time
+
+from utils.low_level_utils import convert_ndarray_in_dict_to_shape
 
 # from omnigibson.servers.server import start_server
 from servers.server import start_server
@@ -41,39 +45,76 @@ from servers.server import start_server
 #             env_var_c = f.read().strip()
 #         env_variables[env_var_log_file[:-4]] = env_var_c
 
-# TMPFS_DIR = '~/tmpfs'
-TMPFS_DIR = '/home/mad0g4/tmpfs'
+# tmpfs directory
+HOME_DIR = os.environ.get('HOME')
+TMPFS_DIR = join(HOME_DIR, 'tmpfs')
 
-# print(env_variables)
+# simulator env
+CONDA_ENV_NAME = 'SIM22'
+CONDA_DIR_NAME = 'miniconda3' # or anaconda3
 
 manager = mp.Manager()
 
 def server_process(*args, **kwargs):
     # og.log.info(f"args: {args}")
     buffer, = args
-    # start_server(buffer)
+    start_server(buffer)
     # buffer['message'] = ('get_image',)
-    # buffer['message'] = ('move_x', -1)
-    buffer['message'] = ('turn', 90)
+    # buffer['message'] = ('move_x', -0.5)
+    # buffer['message'] = ('turn', 90)
+
+def init_tmpfs():
+    global TMPFS_DIR
+    if not exists(TMPFS_DIR):
+        raise ValueError(f"please run \"sudo mount -t tmpfs -o size=512M tmpfs {TMPFS_DIR}\" to create tmpfs in RAM!")
+    # delete all files in TMPFS_DIR
+    for file in os.listdir(TMPFS_DIR):
+        file_path = join(TMPFS_DIR, file)
+        if isfile(file_path):
+            os.remove(file_path)
+        elif isdir(file_path):
+            shutil.rmtree(file_path)
+        else:
+            raise NotImplementedError("The type of the file is not in [file, dir]!")
+
+def start_simulator():
+    global CONDA_ENV_NAME, CONDA_DIR_NAME, HOME_DIR
+    bash_components = f'''#!/bin/bash
+source {join(HOME_DIR, CONDA_DIR_NAME, 'bin/activate')} {CONDA_ENV_NAME}
+python --version
+python ./examples/custom/agentExp_version1214/main.py'''
+    bash_path = './examples/custom/agentExp_version1214/start_simulator.sh'
+    with open(bash_path, 'w') as f:
+        f.write(bash_components)
+    os.system(f"bash {bash_path}")
 
 def main():
+    # init the tmpfs
+    init_tmpfs()
+    
+    # start simulator
+    simulator_p = mp.Process(target=start_simulator)
+    simulator_p.start()
+
+    # start communication with high level server
     global manager
     buffer = manager.dict()
     init_to_None_keys = ['message', 'response']
     for init_to_None_key in init_to_None_keys:
         buffer[init_to_None_key] = None
-    P = mp.Process(target=server_process, args=(buffer,))
-    P.start()
+    server_p = mp.Process(target=server_process, args=(buffer,))
+    server_p.start()
     
     while True:
         while buffer['message'] is None:
             pass
         response = communicate(buffer['message'])
-        print(f"response: {response}")
+        print(f"response: {convert_ndarray_in_dict_to_shape(response)}")
         buffer['message'] = None
         buffer['response'] = response
     
-    P.terminate()
+    simulator_p.terminate()
+    server_p.terminate()
 
 def communicate(message):
     global TMPFS_DIR

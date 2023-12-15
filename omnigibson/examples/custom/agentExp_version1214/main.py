@@ -22,7 +22,7 @@ sys.path.append('....')
 from math import ceil
 from typing import Union, Dict, List
 
-# from utils.low_level_utils import convert_ndarray_in_dict_to_shape, omit_convert_dict
+from utils.low_level_utils import convert_ndarray_in_dict_to_shape, omit_convert_dict
 
 import pickle
 import numpy as np
@@ -49,8 +49,8 @@ GRASPING_MODES = dict(
 gm.USE_GPU_DYNAMICS = False
 gm.ENABLE_FLATCACHE = True
 
-# TMPFS_DIR = '~/tmpfs'
-TMPFS_DIR = '/home/mad0g4/tmpfs'
+HOME_DIR = os.environ.get('HOME')
+TMPFS_DIR = join(HOME_DIR, 'tmpfs')
 
 def pipe_read():
     global TMPFS_DIR
@@ -252,7 +252,6 @@ def main(random_selection=False, headless=False, short_exec=False):
         action = np.zeros(robot.action_dim)
         execute_message(buffer, locals())
         generate_action(buffer, locals())
-        og.log.info(f"action: {action}")
         env.step(action)
 
     """
@@ -301,6 +300,7 @@ def run_get_image(buffer: dict, local_vars: dict):
         'image_depth': image_depth,
     }
     buffer['response'] = response
+    og.log.info(convert_ndarray_in_dict_to_shape(image_res))
     # print(convert_ndarray_in_dict_to_shape(image_res))
     # write rgb_image & depth_image to shared memory
     # shared_memory = buffer['shared_memory']
@@ -363,15 +363,15 @@ def generate_action(buffer: dict, local_vars: dict):
     env, robot = local_vars['env'], local_vars['robot']
     action = local_vars['action']
     
-    og.log.info(f"act_x1: {'act_x' in local_vars}")
+    # og.log.info(f"act_x1: {'act_x' in local_vars}")
     if 'act_x' in local_vars:
         forward_or_back, init_x, sx = local_vars['forward_or_back'], local_vars['init_x'], local_vars['sx']
         if forward_or_back * (robot.get_position()[0] - init_x) >= abs(sx):
             for key in local_vars['keys_x']:
                 local_vars.pop(key)
             local_vars.pop('keys_x')
-            buffer['response'] = 'success'
-    og.log.info(f"act_x2: {'act_x' in local_vars}")
+            buffer['response'] = 'move_x success'
+    # og.log.info(f"act_x2: {'act_x' in local_vars}")
     if 'act_x' in local_vars:
         action[0] = local_vars['act_x']
     
@@ -381,7 +381,7 @@ def generate_action(buffer: dict, local_vars: dict):
             for key in local_vars['keys_y']:
                 local_vars.pop(key)
             local_vars.pop('keys_y')
-            buffer['response'] = 'success'
+            buffer['response'] = 'move_y success'
     if 'act_y' in local_vars:
         action[1] = local_vars['act_y']
     
@@ -390,7 +390,7 @@ def generate_action(buffer: dict, local_vars: dict):
             for key in local_vars['keys_turn']:
                 local_vars.pop(key)
             local_vars.pop('keys_turn')
-            buffer['response'] = 'success'
+            buffer['response'] = 'turn success'
         else:
             local_vars['continue_steps'] -= 1
     if 'act_turn' in local_vars:
