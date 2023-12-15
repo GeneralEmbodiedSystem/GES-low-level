@@ -10,7 +10,7 @@ GES low level development based on OmniGibson.
 - TiagoAdvanced fetching & camera tracking fetching goal [omnigibson/examples/custom/interactive_scene_fetch_ik.py]
 - 把fetchAdvanced机器人加到了家庭场景里面，加了可交互的object，键盘控制移动，见模拟器文档 Gibson环境搭建 部分和 GES-low-level/omnigibson/examples/custom/grasp-interactive_scene.py
 - 双臂机器人，目前想先用上层指令替换键盘指令，接进来。先实现移动，见没写完的 GES-low-level/omnigibson/examples/custom/merge_scene_and_move_EnvWrap.py （现在双臂键盘的移动有问题）
-- low-level运行方法: 在python3.10的环境中在文件夹 omnigibson/ 下运行 python ./examples/custom/agentExp_version1214/lowLevelServer.py
+- low-level运行方法: 在python3.10的环境中在文件夹`omnigibson/`下运行`python ./examples/custom/agentExp_version1214/lowLevelServer.py`，`ctrl+c`目前没法完全杀掉程序，多运行几次`killall python`。
 
 在FetchAdvanced类里面实现了get_image()来获取RGBD，在 grasping_mode_example.py 有使用样例
 
