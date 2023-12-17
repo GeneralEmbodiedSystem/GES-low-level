@@ -11,7 +11,6 @@ tools:
         # This is invalid if `shared_memory` is False
         shared_memory_size: 1000000   # 1 MB
         # The address of the tool server
-        # Note: this must be RESET in each tool
         server_address: ["localhost", 8700]
 
     # Specific tool params (override) 
@@ -23,7 +22,7 @@ tools:
     move_y:
     
     turn:
-    
+
 # Shared memory for communication between 
 # server processes and simulation process
 shm_ser_sim: 
