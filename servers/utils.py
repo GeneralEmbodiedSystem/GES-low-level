@@ -1,14 +1,116 @@
 import socket
 import struct
-from typing import Any, Callable, Iterable, Optional
-from multiprocessing import shared_memory
+from typing import Any, Iterable, Optional, List, Literal
+import os
+import mmap
+import random
+import string
+import json
+from io import BytesIO
 
 import numpy as np
+
+
+class PipeManager:
+    """
+    Class for managing pipe communication (send and receive).
+    The communication is based on shared memory.
+    The numpy array is not supported.
+    """
+    def __init__(
+        self,
+        tmp_path: str,
+        name: str,
+        size: int,
+        create: bool = False
+    ):
+        self.tmp_path = tmp_path
+        self.name = name
+        self.size = size
+
+        # Create a file to back the shared memory
+        path = os.path.join(tmp_path, name)
+        path = os.path.expanduser(path)
+
+        if create:
+            # Create the file
+            with open(path, "wb") as f:
+                # Allocate space
+                f.seek(size - 1)
+                f.write(b'\x00')
+        
+        with open(self.shm_file_path, "r+b") as f:
+            self.shm = mmap.mmap(f.fileno(), size)
+    
+    def close(self, remove=False):
+        self.shm.close()
+        if remove:
+            os.remove(self.shm_file_path)
+    
+    def read_signal(self, role: Literal["server", "client"]) -> bool:
+        """
+        Read the signal from the shared memory (first 2 bytes).
+        When `role='server'`, the signal should represent whether
+        the server has ready sent the data.
+        When `role='client'`, the signal should represent whether
+        the client has ready sent the data.
+        """
+        if role == "server":
+            self.shm.seek(0)
+        elif role == "client":
+            self.shm.seek(1)
+        else:
+            raise ValueError("check should be 'server' or 'client'")
+        signal = self.shm.read(1)
+        signal = bool.from_bytes(signal, "big")
+
+    def write_signal(self, signal: bool, role: Literal["server", "client"]) -> None:
+        """
+        Write the signal to the shared memory (first 2 bytes).
+        When `role='server'`, the signal should represent whether
+        the server has ready sent the data.
+        When `role='client'`, the signal should represent whether
+        the client has ready sent the data.
+        """
+        if role == "server":
+            self.shm.seek(0)
+        elif role == "client":
+            self.shm.seek(1)
+        else:
+            raise ValueError("check should be 'server' or 'client'")
+        self.shm.write(signal.to_bytes(1, byteorder="big"))
+    
+    def read_request(self) -> Any:
+        """
+        Read the request data from the shared memory.
+        """
+        # Read the length of the pickled data
+        self.shm.seek(2)
+        length_bytes = self.shm.read(4)
+        length = int.from_bytes(length_bytes, byteorder='big')
+        # Now read exactly 'length' bytes
+        json_req = self.shm.read(length)
+        req = json.loads(json_req.decode())
+
+        return req
+    
+    def write_request(self, req: Any) -> None:
+        """
+        Write the request data to the shared memory.
+        """
+        json_req = json.dumps(req)
+        # Write the length of the pickled data first
+        self.shm.seek(2)
+        self.shm.write(len(json_req).to_bytes(4, byteorder='big'))
+        self.shm.write(json_req.encode())
 
 
 class SocketManager:
     """
     Class for managing socket communication (send and receive).
+    The communication is based on shared memory and socket.
+    Socket for sending and receiving json data while
+    shared memory for sending and receiving numpy array.
 
     Client Example:
     ```
@@ -16,11 +118,10 @@ class SocketManager:
     sm.init_shared_memory()
     with sm:
         sm.send_shared_memory_name()
-        sm.send_array(array)
         sm.send_string(string)
         sm.send_float(float)
         ...
-    sm.close_shared_memory()
+    sm.close_shared_memory(remove=True)
     ```
     
     Server Example:
@@ -28,8 +129,7 @@ class SocketManager:
     sm = SocketManager(...)
     sm.set_socket(client_socket)
     name = sm.recv_shared_memory_name()
-    sm.init_shared_memory(name=name, create=False)
-    array = sm.recv_array()
+    sm.init_shared_memory(name=name, create=False, size=4*1024*1024)
     string = sm.recv_string()
     ...
     sm.close_shared_memory()
@@ -37,12 +137,10 @@ class SocketManager:
     """
     def __init__(
         self, 
-        shared_memory: Optional[bool] = False,
-        shared_memory_size: Optional[int] = 4096,
-        server_address: Iterable[Any] = ("localhost", 8000)
+        server_address: Iterable[Any] = ("localhost", 8000),
+        tmp_path: Optional[str] = None
     ):
-        self.shared_memory = shared_memory
-        self.shared_memory_size = shared_memory_size
+        self.tmp_path = tmp_path
         
         self.host, self.port = server_address
         self.shm = None
@@ -59,75 +157,48 @@ class SocketManager:
     def set_socket(self, socket: socket.socket):
         self.socket = socket
     
-    def init_shared_memory(self, name=None, create=True):
-        if not self.shared_memory:
-            raise ValueError("shared_memory is not enabled")
-        self.shm = shared_memory.SharedMemory(
-            name=name, create=create,
-            size=self.shared_memory_size)
+    def init_shared_memory(self, name=None, create=True, size=1024*1024*1024):
+        if create:
+            # Random generated name
+            # 6 digits or letters
+            chars = string.ascii_letters + string.digits
+            name = name or ''.join(random.choice(chars) for _ in range(6))
+
+            # Create a file to back the shared memory
+            path = os.path.join(self.tmp_path, name)
+            path = os.path.expanduser(path)
+            with open(path, "wb") as f:
+                # Allocate space
+                f.seek(size - 1)
+                f.write(b'\x00')
+        
+        self.shm_name = name
+        self.shm_size = size
+        self.shm_file_path = os.path.join(self.tmp_path, name)
+        self.shm_file_path = os.path.expanduser(self.shm_file_path)
+        with open(self.shm_file_path, "r+b") as f:
+            self.shm = mmap.mmap(f.fileno(), size)
     
-    def close_shared_memory(self):
+    def close_shared_memory(self, remove=False):
         if self.shm is None:
             raise ValueError("shared_memory is not initialized")
         self.shm.close()
-        self.shm.unlink()
-
+        if remove:
+            os.remove(self.shm_file_path)
+        
+    def set_shared_memory_cursor(self, offset: int):
+        if self.shm is None:
+            raise ValueError("shared_memory is not initialized")
+        self.shm.seek(offset)
+    
     def send_shared_memory_name(self):
         if self.shm is None:
             raise ValueError("shared_memory is not initialized")
-        self.send_string(self.shm.name)
+        self.send_string(self.shm_name)
     
     def recv_shared_memory_name(self):
-        if not self.shared_memory:
-            raise ValueError("shared_memory is not enabled")
         name = self.recv_string()
         return name
-
-    def write_shared_array(self, image: np.ndarray) -> str:
-        # Create a NumPy array backed by shared memory
-        shared_arr = np.ndarray(image.shape, dtype=image.dtype, buffer=self.shm.buf)
-        # Copy the array to shared memory
-        np.copyto(shared_arr, image)
-
-    def read_shared_array(self, shape: tuple, dtype: np.dtype) -> np.ndarray:
-        # Create a NumPy array backed by shared memory
-        shared_arr = np.ndarray(shape, dtype=dtype, buffer=self.shm.buf)
-
-        return shared_arr
-
-    def send_array(self, array: np.ndarray) -> None:
-        """
-        Send a ndarray by the socket.
-        """
-        # Send the array dtype
-        dtype_str = str(array.dtype)
-        dtype_bytes = dtype_str.encode()
-        self.socket.sendall(len(dtype_bytes).to_bytes(4, byteorder="big"))
-        self.socket.sendall(dtype_bytes)
-        # Send the array dimension
-        self.socket.sendall(
-            np.array(array.shape, dtype=np.int32).tobytes())
-        # Send the array
-        self.write_shared_array(array)
-        # Send the finish signal
-        self.socket.sendall(b"ok")
-
-    def recv_array(self) -> np.ndarray:
-        """
-        Receive a ndarray by the socket.
-        """
-        # Receive the array dtype
-        dtype_length = int.from_bytes(self.socket.recv(4), "big")
-        dtype = self.socket.recv(dtype_length).decode()
-        # Receive the array dimension
-        shape = self.socket.recv(12)
-        shape = np.frombuffer(shape, dtype=np.int32)
-        # Receive the finish signal of the array copy
-        self.socket.recv(2)
-        # Receive the array
-        array = self.read_shared_array(shape, dtype).copy()
-
-        return array
 
     def send_string(self, string: str, len_bytes=8) -> None:
         """
@@ -193,6 +264,22 @@ class SocketManager:
 
         return value
 
+    def send_func_code(self, func_code: int) -> None:
+        """
+        Send a function code by the socket.
+        """
+        # Send the function code
+        self.send_int(func_code)
+    
+    def recv_func_code(self) -> int:
+        """
+        Receive a function code by the socket.
+        """
+        # Receive the function code
+        func_code = self.recv_int()
+
+        return func_code
+
     def send_bool(self, value: bool) -> None:
         """
         Send a boolean by the socket.
@@ -209,191 +296,147 @@ class SocketManager:
         value = bool.from_bytes(value, "big")
 
         return value
-
-    def send_tuple(self, tup: tuple) -> None:
+    
+    @staticmethod
+    def serialize_array(array: np.ndarray, np_bytes: BytesIO) -> None:
         """
-        Send a tuple by the socket.
-
-        Note: the element types can be different for tuples.
+        Serialize a numpy array.
         """
-        # Check if the tuple is empty
-        if len(tup) == 0:
-            return
+        dtype_bytes = str(array.dtype).encode()
+        len_dtype_bytes = len(dtype_bytes).to_bytes(4, byteorder="big")
+        np_bytes.write(len_dtype_bytes)
+        np_bytes.write(dtype_bytes)
 
-        for element in tup:
-            send_fn = self.get_send_fn(type(element))
-            send_fn(element)
+        shape_bytes = np.array(array.shape, dtype=np.int32).tobytes()
+        len_shape_bytes = len(shape_bytes).to_bytes(4, byteorder="big")
+        np_bytes.write(len_shape_bytes)
+        np_bytes.write(shape_bytes)
 
-    def recv_tuple(self, template: tuple) -> tuple:
+        array_bytes = array.tobytes()
+        np_bytes.write(array_bytes)
+    
+    @staticmethod
+    def deserialize_array(np_bytes: BytesIO) -> np.ndarray:
         """
-        Receive a tuple by the socket.
-
-        Note: the element types can be different for tuples.
+        Deserialize a numpy array.
         """
-        # Check if the tuple is empty
-        if len(template) == 0:
-            return ()
+        # Read the length of the dtype
+        len_dtype_bytes = np_bytes.read(4)
+        len_dtype = int.from_bytes(len_dtype_bytes, byteorder="big")
+        # Read the dtype
+        dtype_bytes = np_bytes.read(len_dtype)
+        dtype = dtype_bytes.decode()
 
-        tup = []
-        for element in template:
-            recv_fn = self.get_recv_fn(type(element))
-            if recv_fn == self.recv_list or recv_fn == self.recv_tuple \
-                or recv_fn == self.recv_dict:
-                element = recv_fn(element)
-            else:
-                element = recv_fn()
-            tup.append(element)
+        # Read the length of the shape
+        len_shape_bytes = np_bytes.read(4)
+        len_shape = int.from_bytes(len_shape_bytes, byteorder="big")
+        # Read the shape
+        shape_bytes = np_bytes.read(len_shape)
+        shape = np.frombuffer(shape_bytes, dtype=np.int32)
 
-        return tuple(tup)
+        # Calculate the length of the array bytes
+        array_length = np.prod(shape) * np.dtype(dtype).itemsize
+        # Read the array bytes
+        array_bytes = np_bytes.read(array_length)
+        array = np.frombuffer(array_bytes, dtype=dtype)
+        array = array.reshape(shape)
 
-    def send_list(self, lst: list, len_bytes=4) -> None:
+        return array
+    
+    def write_request(self, req: dict) -> int:
         """
-        Send a list by the socket (length takes 4 bytes by default).
+        Write the request data to the shared memory. The file cursor to
+        the shared memory WILL be reset before writing. The return value
+        is the length of the written data.
 
-        Note: the type of the elements of the list must be the SAME.
+        Note: Do not put np.ndarray in the request data.
+        Instead, use `write_arrays()` and `read_arrays()`, and put
+        the index of the array in the request data.
+
+        Example:
+        ```
+        socket_manager.write_request({
+            "array_index": 0,
+            "other_data": ...
+        })
+        socket_manager.write_arrays([array])
+        ```
         """
-        # Send the length of the list
-        lst_length = len(lst).to_bytes(len_bytes, byteorder="big")
-        self.socket.sendall(lst_length)
+        json_req = json.dumps(req)
+        tot_len = 0
+        # Write the length of the pickled data first
+        self.shm.seek(0)
+        tot_len += self.shm.write(len(json_req).to_bytes(4, byteorder='big'))
+        tot_len += self.shm.write(json_req.encode())
+        # Finish signal
+        self.send_bool(True)
 
-        # Check if the list is empty
-        if len(lst) == 0:
-            return
+        return tot_len
 
-        # Get the type of the elements of the list
-        type_ = type(lst[0])
-        send_fn = self.get_send_fn(type_)
-
-        # Send the elements of the list
-        for element in lst:
-            send_fn(element)
-
-    def recv_list(self, template: list, len_bytes=4) -> list:
+    def read_request(self) -> dict:
         """
-        Receive a list by the socket (length takes 4 bytes by default).
+        Read the request data from the shared memory. The file cursor to
+        the shared memory WILL be reset before reading.
 
-        template: a template list that contains the type of the elements of the list.
-
-        Note: the type of the elements of the list must be the SAME.
-        """
-        # Receive the length of the list
-        lst_length = self.socket.recv(len_bytes)
-        lst_length = int.from_bytes(lst_length, "big")
-
-        # Check if the list is empty
-        if lst_length == 0:
-            return []
-
-        # Receive the elements of the list
-        lst = []
-        element_type = type(template[0])
-        recv_fn = self.get_recv_fn(element_type)
+        Note: Do not put np.ndarray in the request data.
+        Instead, use `write_arrays()` and `read_arrays()`, and put
+        the index of the array in the request data.
         
-        for _ in range(lst_length):
-            if recv_fn == self.recv_list or recv_fn == self.recv_tuple \
-                or recv_fn == self.recv_dict:
-                element = recv_fn(template[0])
-            else:
-                element = recv_fn()
-            lst.append(element)
-
-        return lst
-
-    def send_dict(self, dic: dict, len_bytes=4) -> None:
+        Example:
+        ```
+        req = socket_manager.read_request()
+        arrays = socket_manager.read_arrays()
+        array = arrays[req["array_index"]]
+        ```
         """
-        Send a json dictionary by the socket (length takes 4 bytes by default).
+        # Finish signal
+        self.recv_bool()
+        self.shm.seek(0)
+        # Read the length of the pickled data
+        length_bytes = self.shm.read(4)
+        length = int.from_bytes(length_bytes, byteorder='big')
+        # Now read exactly 'length' bytes
+        json_req = self.shm.read(length)
+        req = json.loads(json_req.decode())
 
-        Note: the type of the keys must be STRING.
+        return req
+    
+    def write_arrays(self, arrays: List[np.ndarray], 
+                     write=True, send_signal=True) -> None:
         """
-        # Send the length of the dictionary as a 8-byte string
-        dic_length = len(dic).to_bytes(len_bytes, byteorder="big")
-        self.socket.sendall(dic_length)
+        Write the arrays to the shared memory. The file cursor to
+        the shared memory will NOT be reset before writing.
+        
+        Parameter:
+            write: If True, write the arrays to the shared memory.
+            send_signal: If True, send the finish signal.
 
-        # Check if the dictionary is empty
-        if len(dic) == 0:
-            return
-
-        # Send the keys and values of the dictionary
-        for key, value in dic.items():
-            if type(key) is not str:
-                raise TypeError(f"Unsupported key type: {type(key)}")
-            self.send_string(key, len_bytes=4)
-            send_fn = self.get_send_fn(type(value))
-            send_fn(value)
-
-    def recv_dict(self, template: dict, len_bytes=4) -> dict:
+            Note: This two parameters are useful when the array writing
+            and the request sending are in different places or processes.
         """
-        Receive a json dictionary by the socket (length takes 4 bytes by default).
-
-        template: a template dictionary that contains the type of the values of the dictionary.
-
-        Note: the type of the keys must be STRING.
+        if write:
+            # Write the number of arrays
+            self.shm.write(len(arrays).to_bytes(4, byteorder='big'))
+            # Write the arrays
+            for array in arrays:
+                self.serialize_array(array, self.shm)
+        if send_signal:
+            # Finish signal
+            self.send_bool(True)
+    
+    def read_arrays(self) -> List[np.ndarray]:
         """
-        # Receive the length of the dictionary
-        dic_length = self.socket.recv(len_bytes)
-        dic_length = int.from_bytes(dic_length, "big")
-
-        # Check if the dictionary is empty
-        if dic_length == 0:
-            return {}
-
-        # Receive the keys and values of the dictionary
-        dic = {}
-        for _ in range(dic_length):
-            key = self.recv_string(len_bytes=4)
-            value = template[key]
-            recv_fn = self.get_recv_fn(type(value))
-            if recv_fn == self.recv_list or recv_fn == self.recv_tuple \
-                or recv_fn == self.recv_dict:
-                value = recv_fn(value)
-            else:
-                value = recv_fn()
-            dic[key] = value
-
-        return dic
-
-    def get_send_fn(self, type_: Any) -> Callable:
+        Read the arrays from the shared memory. The file cursor to
+        the shared memory will NOT be reset before reading.
         """
-        Get the send function for the given type.
-        """
-        if type_ == np.ndarray:
-            return self.send_array
-        elif type_ == str:
-            return self.send_string
-        elif type_ == float:
-            return self.send_float
-        elif type_ == int:
-            return self.send_int
-        elif type_ == bool:
-            return self.send_bool
-        elif type_ == list:
-            return self.send_list
-        elif type_ == tuple:
-            return self.send_tuple
-        elif type_ == dict:
-            return self.send_dict
-        else:
-            raise TypeError(f"Unsupported type: {type_}")
-
-    def get_recv_fn(self, type_: Any) -> Callable:
-        """
-        Get the receive function for the given type.
-        """
-        if type_ == np.ndarray:
-            return self.recv_array
-        elif type_ == str:
-            return self.recv_string
-        elif type_ == float:
-            return self.recv_float
-        elif type_ == int:
-            return self.recv_int
-        elif type_ == bool:
-            return self.recv_bool
-        elif type_ == list:
-            return self.recv_list
-        elif type_ == tuple:
-            return self.recv_tuple
-        elif type_ == dict:
-            return self.recv_dict
-        else:
-            raise TypeError(f"Unsupported type: {type_}")
+        # Finish signal
+        self.recv_bool()
+        # Read the number of arrays
+        num_arrays = int.from_bytes(self.shm.read(4), byteorder='big')
+        # Read the arrays
+        arrays = []
+        for _ in range(num_arrays):
+            array = self.deserialize_array(self.shm)
+            arrays.append(array)
+        
+        return arrays

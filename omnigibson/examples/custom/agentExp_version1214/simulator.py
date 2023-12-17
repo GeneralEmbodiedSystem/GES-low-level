@@ -14,31 +14,26 @@ from os.path import exists, join
 # os.system("bash -c 'source /home/mad0g4/.local/share/ov/pkg/isaac_sim-2022.2.0/setup_conda_env.sh'")
 
 import sys
-sys.path.append('.')
-sys.path.append('..')
-sys.path.append('...')
-sys.path.append('....')
-
 from math import ceil
 from typing import Union, Dict, List
-
-from omnigibson.utils.low_level_utils import convert_ndarray_in_dict_to_shape, omit_convert_dict
 
 import pickle
 import numpy as np
 import multiprocessing as mp
+import yaml
 
 import omnigibson as og
+from omnigibson.utils.low_level_utils import convert_ndarray_in_dict_to_shape, omit_convert_dict
 from omnigibson.macros import gm
 from omnigibson.sensors import VisionSensor
 from omnigibson.utils.ui_utils import choose_from_options, KeyboardRobotController
 from omnigibson.utils.asset_utils import get_available_g_scenes, get_available_og_scenes
 from omnigibson.robots import FetchAdvanced, TiagoAdvanced
+from servers import SocketManager, PipeManager
 
 from omnigibson.utils.ui_utils import create_module_logger
 log = create_module_logger(module_name=__name__)
 
-# from servers.server import start_server
 
 GRASPING_MODES = dict(
     sticky="Sticky Mitten - Objects are magnetized when they touch the fingers and a CLOSE command is given",
@@ -49,40 +44,52 @@ GRASPING_MODES = dict(
 gm.USE_GPU_DYNAMICS = False
 gm.ENABLE_FLATCACHE = True
 
-HOME_DIR = os.environ.get('HOME')
-TMPFS_DIR = join(HOME_DIR, 'tmpfs')
+# Read the configuration file
+CONFIG_PATH = './servers/config.yaml'
+with open(CONFIG_PATH, 'r') as f:
+    config = yaml.load(f, Loader=yaml.FullLoader)
+TMP_PATH = config['tmp_path']
+SHM_NAME_INTER = config['shm_ser_sim']['name']
+SHM_SIZE_INTER = config['shm_ser_sim']['size']
 
-def pipe_read():
-    global TMPFS_DIR
-    while not exists(f'{TMPFS_DIR}/message.pkl'):
+
+def pipe_read(pipe_manager: PipeManager):
+    while not pipe_manager.read_signal(role='client'):
         pass
-    message_path = f'{TMPFS_DIR}/message.pkl'
-    with open(message_path, 'rb') as f:
-        x_bin = f.read()
-    os.remove(message_path)
-    x = pickle.loads(x_bin)
+    message = pipe_manager.read_request()
+    pipe_manager.write_signal(False, role='client')
     
-    return x
+    return message
 
-def pipe_write(x):
-    global TMPFS_DIR
-    x_bin = pickle.dumps(x)
-    with open(f'{TMPFS_DIR}/response.pkl', 'wb') as f:
-        f.write(x_bin)
 
-manager = mp.Manager()
+def pipe_write(pipe_manager: PipeManager, data):
+    pipe_manager.write_request(data)
+    pipe_manager.write_signal(True, role='server')
 
-def server_process(*args, **kwargs):
+
+def communicate_process(*args, **kwargs):
+    """
+    This is for internal communication between the simulator process 
+    and the server process. Here, the 'client' is the server process,
+    which forwards the remote client's request to the simulator.
+    And the 'server' is the simulator process, which handles the request
+    and returns the response to the server process.
+    """
     # og.log.info(f"args: {args}")
     buffer, = args
+    pipe_manager = PipeManager(
+        TMP_PATH, SHM_NAME_INTER, 
+        SHM_SIZE_INTER, create=False
+    )
     
     while True:
-        message = pipe_read()
+        message = pipe_read(pipe_manager)
         buffer['message'] = message
         while buffer['response'] is None:
             pass
-        pipe_write(buffer['response'])
+        pipe_write(pipe_manager, buffer['response'])
         buffer['response'] = None
+
 
 def main(random_selection=False, headless=False, short_exec=False):
     """
@@ -90,12 +97,12 @@ def main(random_selection=False, headless=False, short_exec=False):
     Queries the user to select a type of grasping mode
     """
     # start server process
-    global manager
+    manager = mp.Manager()
     buffer = manager.dict()
     init_to_None_keys = ['message', 'response']
     for init_to_None_key in init_to_None_keys:
         buffer[init_to_None_key] = None
-    P = mp.Process(target=server_process, args=(buffer,))
+    P = mp.Process(target=communicate_process, args=(buffer,))
     P.start()
     
     # og.log.info(f"Demo {__file__}\n    " + "*" * 80 + "\n    Description:\n" + main.__doc__ + "*" * 80)
@@ -268,10 +275,11 @@ def main(random_selection=False, headless=False, short_exec=False):
     env.close()
     P.terminate()
 
+
 def execute_message(buffer: dict, local_vars: dict):
     '''
     @param message(tuple): (CMD, *args)
-        (get_image, )
+        (get_image, ...)
         (move_x, distance)
         (move_y, distance)
         (moverz, rotate degree)
@@ -290,11 +298,11 @@ def execute_message(buffer: dict, local_vars: dict):
     og.log.info(f"message: {message}")
     message_execute_func_mapping[message[0]](buffer, local_vars, *message[1:])
 
-def run_get_image(buffer: dict, local_vars: dict):
-    robot: Union[FetchAdvanced, TiagoAdvanced] = local_vars['robot']
-    image_res = robot.get_image()
-    image_rgba, image_depth = image_res['rgb'], image_res['depth']
-    
+
+def run_get_image(buffer: dict, local_vars: dict,
+                  written_len: int, shm_name: str, 
+                  shm_size: int):
+    # Transfer rgba image to rgb image
     def rgba2rgb(rgba, background=(255,255,255)):
         row, col, ch = rgba.shape
         if ch != 4:
@@ -309,16 +317,34 @@ def run_get_image(buffer: dict, local_vars: dict):
 
         return np.asarray(rgb, dtype='uint8')
     
-    response = {
-        'image_rgb': rgba2rgb(image_rgba),
-        'image_depth': np.expand_dims(image_depth, axis=-1),
-    }
-    buffer['response'] = response
+    robot: Union[FetchAdvanced, TiagoAdvanced] = local_vars['robot']
+    image_res = robot.get_image()
+    image_rgb, image_depth = image_res['rgb'], image_res['depth']
+    image_rgb = rgba2rgb(image_rgb)
+    image_depth = np.expand_dims(image_depth, axis=-1)
+    
+    # Write the image arrays to shared memory
+    socket_manager = SocketManager(
+        tmp_path=TMP_PATH
+    )
+    socket_manager.init_shared_memory(
+        shm_name, create=False, size=shm_size
+    )
+    socket_manager.set_shared_memory_cursor(written_len)
+    # We do not send the signal right now
+    # We have to wait until the server
+    # process receive the ack
+    socket_manager.write_arrays(
+        [image_rgb, image_depth], write=True,
+        send_signal=False)
+    
+    buffer['response'] = 'get_image success'
     og.log.info(convert_ndarray_in_dict_to_shape(image_res))
     # print(convert_ndarray_in_dict_to_shape(image_res))
     # write rgb_image & depth_image to shared memory
     # shared_memory = buffer['shared_memory']
     # ...
+
 
 def run_move_x(buffer: dict, local_vars: dict, sx: float):
     """distance to move along x axis
@@ -338,6 +364,11 @@ def run_move_x(buffer: dict, local_vars: dict, sx: float):
         local_vars[key] = eval(key)
     local_vars['keys_x'] = keys
 
+    # We have now send the command to the simulation,
+    # but we need to wait for the robot to actually move
+    # So we do not send the ack right now
+
+
 def run_move_y(buffer: dict, local_vars: dict, sy: float):
     """distance to move along y axis
 
@@ -356,6 +387,11 @@ def run_move_y(buffer: dict, local_vars: dict, sy: float):
         local_vars[key] = eval(key)
     local_vars['keys_y'] = keys
 
+    # We have now send the command to the simulation,
+    # but we need to wait for the robot to actually move
+    # So we do not send the ack right now
+
+
 def run_turn(buffer: dict, local_vars: dict, deg: float):
     """degrees to rotate base
 
@@ -371,7 +407,11 @@ def run_turn(buffer: dict, local_vars: dict, deg: float):
     for key in keys:
         local_vars[key] = eval(key)
     local_vars['keys_turn'] = keys
-    return
+    
+    # We have now send the command to the simulation,
+    # but we need to wait for the robot to actually move
+    # So we do not send the ack right now
+
 
 def generate_action(buffer: dict, local_vars: dict):
     env, robot = local_vars['env'], local_vars['robot']
@@ -384,6 +424,7 @@ def generate_action(buffer: dict, local_vars: dict):
             for key in local_vars['keys_x']:
                 local_vars.pop(key)
             local_vars.pop('keys_x')
+            # The robot has now moved, so we can send the ack
             buffer['response'] = 'move_x success'
     # og.log.info(f"act_x2: {'act_x' in local_vars}")
     if 'act_x' in local_vars:
@@ -412,6 +453,7 @@ def generate_action(buffer: dict, local_vars: dict):
     
     local_vars['action'] = action
     return
+
 
 if __name__ == "__main__":
     main()

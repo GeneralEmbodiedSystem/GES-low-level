@@ -60,18 +60,19 @@ def start_server(pipe: dict):
     CONFIG_PATH = './servers/config.yaml'
     with open(CONFIG_PATH, 'r') as f:
         config = yaml.load(f, Loader=yaml.FullLoader)
-    port_number = config['server_address'][1]
+    base_config = config['tools']['default']
+    port_number = base_config['server_address'][1]
     
     if check_port_occupied(port_number):
         kill_process_using_port(port_number)
-        
-    shared_memory_size = config['shared_memory_size']
     
     address = ('localhost', port_number)
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_socket.bind(address)
     server_socket.listen(1)
-    socket_manager = SocketManager(True, shared_memory_size)
+
+    tmp_path = config['tmp_path']
+    socket_manager = SocketManager(tmp_path=tmp_path)
 
     print("Server listening on", address)
 
@@ -82,15 +83,23 @@ def start_server(pipe: dict):
         try:
             socket_manager.set_socket(client_socket)
             # Receive the function code
-            function_code = socket_manager.recv_int()
-            # Call the function according to the function code
-            functions[function_code](socket_manager, pipe)
-            
+            function_code = socket_manager.recv_func_code()
             if function_code < 0 or function_code >= len(functions):
                 print("Invalid function code, received %d" % function_code)
                 print("Closing connection.")
                 client_socket.close()
                 continue
+            tool_func = functions[function_code]
+            tool_config = config['tools'][tool_func.__name__]
+            tool_config = {**base_config, **tool_config}
+            # Receive the shared memory name
+            if tool_config['shared_memory']:
+                shm_name = socket_manager.recv_shared_memory_name()
+                socket_manager.init_shared_memory(
+                    shm_name, create=False, 
+                    size=tool_config['shared_memory_size'])
+            # Call the function according to the function code
+            tool_func(socket_manager, pipe)
             
         except Exception as e:
             print("Error sending data: ", e)

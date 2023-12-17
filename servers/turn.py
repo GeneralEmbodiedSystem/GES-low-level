@@ -1,12 +1,4 @@
-import sys
-sys.path.append('..')
-
 from servers.utils import SocketManager
-
-
-REQ_TEMP = {
-    'angle': 0
-}
 
 
 def turn(socket_manager: SocketManager, pipe: dict):
@@ -15,7 +7,7 @@ def turn(socket_manager: SocketManager, pipe: dict):
     """
     try:
         # Receive the request data
-        response_data = socket_manager.recv_dict(REQ_TEMP)
+        response_data = socket_manager.read_request()
         angle = response_data['angle']
 
     except Exception as e:
@@ -31,6 +23,6 @@ def turn(socket_manager: SocketManager, pipe: dict):
     pipe['response'] = None
 
     # Send the response
-    socket_manager.send_dict({
+    socket_manager.write_request({
         'success': True
     })
