@@ -6,30 +6,24 @@ tools:
     # Default tool params
     default:
         # Whether to use shared memory to communicate with the server
-        shared_memory: False
+        shared_memory: True
         # The size of the shared memory (in bytes)
         # This is invalid if `shared_memory` is False
-        shared_memory_size: 4096
+        shared_memory_size: 1000000   # 1 MB
         # The address of the tool server
         # Note: this must be RESET in each tool
         server_address: ["localhost", 8700]
 
     # Specific tool params (override) 
     get_image:
-        shared_memory: True
         shared_memory_size: 100000000 # 100 MB
 
     move_x:
-        shared_memory: True
-        shared_memory_size: 1000000   # 1 MB
     
     move_y:
-        shared_memory: True
-        shared_memory_size: 1000000   # 1 MB
-      
+    
     turn:
-        shared_memory: True
-        shared_memory_size: 1000000   # 1 MB
+    
 # Shared memory for communication between 
 # server processes and simulation process
 shm_ser_sim: 
