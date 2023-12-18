@@ -1,7 +1,5 @@
 # -*- coding: UTF-8 -*-
 
-# python ./examples/custom/agentExp_version1214/main.py
-
 # mount tmpfs:
 # mkdir ~/tmpfs
 # sudo mount -t tmpfs -o size=512M tmpfs ~/tmpfs/
@@ -30,6 +28,7 @@ from omnigibson.utils.ui_utils import choose_from_options, KeyboardRobotControll
 from omnigibson.utils.asset_utils import get_available_g_scenes, get_available_og_scenes
 from omnigibson.robots import FetchAdvanced, TiagoAdvanced
 from servers import SocketManager, PipeManager
+from omnigibson.custom_env.body_simulator_cfg import BodySimulatorCfg
 
 from omnigibson.utils.ui_utils import create_module_logger
 log = create_module_logger(module_name=__name__)
@@ -45,12 +44,13 @@ gm.USE_GPU_DYNAMICS = False
 gm.ENABLE_FLATCACHE = True
 
 # Read the configuration file
-CONFIG_PATH = './servers/config.yaml'
-with open(CONFIG_PATH, 'r') as f:
-    config = yaml.load(f, Loader=yaml.FullLoader)
-TMP_PATH = config['tmp_path']
-SHM_NAME_INTER = config['shm_ser_sim']['name']
-SHM_SIZE_INTER = config['shm_ser_sim']['size']
+SERVER_CONFIG_PATH = './servers/config.yaml'
+with open(SERVER_CONFIG_PATH, 'r') as f:
+    server_config = yaml.load(f, Loader=yaml.FullLoader)
+
+TMP_PATH = server_config['tmp_path']
+SHM_NAME_INTER = server_config['shm_ser_sim']['name']
+SHM_SIZE_INTER = server_config['shm_ser_sim']['size']
 
 
 def pipe_read(pipe_manager: PipeManager):
@@ -104,111 +104,17 @@ def main(random_selection=False, headless=False, short_exec=False):
         buffer[init_to_None_key] = None
     P = mp.Process(target=communicate_process, args=(buffer,))
     P.start()
-    
-    # og.log.info(f"Demo {__file__}\n    " + "*" * 80 + "\n    Description:\n" + main.__doc__ + "*" * 80)
-
-    # Choose type of grasping
-    # grasping_mode = choose_from_options(options=GRASPING_MODES, name="grasping mode", random_selection=random_selection)
-    grasping_mode = 'sticky'
-    print(f"grasping_mode: {grasping_mode}")
 
     # Create environment configuration to use
-    scene_type = "InteractiveTraversableScene"  # fix
-    scenes = get_available_og_scenes() if scene_type == "InteractiveTraversableScene" else get_available_g_scenes()
-    # scene_model = choose_from_options(options=scenes, name="scene model", random_selection=random_selection)
-    scene_model = 'Beechwood_0_int'
     
-    print(f"scene model: {scene_model}")
-    scene_cfg = dict(
-        type=scene_type,
-        scene_model=scene_model,
-        load_object_categories=["floors", "walls", "ceilings"],
-    )
-    # if scene_type == "InteractiveTraversableScene":  # 这里我直接默认full了
-    #     load_options = {
-    #         "Quick": "Only load the building assets (i.e.: the floors, walls, ceilings)",
-    #         "Full": "Load all interactive objects in the scene",
-    #     }
-    #     load_mode = choose_from_options(options=load_options, name="load mode", random_selection=random_selection)
-    #     if load_mode == "Quick":
-    #         scene_cfg["load_object_categories"] = ["floors", "walls", "ceilings"]
+    scene_cfg = BodySimulatorCfg.scene_cfg
     
-    robot0_cfg = dict(
-        # type="Fetch",
-        type="TiagoAdvanced",
-        obs_modalities=["scan", "rgb", "depth"],
-        action_type="continuous",
-        action_normalize=True,
-        grasping_mode=grasping_mode,
-        position=[-4.0, 0.0, 0.0],
-    )
+    robot0_cfg = BodySimulatorCfg.robot0_cfg
+    # type of grasping
+    grasping_mode = robot0_cfg['grasping_mode']
 
     # Define objects to load
-    # 整体上x 和 y小一些，可以让robot和物体放到客厅里去。现在的房间太小了
-    objects_cfg = [ 
-        dict(
-            type="DatasetObject",
-            name="delicious_apple",
-            category="apple",
-            model="agveuv",
-            size=0.07,
-            position=[0.83, -0.1, 0.97],
-        ),  # apple
-        dict(
-            type="DatasetObject",
-            name="alarm_clock",
-            category="alarm_clock",
-            model="cvknrh",
-            size=0.06,
-            position=[1.53, 0.1, 0.97],
-        ),  # alarm_clock
-        dict(
-            type="DatasetObject",
-            name="water_bottle",
-            category="water_bottle",
-            model="ackxiy",
-            size=0.06,
-            position=[1.33, -0.5, 0.97],
-        ),  # alarm_clock
-        {
-            "type": "LightObject", 
-            "name": "brilliant_light",
-            "light_type": "Sphere", 
-            "intensity": 50000, 
-            "radius": 0.1, 
-            "position": [3.0, 3.0, 4.0],
-        },
-        dict(
-            type="DatasetObject",
-            name="table",
-            category="breakfast_table",
-            model="lcsizg",
-            bounding_box=[0.5, 0.5, 0.8],
-            fit_avg_dim_volume=False,
-            fixed_base=True,
-            position=[0.7, -0.1, 0.6],
-            orientation=[0, 0, 0.707, 0.707],
-        ),  # table
-        # dict(
-        #     type="DatasetObject",
-        #     name="chair",
-        #     category="straight_chair",
-        #     model="amgwaw",
-        #     bounding_box=None,
-        #     fit_avg_dim_volume=True,
-        #     fixed_base=False,
-        #     position=[0.45, 0.65, 0.425],
-        #     orientation=[0, 0, -0.9990215, -0.0442276],
-        # ),  # chair
-        dict(
-            type="PrimitiveObject",
-            name="box",
-            primitive_type="Cube",
-            rgba=[1.0, 0, 0, 1.0],
-            size=0.05,
-            position=[0.53, -0.1, 0.97],
-        ),  # box
-    ]
+    objects_cfg = BodySimulatorCfg.objects_cfg
 
     # Compile config
     cfg = dict(scene=scene_cfg, robots=[robot0_cfg], objects=objects_cfg)
@@ -229,10 +135,6 @@ def main(random_selection=False, headless=False, short_exec=False):
             sensor.image_height = 720
             sensor.image_width = 720
     
-    # log.warning(f"vision_res: {omit_convert_dict(robot.get_image())}")
-    
-    # return
-
     # Update the simulator's viewer camera's pose so it points towards the robot
     og.sim.viewer_camera.set_position_orientation(
         position=np.array([1.20465,  1.51194,  2.14789]),
@@ -246,7 +148,7 @@ def main(random_selection=False, headless=False, short_exec=False):
     action_generator.print_keyboard_teleop_info()
 
     # Other helpful user info
-    print("Running demo with grasping mode {}.".format(grasping_mode))
+    print(f"Running demo with grasping mode {grasping_mode} and scene mode{scene_cfg['scene_model']}.")
     print("Press ESC to quit")
 
     # Loop control until user quits

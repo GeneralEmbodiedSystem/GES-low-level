@@ -1,4 +1,3 @@
-# python ./examples/custom/agentExp_version1214/lowLevelServer.py
 # To terminate this process, ctrl+c is not enough, use "killall python" or something similar!
 import pickle
 import multiprocessing as mp
@@ -12,65 +11,24 @@ import yaml
 from servers import start_server, PipeManager
 
 
-# def convert_ndarray_in_dict_to_shape(x: dict):
-#     if isinstance(x, np.ndarray):
-#         return x.shape
-#     if isinstance(x, dict):
-#         res = dict()
-#         for k, v in x.items():
-#             res[k] = convert_ndarray_in_dict_to_shape(v)
-#         return res
-#     if isinstance(x, tuple) or isinstance(x, list):
-#         res = list()
-#         for y in x:
-#             res.append(convert_ndarray_in_dict_to_shape(y))
-#         if isinstance(x, tuple):
-#             res = tuple(res)
-#         return res
-#     return x
-
-# ROOT_DIR = '~/'
-# ISAAC_SIM_VERSION = 'isaac_sim-2022.2.0'
-# CONDA_ROOT_DIR = f'{ROOT_DIR}/miniconda3/'
-# CONDA_ENV_NAME = 'SIM22'
-# CONDA_ENV_VERSION = 'python3.7'
-# ISAACSIM_PATH = f'{ROOT_DIR}.local/share/ov/pkg/{ISAAC_SIM_VERSION}'
-# SON_PYTHON_PATH = './examples/custom/agentExp_version1214/main.py'
-# env_variables = {
-#     # "ISAACSIM_PATH": ISAACSIM_PATH,
-#     # "ISAACSIM_PYTHON_EXE": f'{ISAACSIM_PATH}/python.sh',
-#     "PATH": f"{CONDA_ROOT_DIR}envs/{CONDA_ENV_NAME}/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin",
-#     # "PYTHONPATH": f"{CONDA_ROOT_DIR}envs/{CONDA_ENV_NAME}/lib/{CONDA_ENV_VERSION}/site-packages",
-#     # "LD_LIBRARY_PATH": "/usr/local/lib",
-#     # "LANG": "en_US.UTF-8",
-#     # "LC_ALL": "en_US.UTF-8"
-# }
-# env_vars_dir = './test'
-# for env_var_log_file in os.listdir(env_vars_dir):
-#     if '.log' in env_var_log_file:
-#         with open(join(env_vars_dir, env_var_log_file), 'r') as f:
-#             env_var_c = f.read().strip()
-#         env_variables[env_var_log_file[:-4]] = env_var_c
-
 # Read the configuration file
 HOME_DIR = os.environ.get('HOME')
-CONFIG_PATH = './servers/config.yaml'
-with open(CONFIG_PATH, 'r') as f:
-    config = yaml.load(f, Loader=yaml.FullLoader)
+SERVER_CONFIG_PATH = './servers/config.yaml'
+with open(SERVER_CONFIG_PATH, 'r') as f:
+    server_config = yaml.load(f, Loader=yaml.FullLoader)
+
+START_UP_CONFIG_PATH = './start_up_cfg.yaml'
+with open(START_UP_CONFIG_PATH, 'r') as f:
+    start_up_config = yaml.load(f, Loader=yaml.FullLoader)
 
 # tmp directory
-TMP_PATH = config['tmp_path']
-SHM_NAME_INTER = config['shm_ser_sim']['name']
-SHM_SIZE_INTER = config['shm_ser_sim']['size']
-
-# simulator env
-CONDA_ENV_NAME = 'sim'
-CONDA_DIR_NAME = 'miniconda3' # or anaconda3
+TMP_PATH = server_config['tmp_path']
+SHM_NAME_INTER = server_config['shm_ser_sim']['name']
+SHM_SIZE_INTER = server_config['shm_ser_sim']['size']
 
 manager = mp.Manager()
 
 def server_process(*args, **kwargs):
-    # og.log.info(f"args: {args}")
     buffer, = args
     start_server(buffer)
     # the following 3 lines are test code
@@ -78,40 +36,24 @@ def server_process(*args, **kwargs):
     # buffer['message'] = ('move_x', -0.5)
     # buffer['message'] = ('turn', 90)
 
-# def init_tmpfs():
-#     global TMPFS_DIR
-#     if not exists(TMPFS_DIR):
-#         raise ValueError(f"please run \"mkdir -p {TMPFS_DIR} && sudo mount -t tmpfs -o size=512M tmpfs {TMPFS_DIR}\" to create tmpfs in RAM!")
-#     # delete all files in TMPFS_DIR
-#     for file in os.listdir(TMPFS_DIR):
-#         file_path = join(TMPFS_DIR, file)
-#         if isfile(file_path):
-#             os.remove(file_path)
-#         elif isdir(file_path):
-#             shutil.rmtree(file_path)
-#         else:
-#             raise NotImplementedError("The type of the file is not in [file, dir]!")
-
 def start_simulator():
-    global CONDA_ENV_NAME, CONDA_DIR_NAME, HOME_DIR
     bash_components = f'''#!/bin/bash
-        source {join(HOME_DIR, CONDA_DIR_NAME, 'bin/activate')} {CONDA_ENV_NAME}
+        source {join(start_up_config["system_cfg"]["CONDA_DIR_PATH"], 'bin/activate')} {start_up_config["system_cfg"]["CONDA_ENV_NAME"]}
         python --version
-        python omnigibson/examples/custom/agentExp_version1214/simulator.py'''
-    bash_path = 'omnigibson/examples/custom/agentExp_version1214/start_simulator.sh'
+        python {start_up_config["system_cfg"]["EXECUTE_FILE"]}'''
+    bash_path = 'omnigibson/custom_env/start_simulator.sh'
     with open(bash_path, 'w') as f:
         f.write(bash_components)
     os.system(f"bash {bash_path}")
 
 
 def main():
-    # init the pipe
+    # init the pipe, we use pipe to communicate between the simulator process and the server process
+    # and the server process will communicate with the high level server
     pipe_manager = PipeManager(
         TMP_PATH, SHM_NAME_INTER, 
         SHM_SIZE_INTER, create=True
     )
-
-    # init_tmpfs()
     
     # start simulator
     simulator_p = mp.Process(target=start_simulator)
@@ -132,7 +74,6 @@ def main():
                 pass
             response = communicate(
                 buffer['message'], pipe_manager)
-            # print(f"response: {convert_ndarray_in_dict_to_shape(response)}")
             buffer['message'] = None
             buffer['response'] = response
     except KeyboardInterrupt:
@@ -149,7 +90,6 @@ def communicate(message, pipe_manager: PipeManager):
     And the 'server' is the simulator process, which handles the request
     and returns the response to the server process.
     """
-    # print(f"message: {message}")
 
     pipe_manager.write_request(message)
     pipe_manager.write_signal(True, role='client')

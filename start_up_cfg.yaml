@@ -1,0 +1,4 @@
+system_cfg:
+  CONDA_ENV_NAME: 'sim'
+  CONDA_DIR_PATH: '~/miniconda3/' # or anaconda3, or other conda path
+  EXECUTE_FILE: 'omnigibson/custom_env/body_simulator.py'

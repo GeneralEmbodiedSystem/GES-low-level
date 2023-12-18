@@ -16,7 +16,7 @@ from omnigibson.robots import FetchAdvanced
 from omnigibson.utils.ui_utils import create_module_logger
 log = create_module_logger(module_name=__name__)
 
-from utils.common import omit_convert_dict
+from omnigibson.utils.low_level_utils import omit_convert_dict
 
 GRASPING_MODES = dict(
     sticky="Sticky Mitten - Objects are magnetized when they touch the fingers and a CLOSE command is given",
@@ -240,6 +240,8 @@ def main(random_selection=False, headless=False, short_exec=False):
         print("move", s, "m, from step", cur_step, "to", cur_step + continue_steps)
         return cur_step + continue_steps
 
+    print("robot.action_dim", robot.action_dim)
+    
     while step != max_steps:
         # action = action_generator.get_random_action() if action_random_selection else action_generator.get_teleop_action()
         # for _ in range(10):
@@ -249,25 +251,28 @@ def main(random_selection=False, headless=False, short_exec=False):
         #     step = turn(-90, step)
         # if step == 50: # test movex()
         #     step = movex(0.4, step)
-        if step == 50: # test movey()
-            step = movey(1.5, step)
+        # if step == 50: # test movey()
+        #     step = movey(1.5, step)
         action = np.zeros(robot.action_dim)
-        # if step < 50:  # measure the distance of 1 step in y axis
-        #     action[1] = 0.1
-        # elif step < 100:
-        #     action[1] = -0.1
+        if step % 200 < 100:  # measure the distance of 1 step in y axis
+            action[4] = 0.1
+        elif step % 200 < 200:
+            action[4] = -0.1
         env.step(action)
         step += 1
         print("step", step)
         print("robot", robot.get_position())
+    
     """
-    TiagoAdvance action idx:
+    TiagoAdvance action idx (action_dim=19):
     0: base move (x axis), + means forward and - means back. 0.1 * 84 steps ~ 0.2m.  0.1 * 1 step ~ [0.00238, 0.00244]m
     1: base move (y axis), + means left and - means right. 0.1 * 50 steps ~ 0.1173m.  0.1 * 1 step ~ 0.002346 m
-    2: base rotate (+left/-right). 614 steps * 0.2 = 122.8 ~ 360 degree left;  61.4 ~ 180 degree left;
+    2: turn base (+left/-right). 614 steps * 0.2 = 122.8 ~ 360 degree left;  61.4 ~ 180 degree left;
         so 90 degree left is 30.7 or 0.1 * 307 steps; or 0.6 * 51 steps (action[2]=0.6 is large enough!)
-    3: head rotate (left/right)
-    5: left hand front/back
+    3: turn head (+left/-right)
+    4: head +up/-down
+    [5, 11]: left arm. for example, the dim 5 means left hand front/back 
+    [12, 18]: right arm.
     """
 
     # Always shut down the environment cleanly at the end
