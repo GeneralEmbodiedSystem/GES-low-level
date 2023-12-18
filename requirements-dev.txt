@@ -8,3 +8,5 @@ mkdocs-material-extensions
 mkdocstrings[python]
 mkdocs-section-index
 mkdocs-literate-nav
+# Custom libraries
+typing_extensions

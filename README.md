@@ -36,7 +36,7 @@ OmniGibson需要在一个python 3.7的环境下运行。
 1. `move_x(distance: float)`
     - Description: The robot moves forward a distance d. If d is negative, the robot moves backward.
     - Parameter: 
-        1. `distance`: The distance the robot needs to move forward or backward. `distance` in [-5, -0.1] means move back. `distance` in [0.1, 5] means move forward. The unit of distance is **meters**.
+        1. `distance`: The distance the robot needs to move forward or backward. `distance` in [-1, -0.1] means move back. `distance` in [0.1, 1] means move forward. The unit of distance is **meters**.
     - Return: 
         1. `success`: a bool indicating whether the operation is successful.
 

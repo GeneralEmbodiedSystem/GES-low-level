@@ -1,5 +1,5 @@
 import socket
-
+import time
 import yaml
 import psutil
 
@@ -39,16 +39,15 @@ def check_port_occupied(port):
 
 
 def kill_process_using_port(port):
-    for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
-        try:
-            if proc.info['name'] is None:
-                continue
-            if f':{port}' in ' '.join(proc.info['cmdline']):
-                print(f"Process {proc.info['pid']} is using port {port}. Terminating...")
+    for conn in psutil.net_connections(kind='inet'):
+        if conn.laddr.port == port:
+            try:
+                proc = psutil.Process(conn.pid)
+                print(f"Process {proc.pid} is using port {port}. Terminating...")
                 proc.terminate()
                 print("Process terminated.")
-        except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
-            pass
+            except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+                pass
 
 
 def start_server(pipe: dict):
@@ -65,6 +64,7 @@ def start_server(pipe: dict):
     
     if check_port_occupied(port_number):
         kill_process_using_port(port_number)
+        time.sleep(2)
     
     address = ('localhost', port_number)
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -91,7 +91,10 @@ def start_server(pipe: dict):
                 continue
             tool_func = functions[function_code]
             tool_config = config['tools'][tool_func.__name__]
-            tool_config = {**base_config, **tool_config}
+            if tool_config is None:
+                tool_config = base_config
+            else:
+                tool_config = {**base_config, **tool_config}
             # Receive the shared memory name
             if tool_config['shared_memory']:
                 shm_name = socket_manager.recv_shared_memory_name()

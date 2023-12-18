@@ -1,12 +1,17 @@
 import socket
 import struct
-from typing import Any, Iterable, Optional, List, Literal
+from typing import Any, Iterable, Optional, List
 import os
 import mmap
 import random
 import string
 import json
 from io import BytesIO
+
+try:
+    from typing import Literal
+except ImportError:
+    from typing_extensions import Literal
 
 import numpy as np
 
@@ -31,9 +36,13 @@ class PipeManager:
         # Create a file to back the shared memory
         path = os.path.join(tmp_path, name)
         path = os.path.expanduser(path)
+        self.shm_file_path = path
 
         if create:
             # Create the file
+            if not os.path.exists(path):
+                # mkdir
+                os.makedirs(os.path.dirname(path), exist_ok=True)
             with open(path, "wb") as f:
                 # Allocate space
                 f.seek(size - 1)
@@ -63,6 +72,8 @@ class PipeManager:
             raise ValueError("check should be 'server' or 'client'")
         signal = self.shm.read(1)
         signal = bool.from_bytes(signal, "big")
+        
+        return signal
 
     def write_signal(self, signal: bool, role: Literal["server", "client"]) -> None:
         """
