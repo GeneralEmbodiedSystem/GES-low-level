@@ -16,7 +16,7 @@ TMP_PATH = server_config['tmp_path']
 
 def run_move_x(buffer: dict, local_vars: dict, sx: float):
     """distance to move along x axis. this function only set a `move_x` state. 
-    the actual movement(generate action) is done in execute_move_x
+    the actual movement(generate action at each time) is done in execute_move_x
 
     Args:
         s (int): distance to move along x axis. [-1, -0.1] means move back. [0.1, 1] means move forward.

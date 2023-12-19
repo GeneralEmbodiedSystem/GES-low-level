@@ -51,7 +51,7 @@ def execute_move_y(buffer: dict, local_vars: dict):
     
     if 'act_y' in local_vars:
         left_or_right, init_y, sy = local_vars['left_or_right'], local_vars['init_y'], local_vars['sy']
-        if left_or_right * (robot.get_position()[0] - init_y) >= abs(sy):
+        if left_or_right * (robot.get_position()[1] - init_y) >= abs(sy):
             for key in local_vars['keys_y']:
                 local_vars.pop(key)
             local_vars.pop('keys_y')

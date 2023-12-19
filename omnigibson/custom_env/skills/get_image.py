@@ -52,9 +52,9 @@ def run_get_image(buffer: dict, local_vars: dict,
     # process receive the ack
     
     # showing image(test)
-    import matplotlib.pyplot as plt
-    plt.imshow(image_rgb)
-    plt.show()
+    # import matplotlib.pyplot as plt
+    # plt.imshow(image_rgb)
+    # plt.show()
     
     socket_manager.write_arrays(
         [image_rgb, image_depth], write=True,

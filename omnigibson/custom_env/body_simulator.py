@@ -188,7 +188,7 @@ def main(random_selection=False, headless=False, short_exec=False):
 
 
 def execute_message(buffer: dict, local_vars: dict):
-    '''
+    '''this function only set the low level to a given state. the actual movement(generate action at each time) is done in generate_action
     @param message(tuple): (CMD, *args)
         (get_image, ...)
         (move_x, distance)
@@ -212,7 +212,7 @@ def generate_action(buffer: dict, local_vars: dict):
     action = local_vars['action']
     
     for skill, func_tuple in skillset.items():
-        if len(func_tuple) >= 2:
+        if len(func_tuple) >= 2:  # if the skill has execute_xxx function
             skill_execute_func = func_tuple[1]  # execute_xxx. it generate the action
             action = skill_execute_func(buffer, local_vars)
     
