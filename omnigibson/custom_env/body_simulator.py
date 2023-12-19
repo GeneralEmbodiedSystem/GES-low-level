@@ -36,7 +36,7 @@ from omnigibson.custom_env.skills.turn import run_turn, execute_turn
 from omnigibson.utils.ui_utils import create_module_logger
 log = create_module_logger(module_name=__name__)
 
-
+# write your skills and corresponding function here!!
 skillset = {
     'get_image': (run_get_image, ),
     'move_x': (run_move_x, execute_move_x),

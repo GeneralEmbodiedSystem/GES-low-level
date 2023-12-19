@@ -26,7 +26,7 @@ def run_move_x(buffer: dict, local_vars: dict, sx: float):
     
     init_x = robot.get_position()[0]
     forward_or_back = 1 if sx > 0 else -1
-    act_x = forward_or_back * 0.1  # 0.1 is the velocity 
+    act_x = forward_or_back * 0.1  # you can modify here: 0.1 is the velocity 
     
     keys = ['init_x', 'act_x', 'forward_or_back', 'sx']
     for key in keys:
@@ -49,13 +49,13 @@ def execute_move_x(buffer: dict, local_vars: dict):
     
     if 'act_x' in local_vars:
         forward_or_back, init_x, sx = local_vars['forward_or_back'], local_vars['init_x'], local_vars['sx']
-        if forward_or_back * (robot.get_position()[0] - init_x) >= abs(sx):
+        if forward_or_back * (robot.get_position()[0] - init_x) >= abs(sx):  # you can modify here
             for key in local_vars['keys_x']:
                 local_vars.pop(key)
             local_vars.pop('keys_x')
             # The robot has now moved, so we can send the ack
-            buffer['response'] = 'move_x success'
+            buffer['response'] = 'move_x success'  # you can modify here
     # og.log.info(f"act_x2: {'act_x' in local_vars}")
     if 'act_x' in local_vars:
-        action[0] = local_vars['act_x']
+        action[0] = local_vars['act_x']  # you can modify here
     return action

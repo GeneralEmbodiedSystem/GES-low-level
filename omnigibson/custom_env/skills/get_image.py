@@ -51,9 +51,10 @@ def run_get_image(buffer: dict, local_vars: dict,
     # We have to wait until the server
     # process receive the ack
     
-    # # showing image(test)
-    # import matplotlib.pyplot as plt
-    # plt.imshow(image_rgb)
+    # showing image(test)
+    import matplotlib.pyplot as plt
+    plt.imshow(image_rgb)
+    plt.show()
     
     socket_manager.write_arrays(
         [image_rgb, image_depth], write=True,

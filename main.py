@@ -32,7 +32,7 @@ def server_process(*args, **kwargs):
     buffer, = args
     start_server(buffer)
     # the following 3 lines are test code
-    # buffer['message'] = ('get_image',)
+    # buffer['message'] = ('get_image', 0, SHM_NAME_INTER, SHM_SIZE_INTER)
     # buffer['message'] = ('move_x', -0.5)
     # buffer['message'] = ('move_y', 0.5)
     # buffer['message'] = ('turn', 90)
