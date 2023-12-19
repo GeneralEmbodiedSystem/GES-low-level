@@ -26,7 +26,7 @@ def run_move_x(buffer: dict, local_vars: dict, sx: float):
     
     init_x = robot.get_position()[0]
     forward_or_back = 1 if sx > 0 else -1
-    act_x = forward_or_back * 0.1  # you can modify here: 0.1 is the velocity 
+    act_x = forward_or_back * 0.05  # you can modify here: 0.1 is the velocity 
     
     keys = ['init_x', 'act_x', 'forward_or_back', 'sx']
     for key in keys:
