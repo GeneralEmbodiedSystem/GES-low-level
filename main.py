@@ -34,6 +34,7 @@ def server_process(*args, **kwargs):
     # the following 3 lines are test code
     # buffer['message'] = ('get_image',)
     # buffer['message'] = ('move_x', -0.5)
+    # buffer['message'] = ('move_y', 0.5)
     # buffer['message'] = ('turn', 90)
 
 def start_simulator():

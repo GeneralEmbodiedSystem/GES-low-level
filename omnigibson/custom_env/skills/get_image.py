@@ -13,8 +13,6 @@ with open(SERVER_CONFIG_PATH, 'r') as f:
     server_config = yaml.load(f, Loader=yaml.FullLoader)
 
 TMP_PATH = server_config['tmp_path']
-SHM_NAME_INTER = server_config['shm_ser_sim']['name']
-SHM_SIZE_INTER = server_config['shm_ser_sim']['size']
 
 
 def run_get_image(buffer: dict, local_vars: dict,
@@ -52,6 +50,11 @@ def run_get_image(buffer: dict, local_vars: dict,
     # We do not send the signal right now
     # We have to wait until the server
     # process receive the ack
+    
+    # # showing image(test)
+    # import matplotlib.pyplot as plt
+    # plt.imshow(image_rgb)
+    
     socket_manager.write_arrays(
         [image_rgb, image_depth], write=True,
         send_signal=False)
