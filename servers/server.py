@@ -4,25 +4,33 @@ import yaml
 import psutil
 
 from servers.utils import SocketManager
-from servers.get_image import get_image
-from servers.move_x import move_x
-from servers.move_y import move_y
-from servers.turn import turn
+from servers.skills import get_image, move_forward, move_backward, \
+    move_left, move_right, brake, turn_left, turn_right, get_velocity
 
 
 # Functions
 functions = [
     get_image,
-    move_x,
-    move_y,
-    turn
+    move_forward,
+    move_backward,
+    move_left,
+    move_right,
+    brake,
+    turn_left,
+    turn_right,
+    get_velocity
 ]
 
 # Function codes
 GET_IMAGE = 0
-MOVE_X = 1
-MOVE_Y = 2
-TURN = 3
+MOVE_FORWARD = 1
+MOVE_BACKWARD = 2 
+MOVE_LEFT = 3
+MOVE_RIGHT = 4
+BRAKE = 5
+TURN_LEFT = 6
+TURN_RIGHT = 7
+GET_VELOCITY = 8
 
 
 def check_port_occupied(port):

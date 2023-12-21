@@ -31,11 +31,57 @@ manager = mp.Manager()
 def server_process(*args, **kwargs):
     buffer, = args
     start_server(buffer)
-    # the following 3 lines are test code
+    # the following lines are test code
+    # Test getting an image
     # buffer['message'] = ('get_image', 0, SHM_NAME_INTER, SHM_SIZE_INTER)
-    # buffer['message'] = ('move_x', -0.5)
-    # buffer['message'] = ('move_y', 1)
-    # buffer['message'] = ('turn', 90)
+    # import time
+    # time.sleep(5)
+    # Test robot moving
+    # buffer['message'] = ('move_backward', 0.1)
+    # while buffer['response'] is None:
+    #     pass
+    # print(buffer['response'])
+    # time.sleep(3)
+    # buffer['message'] = ('move_forward', 0.1)
+    # while buffer['response'] is None:
+    #     pass
+    # print(buffer['response'])
+    # time.sleep(3)
+    # buffer['message'] = ('move_left', 0.1)
+    # while buffer['response'] is None:
+    #     pass
+    # print(buffer['response'])
+    # time.sleep(3)
+    # buffer['message'] = ('move_right', 0.1)
+    # while buffer['response'] is None:
+    #     pass
+    # print(buffer['response'])
+    # time.sleep(3)
+    # buffer['message'] = ('brake',)
+    # while buffer['response'] is None:
+    #     pass
+    # print(buffer['response'])
+    # time.sleep(3)
+    # buffer['message'] = ('turn_right', 90)
+    # while buffer['response'] is None:
+    #     pass
+    # print(buffer['response'])
+    # time.sleep(1)
+    # buffer['message'] = ('turn_left', 180)
+    # while buffer['response'] is None:
+    #     pass
+    # print(buffer['response'])
+    # Test braking
+    # buffer['message'] = ('move_backward', 0.1)
+    # while buffer['response'] is None:
+    #     pass
+    # print(buffer['response'])
+    # time.sleep(3)
+    # buffer['message'] = ('brake',)
+    # while buffer['response'] is None:
+    #     pass
+    # print(buffer['response'])
+
 
 def start_simulator():
     bash_components = f'''#!/bin/bash

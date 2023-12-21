@@ -2,7 +2,7 @@ GES low level development based on OmniGibson.
 
 # 运行
 
-- 创建python 3.10的环境，用于运行high level（以及用于启动low level的程序）。（这个环境称作high level环境）
+- 创建python 3.10的环境，用于运行high level（以及用于启动low level的程序）。（这个环境称作high level环境）。这个环境可能需要安装依赖`pip install pyyaml numpy psutil`。
 - 创建一个python 3.7的环境，安装isaac sim 2022.2.0（具体见模拟器安装文档），以及`pip install -e .`当前仓库。模拟器实际上是在这个环境中运行的。（这个环境称作low level环境）
 - 将conda的路径和**low level环境**的名字写到根目录的`start_up_cfg.yaml`中
 - **activate high level环境**（也就是python 3.10的环境），然后在仓库根目录下运行`python main.py`即可。他会创建新进程，并在新进程中activate low level环境、启动模拟器比如`omnigibson/custom_env/body_simulator.py`。
@@ -22,6 +22,8 @@ GES low level development based on OmniGibson.
   - 把fetchAdvanced机器人加到了家庭场景里面，加了可交互的object，键盘控制移动，见模拟器文档 Gibson环境搭建 部分和 GES-low-level/omnigibson/examples/custom/grasp-interactive_scene.py
   - 双臂机器人，目前想先用上层指令替换键盘指令，接进来。先实现移动，见没写完的 GES-low-level/omnigibson/examples/custom/merge_scene_and_move_EnvWrap.py （现在双臂键盘的移动有问题）
 
+
+OmniGibson需要在一个python 3.7的环境下运行。
 在FetchAdvanced类里面实现了get_image()来获取RGBD，在 grasping_mode_example.py 有使用样例
 
 ## API
