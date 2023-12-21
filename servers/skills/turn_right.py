@@ -1,14 +1,14 @@
 from servers.utils import SocketManager
 
 
-def move_x(socket_manager: SocketManager, pipe: dict):
+def turn_right(socket_manager: SocketManager, pipe: dict):
     """
-    Move the robot in the x direction (front-back)
+    Turn the robot right
     """
     try:
-        # Receive the distance
+        # Receive the request data
         response_data = socket_manager.read_request()
-        distance = response_data['distance']
+        angle = response_data['angle']
 
     except Exception as e:
         print("Error receive data: ", e)
@@ -16,7 +16,7 @@ def move_x(socket_manager: SocketManager, pipe: dict):
         return
     
     # Execute move
-    pipe['message'] = ("move_x", distance)
+    pipe['message'] = ("turn_right", angle)
     
     while pipe['response'] is None:
         pass

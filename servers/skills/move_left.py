@@ -1,14 +1,19 @@
 from servers.utils import SocketManager
 
 
-def move_y(socket_manager: SocketManager, pipe: dict):
+# Define the speed modes
+WALK_SPEED = 0.2
+CRAWL_SPEED = 0.05
+
+
+def move_left(socket_manager: SocketManager, pipe: dict):
     """
-    Move the robot in the y direction (left-right)
+    Move the robot left
     """
     try:
         # Receive the request data
         response_data = socket_manager.read_request()
-        distance = response_data['distance']
+        mode = response_data['mode']
 
     except Exception as e:
         print("Error receive data: ", e)
@@ -16,7 +21,15 @@ def move_y(socket_manager: SocketManager, pipe: dict):
         return
     
     # Execute move
-    pipe['message'] = ("move_y", distance)
+    if mode == 'walk':
+        velocity = WALK_SPEED
+    elif mode == 'crawl':
+        velocity = CRAWL_SPEED
+    else:
+        print("Invalid speed mode: %s" % mode)
+        print("Closing connection.")
+        return
+    pipe['message'] = ("move_left", velocity)
     
     while pipe['response'] is None:
         pass

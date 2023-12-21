@@ -17,6 +17,11 @@ GES low level development based on OmniGibson.
 # 运行
 
 新建一个python 3.10的环境，然后在仓库根目录下运行`python main.py`，如果有显存泄露的问题，运行main之前多运行几次`killall python`。
+
+```bash
+pip install pyyaml numpy psutil
+```
+
 OmniGibson需要在一个python 3.7的环境下运行。
 
 ## API

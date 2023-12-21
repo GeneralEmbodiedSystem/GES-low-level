@@ -1,7 +1,8 @@
 # For storing share memory files
 tmp_path: "~/tmp"
 # Tools that are enabled
-tools_enabled: ["get_image", "move_x", "move_y", "turn"]  
+tools_enabled: ["get_image", "move_forward", "move_backward", "move_left",
+                "move_right", "brake", "turn_left", "turn_right"]
 tools:
     # Default tool params
     default:
@@ -17,11 +18,19 @@ tools:
     get_image:
         shared_memory_size: 100000000 # 100 MB
 
-    move_x:
-    
-    move_y:
-    
-    turn:
+    move_forward:
+
+    move_backward:
+
+    move_left:
+
+    move_right:
+
+    brake:
+
+    turn_left:
+
+    turn_right:
 
 # Shared memory for communication between 
 # server processes and simulation process

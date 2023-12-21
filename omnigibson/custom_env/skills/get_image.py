@@ -1,4 +1,4 @@
-from typing import Union, Dict, List
+from typing import Union
 
 import numpy as np
 import yaml
@@ -8,10 +8,11 @@ from omnigibson.utils.low_level_utils import convert_ndarray_in_dict_to_shape
 from servers import SocketManager, PipeManager
 from omnigibson.robots import FetchAdvanced, TiagoAdvanced
 
+
+# Load the config file
 SERVER_CONFIG_PATH = './servers/config.yaml'
 with open(SERVER_CONFIG_PATH, 'r') as f:
     server_config = yaml.load(f, Loader=yaml.FullLoader)
-
 TMP_PATH = server_config['tmp_path']
 
 
@@ -66,4 +67,3 @@ def run_get_image(buffer: dict, local_vars: dict,
     # write rgb_image & depth_image to shared memory
     # shared_memory = buffer['shared_memory']
     # ...
-
