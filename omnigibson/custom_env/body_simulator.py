@@ -9,6 +9,7 @@ Example script demo'ing robot manipulation control with grasping.
 """
 import numpy as np
 import yaml
+import argparse
 
 import omnigibson as og
 from omnigibson.macros import gm
@@ -54,16 +55,20 @@ TMP_PATH = server_config['tmp_path']
 SHM_NAME_INTER = server_config['shm_ser_sim']['name']
 SHM_SIZE_INTER = server_config['shm_ser_sim']['size']
 
-SIM_CONFIG_PATH = './omnigibson/custom_env/body_simulator_cfg.yaml'
-with open(SIM_CONFIG_PATH, 'r') as f:
-    sim_config = yaml.load(f, Loader=yaml.FullLoader)
-
 
 def main(random_selection=False, headless=False, short_exec=False):
     """
     Robot grasping mode demo with selection
     Queries the user to select a type of grasping mode
     """
+    # environment config, including scene, robot, and objects
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--config_file", type=str, default="table_food_trash_can_env.yaml")
+    args = parser.parse_args()
+    sim_config_path = './omnigibson/custom_env/configs/' + args.config_file
+    with open(sim_config_path, 'r') as f:
+        sim_config = yaml.load(f, Loader=yaml.FullLoader)
+    
     # Create pipe for communication with server process
     # This is for internal communication between the simulator process 
     # and the server process. Here, the 'client' is the server process,

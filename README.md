@@ -4,7 +4,7 @@ GES low level development based on OmniGibson.
 
 - 创建python 3.10的环境，用于运行high level（以及用于启动low level的程序）。（这个环境称作high level环境）。这个环境可能需要安装依赖`pip install pyyaml numpy psutil`。
 - 创建一个python 3.7的环境，安装isaac sim 2022.2.0（具体见模拟器安装文档），以及`pip install -e .`当前仓库。模拟器实际上是在这个环境中运行的。（这个环境称作low level环境）
-- 将conda的路径和**low level环境**的名字写到根目录的`start_up_cfg.yaml`中
+- 将conda的路径`CONDA_DIR_PATH`和**low level环境**的名字`CONDA_ENV_NAME`，希望运行的环境类型的config`ENV_CONFIG_FILE`写到根目录的`start_up_cfg.yaml`中
 - **activate high level环境**（也就是python 3.10的环境），然后在仓库根目录下运行`python main.py`即可。他会创建新进程，并在新进程中activate low level环境、启动模拟器比如`omnigibson/custom_env/body_simulator.py`。
 - 如果有显存泄露或端口占用的问题，运行`python main.py`之前多运行几次`killall python`。
 

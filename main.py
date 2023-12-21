@@ -28,7 +28,7 @@ def start_simulator():
     bash_components = f'''#!/bin/bash
         source {join(start_up_config["system_cfg"]["CONDA_DIR_PATH"], 'bin/activate')} {start_up_config["system_cfg"]["CONDA_ENV_NAME"]}
         python --version
-        python {start_up_config["system_cfg"]["EXECUTE_FILE"]}'''
+        python {start_up_config["system_cfg"]["EXECUTE_FILE"]} --config_file {start_up_config["system_cfg"]["ENV_CONFIG_FILE"]}'''
     bash_path = 'omnigibson/custom_env/start_simulator.sh'
     with open(bash_path, 'w') as f:
         f.write(bash_components)
