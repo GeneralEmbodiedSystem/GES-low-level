@@ -28,6 +28,7 @@ from omnigibson.custom_env.skills.move_right import run_move_right, execute_move
 from omnigibson.custom_env.skills.turn_left import run_turn_left, execute_turn_left
 from omnigibson.custom_env.skills.turn_right import run_turn_right, execute_turn_right
 from omnigibson.custom_env.skills.brake import run_brake
+from omnigibson.custom_env.skills.get_velocity import run_get_velocity
 
 
 from omnigibson.utils.ui_utils import create_module_logger
@@ -42,7 +43,8 @@ skillset = {
     'move_right': (run_move_right, execute_move_right),
     'turn_left': (run_turn_left, execute_turn_left),
     'turn_right': (run_turn_right, execute_turn_right),
-    'brake': (run_brake, )
+    'brake': (run_brake, ),
+    'get_velocity': (run_get_velocity, )
 }
 
 # Don't use GPU dynamics and Use flatcache for performance boost
@@ -161,7 +163,7 @@ def main(random_selection=False, headless=False, short_exec=False):
     active_actions = {
         # The action related to base moving, E.g.,
         # "move_action": {
-        #     "func": execute_example_skill,
+        #     "func": "execute_example_skill",
         #     "args": {
         #         "arg_1": 0.1 
         #     },
