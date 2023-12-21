@@ -1,7 +1,7 @@
-from servers.utils import SocketManager
+from servers.utils import SocketManager, PipeManager
 
 
-def get_image(socket_manager: SocketManager, pipe: dict):
+def get_image(socket_manager: SocketManager, pipe: PipeManager):
     # Send the response
     written_len = socket_manager.write_request({
         'image_rgb': 0,
@@ -9,13 +9,14 @@ def get_image(socket_manager: SocketManager, pipe: dict):
     })
 
     # Send the message to main process
-    pipe['message'] = (
-        "get_image", written_len, 
-        socket_manager.shm_name, socket_manager.shm_size)
+    pipe.write(
+        data=("get_image", written_len, 
+            socket_manager.shm_name, socket_manager.shm_size),
+        role="client"
+    )
     
-    while pipe['response'] is None:
+    while pipe.read(role="client") is None:
         pass
-    pipe['response'] = None
     
     socket_manager.write_arrays(
         [], write=False, send_signal=True)

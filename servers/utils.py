@@ -91,11 +91,11 @@ class PipeManager:
             raise ValueError("check should be 'server' or 'client'")
         self.shm.write(signal.to_bytes(1, byteorder="big"))
     
-    def read_request(self) -> Any:
+    def read_data(self) -> Any:
         """
-        Read the request data from the shared memory.
+        Read the data from the shared memory.
         """
-        # Read the length of the pickled data
+        # Read the length of the serialized data
         self.shm.seek(2)
         length_bytes = self.shm.read(4)
         length = int.from_bytes(length_bytes, byteorder='big')
@@ -105,15 +105,52 @@ class PipeManager:
 
         return req
     
-    def write_request(self, req: Any) -> None:
+    def write_data(self, data: Any) -> None:
         """
-        Write the request data to the shared memory.
+        Write the data to the shared memory.
         """
-        json_req = json.dumps(req)
-        # Write the length of the pickled data first
+        json_req = json.dumps(data)
+        # Write the length of the serialized data first
         self.shm.seek(2)
         self.shm.write(len(json_req).to_bytes(4, byteorder='big'))
         self.shm.write(json_req.encode())
+
+    def read(self, role: Literal["server", "client"]) -> Any:
+        """
+        Read the data from the shared memory. This function
+        will perform the check and read the data only when
+        the counterpart has ready sent the data (otherwise return None).
+        
+        When `role='server'`, the data should be the request data.
+        When `role='client'`, the data should be the response data.
+        """
+        if role != "server" and role != "client":
+            raise ValueError("`role` should be 'server' or 'client'")
+        counterpart_role = "client" if role == "server" else "server"
+        # Read the signal
+        signal = self.read_signal(counterpart_role)
+        if not signal:
+            # The counterpart has not ready sent the data
+            return None
+        # Read the request data
+        data = self.read_data()
+        # Disable the signal
+        self.write_signal(False, counterpart_role)
+
+        return data
+    
+    def write(self, data: Any, role: Literal["server", "client"]) -> None:
+        """
+        Write the data to the shared memory. This function
+        will send the written signal to the counterpart.
+        
+        When `role='server'`, the data should be the response data.
+        When `role='client'`, the data should be the request data.
+        """
+        # Write the data
+        self.write_data(data)
+        # Write the signal
+        self.write_signal(True, role)
 
 
 class SocketManager:

@@ -7,18 +7,12 @@
 """
 Example script demo'ing robot manipulation control with grasping.
 """
-import multiprocessing as mp
-
 import numpy as np
 import yaml
 
 import omnigibson as og
-from omnigibson.utils.low_level_utils import convert_ndarray_in_dict_to_shape, omit_convert_dict
 from omnigibson.macros import gm
 from omnigibson.sensors import VisionSensor
-from omnigibson.utils.ui_utils import choose_from_options, KeyboardRobotController
-from omnigibson.utils.asset_utils import get_available_g_scenes, get_available_og_scenes
-from omnigibson.robots import FetchAdvanced, TiagoAdvanced
 from servers import PipeManager
 from omnigibson.custom_env.skills.get_image import run_get_image
 from omnigibson.custom_env.skills.move_forward import run_move_forward, execute_move_forward
@@ -65,57 +59,21 @@ with open(SIM_CONFIG_PATH, 'r') as f:
     sim_config = yaml.load(f, Loader=yaml.FullLoader)
 
 
-def pipe_read(pipe_manager: PipeManager):
-    while not pipe_manager.read_signal(role='client'):
-        pass
-    message = pipe_manager.read_request()
-    pipe_manager.write_signal(False, role='client')
-    
-    return message
-
-
-def pipe_write(pipe_manager: PipeManager, data):
-    pipe_manager.write_request(data)
-    pipe_manager.write_signal(True, role='server')
-
-
-def communicate_process(*args, **kwargs):
-    """
-    This is for internal communication between the simulator process 
-    and the server process. Here, the 'client' is the server process,
-    which forwards the remote client's request to the simulator.
-    And the 'server' is the simulator process, which handles the request
-    and returns the response to the server process.
-    """
-    # og.log.info(f"args: {args}")
-    buffer, = args
-    pipe_manager = PipeManager(
-        TMP_PATH, SHM_NAME_INTER, 
-        SHM_SIZE_INTER, create=False
-    )
-    
-    while True:
-        message = pipe_read(pipe_manager)
-        buffer['message'] = message
-        while buffer['response'] is None:
-            pass
-        pipe_write(pipe_manager, buffer['response'])
-        buffer['response'] = None
-
-
 def main(random_selection=False, headless=False, short_exec=False):
     """
     Robot grasping mode demo with selection
     Queries the user to select a type of grasping mode
     """
-    # start server process
-    manager = mp.Manager()
-    buffer = manager.dict()
-    init_to_None_keys = ['message', 'response']
-    for init_to_None_key in init_to_None_keys:
-        buffer[init_to_None_key] = None
-    P = mp.Process(target=communicate_process, args=(buffer,))
-    P.start()
+    # Create pipe for communication with server process
+    # This is for internal communication between the simulator process 
+    # and the server process. Here, the 'client' is the server process,
+    # which forwards the remote client's request to the simulator.
+    # And the 'server' is the simulator process, which handles the request
+    # and returns the response to the server process.
+    pipe = PipeManager(
+        TMP_PATH, SHM_NAME_INTER, 
+        SHM_SIZE_INTER, create=False
+    )
 
     # Create environment configuration to use
     scene_cfg = sim_config["scene_cfg"]
@@ -189,7 +147,7 @@ def main(random_selection=False, headless=False, short_exec=False):
     try:
         while True:
             action = np.zeros(robot.action_dim)
-            execute_message(buffer, locals())
+            execute_message(pipe, locals())
 
             """
             TiagoAdvance action idx (action_dim=19):
@@ -202,15 +160,14 @@ def main(random_selection=False, headless=False, short_exec=False):
             [5, 11]: left arm. for example, the dim 5 means left hand front/back 
             [12, 18]: right arm.
             """
-            generate_action(buffer, locals())
+            generate_action(pipe, locals())
             env.step(action)
     except KeyboardInterrupt:
         # Always shut down the environment cleanly at the end
         env.close()
-        P.terminate()
 
 
-def execute_message(buffer: dict, local_vars: dict):
+def execute_message(pipe: PipeManager, local_vars: dict):
     '''this function only set the low level to a given state. the actual movement(generate action at each time) is done in generate_action
     @param message(tuple): (CMD, *args)
         (get_image, ...)
@@ -218,18 +175,17 @@ def execute_message(buffer: dict, local_vars: dict):
         (move_backward, velocity)
         ...
     '''
-    if buffer['message'] is None:
+    message = pipe.read(role='server')
+    if message is None:
         return
-    message = buffer['message']
-    buffer['message'] = None
     
     og.log.info(f"message: {message}")
     # `skillset[message[0]][0]` is like run_xxx. 
     # It only set the action to be taken
-    skillset[message[0]][0](buffer, local_vars, *message[1:])
+    skillset[message[0]][0](pipe, local_vars, *message[1:])
 
 
-def generate_action(buffer: dict, local_vars: dict):
+def generate_action(pipe: PipeManager, local_vars: dict):
     """
     Generate action for the robot according to `active_actions`.
     This function is called at each time step.
@@ -242,7 +198,7 @@ def generate_action(buffer: dict, local_vars: dict):
     if skill_executed is not None:
         skill_execute_func = skillset[skill_executed['func']][1]
         args = skill_executed['args']
-        action = skill_execute_func(buffer, local_vars, **args)
+        action = skill_execute_func(pipe, local_vars, **args)
     
     local_vars['action'] = action
     return
