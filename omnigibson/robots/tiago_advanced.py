@@ -176,6 +176,11 @@ class TiagoAdvanced(Tiago):
     #     }
     #     return dic
 
+    '''
+    Fetch inherit TwoWheelRobot, so base controller is DifferentialDriveController
+    Tiago inherit LocomotionRobot, so base controller is JointController
+    '''
+
     # @property
     # def _default_controller_config(self):
     #     # Grab defaults from super method first
