@@ -15,6 +15,7 @@ import omnigibson as og
 from omnigibson.macros import gm
 from omnigibson.sensors import VisionSensor
 from servers import PipeManager
+from omnigibson.custom_env.utils import handle_collision
 from omnigibson.custom_env.skills.get_image import run_get_image
 from omnigibson.custom_env.skills.move_forward import run_move_forward, execute_move_forward
 from omnigibson.custom_env.skills.move_backward import run_move_backward, execute_move_backward
@@ -169,6 +170,8 @@ def main(random_selection=False, headless=False, short_exec=False):
             [12, 18]: right arm.
             """
             generate_action(pipe, locals())
+            # If a collision happens, brake the robot
+            handle_collision(locals())
             env.step(action)
     except KeyboardInterrupt:
         # Always shut down the environment cleanly at the end
