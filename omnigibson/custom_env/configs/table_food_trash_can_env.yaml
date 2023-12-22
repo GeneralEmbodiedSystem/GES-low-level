@@ -1,3 +1,4 @@
+# env description: there are some trash on the breakfast_table, robot needs to put them into the trash_can 
 scene_cfg:
   type: InteractiveTraversableScene
   scene_model: Beechwood_0_int
