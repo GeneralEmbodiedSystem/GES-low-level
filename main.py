@@ -2,6 +2,8 @@
 import multiprocessing as mp
 import os
 from os.path import join
+import sys
+import select
 
 import yaml
 
@@ -54,7 +56,7 @@ def main():
     try:
         start_server(pipe_manager)
 
-        # Test skills
+        # ------------------ Start Test Skills ------------------
         # pipe = pipe_manager
         # # Backward
         # pipe.write(
@@ -63,10 +65,28 @@ def main():
         # )
         
         # while True:
+        #     ready, _, _ = select.select([sys.stdin], [], [], 0.1)
+        #     if ready:  # If there is input to read
+        #         user_input = sys.stdin.readline().strip()
+        #         print("your operation is:", user_input)
+        #         """skill is like: 
+        #         ("move_forward", 0.1)
+        #         ("brake", )
+        #         ("turn_left", 90)
+        #         ("turn_right", 90)
+        #         ("move_left", 0.1)
+        #         ("move_right", 0.1)
+        #         """
+        #         pipe.write(
+        #             data=eval(user_input),
+        #             role="client"
+        #         )
+                
         #     data = pipe_manager.read(role="client")
         #     if data is not None:
         #         print(data)
-        #         break
+        #         # break
+        # ------------------ End Test Skills ------------------
 
     except KeyboardInterrupt:
         simulator_p.terminate()

@@ -15,7 +15,16 @@ robot0_cfg:
   action_type: continuous
   action_normalize: true
   grasping_mode: sticky  # or physical
-  position: [-4.0, 0.0, 0.0]
+
+other_init_cfg:
+  robot_position: [0.0, -0.5, 0.0]  # do not move this line to robot0_cfg, it is not a robot property and will cause error (will be changed by og.env)
+  camera_resolution:
+    image_height: 720
+    image_width: 720
+
+viewer_camera_cfg:
+  position: [1.20465,  1.51194,  2.14789]
+  orientation: [0.144,  0.424,  0.846, 0.28757]
 
 objects_cfg:
   - type: DatasetObject

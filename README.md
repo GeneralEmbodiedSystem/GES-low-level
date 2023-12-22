@@ -7,7 +7,7 @@ GES low level development based on OmniGibson.
 - 将conda的路径`CONDA_DIR_PATH`和**low level环境**的名字`CONDA_ENV_NAME`，希望运行的环境类型的config`ENV_CONFIG_FILE`写到根目录的`start_up_cfg.yaml`中
 - **activate high level环境**（也就是python 3.10的环境），然后在仓库根目录下运行`python main.py`即可。他会创建新进程，并在新进程中activate low level环境、启动模拟器比如`omnigibson/custom_env/body_simulator.py`。
 - 如果有显存泄露或端口占用的问题，运行`python main.py`之前多运行几次`killall python`。
-
+- 如果要测试机器人的skill执行，可以在`main.py`中注释掉Start Test Skills的若干行， 然后运行`python main.py`，此时在命令行输入skill名字，就可以执行对应的skill了，skill样例参见`main.py`里面写的注释。
 
 # 开发代码位置
 

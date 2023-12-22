@@ -100,21 +100,21 @@ def main(random_selection=False, headless=False, short_exec=False):
     robot = env.robots[0]
 
     # TODO: remove hard code
-    robot.set_position([0, -0.5, 0])
+    robot.set_position(sim_config["other_init_cfg"]["robot_position"])  # robot0_cfg["position"]
     robot.reset()
     # robot.keep_still()
 
     # Make the robot's camera(s) high-res
     for sensor in robot.sensors.values():
         if isinstance(sensor, VisionSensor):
-            sensor.image_height = 720
-            sensor.image_width = 720
+            sensor.image_height = sim_config["other_init_cfg"]["camera_resolution"]["image_height"]
+            sensor.image_width = sim_config["other_init_cfg"]["camera_resolution"]["image_width"]
     
     # TODO: remove hard code
     # Update the simulator's viewer camera's pose so it points towards the robot
     og.sim.viewer_camera.set_position_orientation(
-        position=np.array([1.20465,  1.51194,  2.14789]),
-        orientation=np.array([0.144,  0.424,  0.846, 0.28757]),
+        position=np.array(sim_config["viewer_camera_cfg"]["position"]),
+        orientation=np.array(sim_config["viewer_camera_cfg"]["orientation"]),
     )
 
     # Create teleop controller
