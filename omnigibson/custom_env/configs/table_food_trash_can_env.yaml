@@ -23,8 +23,8 @@ other_init_cfg:
     image_width: 720
 
 viewer_camera_cfg:
-  position: [1.20465,  1.51194,  2.14789]
-  orientation: [0.144,  0.424,  0.846, 0.28757]
+  position: [1.66024,  1.49093,  2.30134]
+  orientation: [0.17299,  0.40222,  0.82587, 0.35529]  # note that it is (x, y, z, w) instead of (w, x, y, z)
 
 objects_cfg:
   - type: DatasetObject
@@ -94,8 +94,17 @@ objects_cfg:
     bounding_box: null
     fit_avg_dim_volume: true
     fixed_base: false
-    position: [-0.45, 0.65, 0.425]
+    position: [-0.308, 0.68, 0.425]
     orientation: [0, 0, -0.9990215, -0.0442276]
+
+  - type: DatasetObject
+    name: gaming_table
+    category: gaming_table
+    model: ipdvzo
+    bounding_box: null
+    fit_avg_dim_volume: true
+    fixed_base: false
+    position: [-0.06, 1.277, 0.348]
 
   - type: DatasetObject
     name: trash_can
