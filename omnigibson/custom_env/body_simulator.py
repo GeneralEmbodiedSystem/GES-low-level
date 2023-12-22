@@ -104,6 +104,9 @@ def main(random_selection=False, headless=False, short_exec=False):
     robot.reset()
     # robot.keep_still()
 
+    # Init Lidar sensors
+    robot.init_scan_sensor()
+
     # Make the robot's camera(s) high-res
     for sensor in robot.sensors.values():
         if isinstance(sensor, VisionSensor):
