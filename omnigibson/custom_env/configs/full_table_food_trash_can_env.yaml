@@ -1,0 +1,56 @@
+# env description: there are some trash on the breakfast_table, robot needs to put them into the trash_can 
+scene_cfg:
+  type: InteractiveTraversableScene
+  scene_model: Beechwood_0_int
+  # load_object_categories:  # this line means load_mode == "Quick". Comment it if you want to load all objects
+  #   - floors
+  #   - walls
+  #   - ceilings
+  not_load_object_categories:  # picture, door
+    - house_paint
+    - door
+    - picture
+
+
+robot0_cfg:
+  type: TiagoAdvanced  # or FetchAdanced sth.
+  obs_modalities:
+    - scan
+    - rgb
+    - depth
+  action_type: continuous
+  action_normalize: true
+  grasping_mode: sticky  # or physical
+
+other_init_cfg:
+  robot_position: [-0.46, -3.07, 0.0]  # do not move this line to robot0_cfg, it is not a robot property and will cause error (will be changed by og.env)
+  camera_resolution:
+    image_height: 720
+    image_width: 720
+
+viewer_camera_cfg:
+  position: [1.52073,  -1.72063,  2.29943]
+  orientation: [0.23495,  0.44031, 0.76449, 0.40803]  # note that it is (x, y, z, w) instead of (w, x, y, z)
+
+objects_cfg:
+  - type: DatasetObject
+    name: box_of_yogurt
+    category: box_of_yogurt
+    model: jkemqc
+    size: 0.06
+    position: [-4.78487, -3.4305, 0.89581]
+
+  - type: DatasetObject
+    name: box_of_crackers
+    category: box_of_crackers
+    model: cmdigf
+    size: 0.06
+    position: [-4.78487, -3.62202, 0.89581]
+
+  - type: DatasetObject
+    name: trash_can
+    category: trash_can
+    model: aefcem
+    size: 0.06
+    position: [-0.46, -4.63, 0.2]
+  

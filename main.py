@@ -58,11 +58,6 @@ def main():
 
         # ------------------ Start Test Skills ------------------
         # pipe = pipe_manager
-        # # Backward
-        # pipe.write(
-        #     data=("move_backward", 0.1),
-        #     role="client"
-        # )
         
         # while True:
         #     ready, _, _ = select.select([sys.stdin], [], [], 0.1)
@@ -81,11 +76,12 @@ def main():
         #             data=eval(user_input),
         #             role="client"
         #         )
-                
-        #     data = pipe_manager.read(role="client")
-        #     if data is not None:
-        #         print(data)
-        #         # break
+            
+        #         while True:
+        #             data = pipe_manager.read(role="client")
+        #             if data is not None:
+        #                 print(data)
+        #                 break
         # ------------------ End Test Skills ------------------
 
     except KeyboardInterrupt:

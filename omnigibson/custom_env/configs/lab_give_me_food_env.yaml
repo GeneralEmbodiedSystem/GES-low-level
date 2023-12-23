@@ -96,7 +96,7 @@ objects_cfg:
     model: lfxtqa
     size: 0.04
     fixed_base: false
-    position: [-0.22, 1.1, 0.484]
+    position: [-0.22, 1.1, 0.476]
     orientation: [0.707, 0, 0, 0.707]  # anti-clockwise rotate 90 degree around x axis
 
   - type: DatasetObject
