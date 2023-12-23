@@ -207,4 +207,17 @@ class TiagoAdvanced(Tiago):
 
     #     return cfg
     
-    
+    @property
+    def tucked_default_joint_pos(self):
+        pos = np.zeros(self.n_dof)
+        # Keep the current joint positions for the base joints
+        pos[self.base_idx] = self.get_joint_positions()[self.base_idx]
+        pos[self.trunk_control_idx] = 0
+        pos[self.camera_control_idx] = np.array([0.0, 0.0])
+        for arm in self.arm_names:
+            pos[self.gripper_control_idx[arm]] = np.array([0.045, 0.045])  # open gripper
+            pos[self.arm_control_idx[arm]] = np.array(
+                # [-1.10, 1.47, 2.71, 1.71, -1.57, 1.39, 0]
+                [0, 0, 0, 0, 0, 0, 0]
+            )
+        return pos

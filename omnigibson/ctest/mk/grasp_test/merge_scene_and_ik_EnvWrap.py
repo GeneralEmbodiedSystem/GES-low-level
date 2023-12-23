@@ -1,6 +1,9 @@
 """
 Example script demo'ing robot manipulation control with grasping.
 """
+# TODO: adjust arm default joint position
+# TODO: make sticky mode valid
+# TODO: high position first, then fix hand not rotate, then reach the goal
 from typing import Union, Dict, List, Any
 
 import pprint
@@ -70,7 +73,7 @@ def get_pos_by_prim_path(prim_path: str):
 # https://forums.developer.nvidia.com/t/world-position-not-updating-during-simulation-run/245372/5
 def get_pos_by_prim_path_physxApi(prim_path: str):
     '''
-    @param prim_path: e.g. /world/robot/eyes
+    @param prim_path: e.g. /world/robot/eyes/base_link
     @return position/translate: np.ndarray([x, y, z])
     '''
     curr_transform = get_physx_interface().get_rigidbody_transformation(prim_path)
@@ -305,6 +308,8 @@ def main(random_selection=False, headless=False, short_exec=False):
         # apple_pos = get_pos_by_prim_path("/World/delicious_apple/base_link") - position_mapping['delicious_apple']  # notice the pos!
         apple_pos = get_pos_by_prim_path_physxApi("/World/delicious_apple/base_link") # this is world position
         box_pos = get_pos_by_prim_path_physxApi("/World/box/base_link") # this is world position
+        robot_pos = get_pos_by_prim_path_physxApi("/World/robot/base_link") # this is world position
+        # print(f'robot_pos: {robot_pos}')
         tgt_pos = box_pos
         # print("tgt pos", tgt_pos)  # apple
         
@@ -339,7 +344,7 @@ def main(random_selection=False, headless=False, short_exec=False):
 def execute_ik(ik_solver: IKSolver, robot: TiagoAdvanced, pos, buffer: dict, quat=None, max_iter=100):
     control_idx = np.concatenate([robot.trunk_control_idx, robot.arm_control_idx[robot.default_arm]])
     joint_pos = ik_solver.solve(
-        target_pos=pos - robot.get_position(), # local target quaternion orientation in robot's base coordinate frame
+        target_pos=pos - get_pos_by_prim_path_physxApi("/World/robot/base_link"), # local target quaternion orientation in robot's base coordinate frame
         target_quat=quat,
         max_iterations=max_iter,
         initial_joint_pos=robot.get_joint_positions()[control_idx],
