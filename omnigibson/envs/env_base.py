@@ -494,6 +494,14 @@ class Environment(gym.Env, GymObservable, Recreatable):
         return self.scene.robots
 
     @property
+    def objects(self):
+        """
+        Returns:
+            list of BaseObject: Standalone object(s) in the current scene
+        """
+        return self.scene.objects
+
+    @property
     def env_config(self):
         """
         Returns:
