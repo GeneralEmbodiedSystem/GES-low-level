@@ -16,7 +16,7 @@ with open(SERVER_CONFIG_PATH, 'r') as f:
 TMP_PATH = server_config['tmp_path']
 
 
-def run_get_image(buffer: dict, local_vars: dict,
+def run_get_image(pipe: PipeManager, local_vars: dict,
                   written_len: int, shm_name: str, 
                   shm_size: int):
     # Transfer rgba image to rgb image
@@ -48,22 +48,12 @@ def run_get_image(buffer: dict, local_vars: dict,
         shm_name, create=False, size=shm_size
     )
     socket_manager.set_shared_memory_cursor(written_len)
-    # We do not send the signal right now
-    # We have to wait until the server
-    # process receive the ack
-    
-    # showing image(test)
-    # import matplotlib.pyplot as plt
-    # plt.imshow(image_rgb)
-    # plt.show()
-    
     socket_manager.write_arrays(
         [image_rgb, image_depth], write=True,
         send_signal=False)
     
-    buffer['response'] = 'get_image success'
+    pipe.write(
+        data="get_image success",
+        role="server"
+    )
     og.log.info(convert_ndarray_in_dict_to_shape(image_res))
-    # print(convert_ndarray_in_dict_to_shape(image_res))
-    # write rgb_image & depth_image to shared memory
-    # shared_memory = buffer['shared_memory']
-    # ...

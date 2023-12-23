@@ -1,0 +1,116 @@
+# env description: there are some trash on the breakfast_table, robot needs to put them into the trash_can 
+scene_cfg:
+  type: InteractiveTraversableScene
+  scene_model: Beechwood_0_int
+  load_object_categories:  # this line means load_mode == "Quick". Comment it if you want to load all objects
+    - floors
+    - walls
+    - ceilings
+
+robot0_cfg:
+  type: TiagoAdvanced  # or FetchAdanced sth.
+  obs_modalities:
+    - scan
+    - rgb
+    - depth
+  action_type: continuous
+  action_normalize: true
+  grasping_mode: sticky  # or physical
+
+other_init_cfg:
+  robot_position: [0.0, -0.5, 0.0]  # do not move this line to robot0_cfg, it is not a robot property and will cause error (will be changed by og.env)
+  camera_resolution:
+    image_height: 720
+    image_width: 720
+
+viewer_camera_cfg:
+  position: [1.66024,  1.49093,  2.30134]
+  orientation: [0.17299,  0.40222,  0.82587, 0.35529]  # note that it is (x, y, z, w) instead of (w, x, y, z)
+
+objects_cfg:
+  - type: DatasetObject
+    name: delicious_apple
+    category: apple
+    model: agveuv
+    size: 0.07
+    position: [0.83, -0.1, 0.768]
+
+  # - type: DatasetObject
+  #   name: alarm_clock
+  #   category: alarm_clock
+  #   model: cvknrh
+  #   size: 0.06
+  #   position: [0.73, -0.1, 0.76]
+
+  - type: DatasetObject
+    name: banana
+    category: banana
+    model: znakxm
+    # rgba: [0.839, 0.804, 0.431, 1.0]
+    size: 0.06
+    position: [0.68, -0.1, 0.76]
+
+  - type: DatasetObject
+    name: match_box
+    category: match_box
+    model: xpnfjz
+    size: 0.06
+    position: [0.83, -0.2, 0.76]
+
+  - type: DatasetObject
+    name: box_of_yogurt
+    category: box_of_yogurt
+    model: jkemqc
+    size: 0.06
+    position: [0.53, 0, 0.76]
+
+  - type: PrimitiveObject
+    name: box
+    primitive_type: Cube
+    rgba: [1.0, 0, 0, 1.0]
+    size: 0.05
+    position: [0.53, -0.2, 0.76]
+
+  - type: LightObject
+    name: brilliant_light
+    light_type: Sphere
+    intensity: 50000
+    radius: 0.1
+    position: [3.0, 3.0, 4.0]
+
+  - type: DatasetObject
+    name: table
+    category: breakfast_table
+    model: lcsizg
+    bounding_box: [0.5, 0.5, 0.8]
+    fit_avg_dim_volume: false
+    fixed_base: true
+    position: [0.7, -0.1, 0.6]
+    orientation: [0, 0, 0.707, 0.707]
+
+  - type: DatasetObject
+    name: chair
+    category: straight_chair
+    model: amgwaw
+    bounding_box: null
+    fit_avg_dim_volume: true
+    fixed_base: false
+    position: [-0.308, 0.68, 0.425]
+    orientation: [0, 0, -0.9990215, -0.0442276]
+
+  - type: DatasetObject
+    name: gaming_table
+    category: gaming_table
+    model: ipdvzo
+    bounding_box: null
+    fit_avg_dim_volume: true
+    fixed_base: false
+    position: [-0.06, 1.277, 0.348]
+
+  - type: DatasetObject
+    name: trash_can
+    category: trash_can
+    model: aefcem
+    size: 0.06
+    position: [-1.45, -1.1, 0.225]
+  

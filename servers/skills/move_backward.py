@@ -1,4 +1,4 @@
-from servers.utils import SocketManager
+from servers.utils import SocketManager, PipeManager
 
 
 # Define the speed modes
@@ -6,7 +6,7 @@ WALK_SPEED = 0.1
 CRAWL_SPEED = 0.05
 
 
-def move_backward(socket_manager: SocketManager, pipe: dict):
+def move_backward(socket_manager: SocketManager, pipe: PipeManager):
     """
     Move the robot backward
     """
@@ -29,11 +29,14 @@ def move_backward(socket_manager: SocketManager, pipe: dict):
         print("Invalid speed mode: %s" % mode)
         print("Closing connection.")
         return
-    pipe['message'] = ("move_backward", velocity)
     
-    while pipe['response'] is None:
+    pipe.write(
+        data=("move_backward", velocity),
+        role="client"
+    )
+    
+    while pipe.read(role="client") is None:
         pass
-    pipe['response'] = None
 
     # Send the response
     socket_manager.write_request({

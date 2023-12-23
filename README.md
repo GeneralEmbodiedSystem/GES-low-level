@@ -4,10 +4,10 @@ GES low level development based on OmniGibson.
 
 - 创建python 3.10的环境，用于运行high level（以及用于启动low level的程序）。（这个环境称作high level环境）。这个环境可能需要安装依赖`pip install pyyaml numpy psutil`。
 - 创建一个python 3.7的环境，安装isaac sim 2022.2.0（具体见模拟器安装文档），以及`pip install -e .`当前仓库。模拟器实际上是在这个环境中运行的。（这个环境称作low level环境）
-- 将conda的路径和**low level环境**的名字写到根目录的`start_up_cfg.yaml`中
+- 将conda的路径`CONDA_DIR_PATH`和**low level环境**的名字`CONDA_ENV_NAME`，希望运行的环境类型的config`ENV_CONFIG_FILE`写到根目录的`start_up_cfg.yaml`中
 - **activate high level环境**（也就是python 3.10的环境），然后在仓库根目录下运行`python main.py`即可。他会创建新进程，并在新进程中activate low level环境、启动模拟器比如`omnigibson/custom_env/body_simulator.py`。
 - 如果有显存泄露或端口占用的问题，运行`python main.py`之前多运行几次`killall python`。
-
+- 如果要测试机器人的skill执行，可以在`main.py`中注释掉Start Test Skills的若干行， 然后运行`python main.py`，此时在命令行输入skill名字，就可以执行对应的skill了，skill样例参见`main.py`里面写的注释。
 
 # 开发代码位置
 
@@ -40,24 +40,53 @@ OmniGibson需要在一个python 3.7的环境下运行。
 
 ### Move Body
 
-1. `move_x(distance: float)`
-    - Description: The robot moves forward a distance d. If d is negative, the robot moves backward.
+1. `move_forward(vel_f: float)`
+    - Description: Move the robot forward. 
     - Parameter: 
-        1. `distance`: The distance the robot needs to move forward or backward. `distance` in [-1, -0.1] means move back. `distance` in [0.1, 1] means move forward. The unit of distance is **meters**.
+        1. `vel_f` (float): velocity to move forward (`vel_b >= 0`). The unit of velocity is **m/s**. The range of `vel_f` is [0, 0.3].
     - Return: 
-        1. `success`: a bool indicating whether the operation is successful.
+        1. a string indicating whether the operation is successful.
 
-2. `move_y(distance: float)`
-    - Description: The robot translates a distance d to the left. If d is negative, the robot translates to the right.
+2. `move_backward(vel_b: float)`
+    - Description: Move the robot backward.
     - Parameter: 
-        1. `distance`: The distance the robot needs to translate to the left or right. `distance` in [-1, -0.1] means move right. `distance` in [0.1, 1] means move left. The unit of distance is **meters**.
+        1. `vel_b` (float): velocity to move backward (`vel_b >= 0`). The unit of velocity is **m/s**. The range of `vel_b` is [0, 0.3].
     - Return: 
-        1. `success`: a bool indicating whether the operation is successful. 
+        1. a string indicating whether the operation is successful.
 
-3. `turn(angle: int)`
-    - Description: The robot as a whole rotates counterclockwise by an angle. If the angle is negative, the robot rotates clockwise.
+3. `move_left(vel_l: float)`
+    - Description: Move the robot left.
     - Parameter: 
-        1. `angle`: The angle the robot needs to rotate counterclockwise(a.k.a. turn left). If it is negative, the robot rotates clockwise(a.k.a. turn right). `angle` is an integer in [-180, 180] expressed in **angle system**. `angle` in [-180, -1] means turn right. `angle` in [1, 180] means turn left.
+        1. `vel_l` (float): velocity to move left (`vel_l >= 0`). The unit of velocity is **m/s**. The range of `vel_l` is [0, 0.3].
     - Return: 
-        1. `success`: a bool indicating whether the operation is successful.
+        1. a string indicating whether the operation is successful.
+
+
+4. `move_right(vel_r: float)`
+    - Description: Move the robot right.
+    - Parameter: 
+        1. `vel_r` (float): velocity to move right (`vel_r >= 0`). The unit of velocity is **m/s**. The range of `vel_r` is [0, 0.3].
+    - Return: 
+        1. a string indicating whether the operation is successful.
+
+
+5. `turn_left(angle: int)`
+    - Description: Turn the robot left.
+    - Parameter: 
+        1. `angle`: The angle the robot needs to rotate counterclockwise(a.k.a. turn left). `angle` is an integer in [1, 180] expressed in **angle system**. `angle` in [1, 180] means turn left.
+    - Return: 
+        1. a string indicating whether the operation is successful.
+
+6. `turn_right(angle: int)`
+    - Description: Turn the robot right.
+    - Parameter: 
+        1. `angle`: The angle the robot needs to rotate clockwise(a.k.a. turn right). `angle` is an integer in [1, 180] expressed in **angle system**. `angle` in [1, 180] means turn right.
+    - Return: 
+        1. a string indicating whether the operation is successful.
+
+7. `get_velocity()`
+    - Description: Get the current velocity of the robot.
+    - Parameter: None
+    - Return: 
+        1. a string which means the current velocity of the robot.
 

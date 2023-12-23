@@ -1,7 +1,7 @@
-from servers.utils import SocketManager
+from servers.utils import SocketManager, PipeManager
 
 
-def turn_left(socket_manager: SocketManager, pipe: dict):
+def turn_left(socket_manager: SocketManager, pipe: PipeManager):
     """
     Turn the robot left
     """
@@ -16,11 +16,14 @@ def turn_left(socket_manager: SocketManager, pipe: dict):
         return
     
     # Execute move
-    pipe['message'] = ("turn_left", angle)
+
+    pipe.write(
+        data=("turn_left", angle),
+        role="client"
+    )
     
-    while pipe['response'] is None:
+    while pipe.read(role="client") is None:
         pass
-    pipe['response'] = None
 
     # Send the response
     socket_manager.write_request({

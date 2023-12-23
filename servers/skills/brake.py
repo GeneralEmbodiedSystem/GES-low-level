@@ -1,16 +1,18 @@
-from servers.utils import SocketManager
+from servers.utils import SocketManager, PipeManager
 
 
-def brake(socket_manager: SocketManager, pipe: dict):
+def brake(socket_manager: SocketManager, pipe: PipeManager):
     """
     Brake the robot
     """
     # Execute move
-    pipe['message'] = ("brake",)
+    pipe.write(
+        data=("brake",),
+        role="client"
+    )
     
-    while pipe['response'] is None:
+    while pipe.read(role="client") is None:
         pass
-    pipe['response'] = None
 
     # Send the response
     socket_manager.write_request({

@@ -3,7 +3,7 @@ import time
 import yaml
 import psutil
 
-from servers.utils import SocketManager
+from servers.utils import SocketManager, PipeManager
 from servers.skills import get_image, move_forward, move_backward, \
     move_left, move_right, brake, turn_left, turn_right, get_velocity
 
@@ -58,7 +58,7 @@ def kill_process_using_port(port):
                 pass
 
 
-def start_server(pipe: dict):
+def start_server(pipe: PipeManager):
     """
     Start server on port_number,
     which is used to communicate with High-Level module

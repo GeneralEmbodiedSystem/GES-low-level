@@ -1,14 +1,16 @@
 """
 Define the turn_right skill.
 """
+from servers.utils import PipeManager
 
 
-def run_turn_right(buffer: dict, local_vars: dict, angle: int):
+def run_turn_right(pipe: PipeManager, local_vars: dict, angle: int):
     """Turn the robot right. This function only set a `turn_right` state. 
     the actual movement (generate action at each time) is done in execute_turn_right
 
     Args:
-        buffer: a dict used to communicate between the simulator process and the server process.
+        pipe: a wrapper of shared memory used to communicate between 
+            the simulator process and the server process.
         local_vars: a dict used to store local variables, which are shared with
             other functions.
         angle (int): angle to turn right (`angle` in [1, 180]).
@@ -27,11 +29,12 @@ def run_turn_right(buffer: dict, local_vars: dict, angle: int):
     # So we do not send the ack right now
 
 
-def execute_turn_right(buffer: dict, local_vars: dict, angle: int):
+def execute_turn_right(pipe: PipeManager, local_vars: dict, angle: int):
     """generate action for turn_right (the actual movement)
 
     Args:
-        buffer: a dict used to communicate between the simulator process and the server process.
+        pipe: a wrapper of shared memory used to communicate between 
+            the simulator process and the server process.
         local_vars: a dict used to store local variables, which are shared with
             other functions.
         angle (int): angle to turn right (`angle` in [1, 180]).
@@ -43,7 +46,10 @@ def execute_turn_right(buffer: dict, local_vars: dict, angle: int):
         local_vars['turn_steps'] += 1
         action[2] = -0.341
     else:
-        buffer['response'] = 'turn_right success'
+        pipe.write(
+            data="turn_right success",
+            role="server"
+        )
         # Erase the corresponding active action
         local_vars['active_actions']['move_action'] = None
 

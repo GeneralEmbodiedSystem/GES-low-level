@@ -7,19 +7,16 @@
 """
 Example script demo'ing robot manipulation control with grasping.
 """
-import multiprocessing as mp
-
 import numpy as np
 import yaml
+import argparse
 
 import omnigibson as og
-from omnigibson.utils.low_level_utils import convert_ndarray_in_dict_to_shape, omit_convert_dict
 from omnigibson.macros import gm
 from omnigibson.sensors import VisionSensor
-from omnigibson.utils.ui_utils import choose_from_options, KeyboardRobotController
-from omnigibson.utils.asset_utils import get_available_g_scenes, get_available_og_scenes
-from omnigibson.robots import FetchAdvanced, TiagoAdvanced
 from servers import PipeManager
+from omnigibson.custom_env.exceptions import MoveException
+from omnigibson.custom_env.utils import handle_collision
 from omnigibson.custom_env.skills.get_image import run_get_image
 from omnigibson.custom_env.skills.move_forward import run_move_forward, execute_move_forward
 from omnigibson.custom_env.skills.move_backward import run_move_backward, execute_move_backward
@@ -60,62 +57,30 @@ TMP_PATH = server_config['tmp_path']
 SHM_NAME_INTER = server_config['shm_ser_sim']['name']
 SHM_SIZE_INTER = server_config['shm_ser_sim']['size']
 
-SIM_CONFIG_PATH = './omnigibson/custom_env/body_simulator_cfg.yaml'
-with open(SIM_CONFIG_PATH, 'r') as f:
-    sim_config = yaml.load(f, Loader=yaml.FullLoader)
-
-
-def pipe_read(pipe_manager: PipeManager):
-    while not pipe_manager.read_signal(role='client'):
-        pass
-    message = pipe_manager.read_request()
-    pipe_manager.write_signal(False, role='client')
-    
-    return message
-
-
-def pipe_write(pipe_manager: PipeManager, data):
-    pipe_manager.write_request(data)
-    pipe_manager.write_signal(True, role='server')
-
-
-def communicate_process(*args, **kwargs):
-    """
-    This is for internal communication between the simulator process 
-    and the server process. Here, the 'client' is the server process,
-    which forwards the remote client's request to the simulator.
-    And the 'server' is the simulator process, which handles the request
-    and returns the response to the server process.
-    """
-    # og.log.info(f"args: {args}")
-    buffer, = args
-    pipe_manager = PipeManager(
-        TMP_PATH, SHM_NAME_INTER, 
-        SHM_SIZE_INTER, create=False
-    )
-    
-    while True:
-        message = pipe_read(pipe_manager)
-        buffer['message'] = message
-        while buffer['response'] is None:
-            pass
-        pipe_write(pipe_manager, buffer['response'])
-        buffer['response'] = None
-
 
 def main(random_selection=False, headless=False, short_exec=False):
     """
     Robot grasping mode demo with selection
     Queries the user to select a type of grasping mode
     """
-    # start server process
-    manager = mp.Manager()
-    buffer = manager.dict()
-    init_to_None_keys = ['message', 'response']
-    for init_to_None_key in init_to_None_keys:
-        buffer[init_to_None_key] = None
-    P = mp.Process(target=communicate_process, args=(buffer,))
-    P.start()
+    # environment config, including scene, robot, and objects
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--config_file", type=str, default="table_food_trash_can_env.yaml")
+    args = parser.parse_args()
+    sim_config_path = './omnigibson/custom_env/configs/' + args.config_file
+    with open(sim_config_path, 'r') as f:
+        sim_config = yaml.load(f, Loader=yaml.FullLoader)
+    
+    # Create pipe for communication with server process
+    # This is for internal communication between the simulator process 
+    # and the server process. Here, the 'client' is the server process,
+    # which forwards the remote client's request to the simulator.
+    # And the 'server' is the simulator process, which handles the request
+    # and returns the response to the server process.
+    pipe = PipeManager(
+        TMP_PATH, SHM_NAME_INTER, 
+        SHM_SIZE_INTER, create=False
+    )
 
     # Create environment configuration to use
     scene_cfg = sim_config["scene_cfg"]
@@ -137,21 +102,24 @@ def main(random_selection=False, headless=False, short_exec=False):
     robot = env.robots[0]
 
     # TODO: remove hard code
-    robot.set_position([0, -0.5, 0])
+    robot.set_position(sim_config["other_init_cfg"]["robot_position"])  # robot0_cfg["position"]
     robot.reset()
     # robot.keep_still()
+
+    # Init Lidar sensors
+    robot.init_scan_sensor()
 
     # Make the robot's camera(s) high-res
     for sensor in robot.sensors.values():
         if isinstance(sensor, VisionSensor):
-            sensor.image_height = 720
-            sensor.image_width = 720
+            sensor.image_height = sim_config["other_init_cfg"]["camera_resolution"]["image_height"]
+            sensor.image_width = sim_config["other_init_cfg"]["camera_resolution"]["image_width"]
     
     # TODO: remove hard code
     # Update the simulator's viewer camera's pose so it points towards the robot
     og.sim.viewer_camera.set_position_orientation(
-        position=np.array([1.20465,  1.51194,  2.14789]),
-        orientation=np.array([0.144,  0.424,  0.846, 0.28757]),
+        position=np.array(sim_config["viewer_camera_cfg"]["position"]),
+        orientation=np.array(sim_config["viewer_camera_cfg"]["orientation"]),
     )
 
     # Create teleop controller
@@ -185,11 +153,15 @@ def main(random_selection=False, headless=False, short_exec=False):
     # max_steps = -1 if not short_exec else 600
     # step = 0
     # action_random_selection = False
+
+    # Ignore the floors when checking collision
+    ignore_objs = tuple(env.scene.object_registry("category", "floors", []))
     
     try:
         while True:
             action = np.zeros(robot.action_dim)
-            execute_message(buffer, locals())
+            if robot.ready:
+                execute_message(pipe, locals())
 
             """
             TiagoAdvance action idx (action_dim=19):
@@ -202,15 +174,16 @@ def main(random_selection=False, headless=False, short_exec=False):
             [5, 11]: left arm. for example, the dim 5 means left hand front/back 
             [12, 18]: right arm.
             """
-            generate_action(buffer, locals())
+            generate_action(pipe, locals())
+            # If a collision happens, brake the robot
+            handle_collision(locals(), ignore_objs)
             env.step(action)
     except KeyboardInterrupt:
         # Always shut down the environment cleanly at the end
         env.close()
-        P.terminate()
 
 
-def execute_message(buffer: dict, local_vars: dict):
+def execute_message(pipe: PipeManager, local_vars: dict):
     '''this function only set the low level to a given state. the actual movement(generate action at each time) is done in generate_action
     @param message(tuple): (CMD, *args)
         (get_image, ...)
@@ -218,18 +191,17 @@ def execute_message(buffer: dict, local_vars: dict):
         (move_backward, velocity)
         ...
     '''
-    if buffer['message'] is None:
+    message = pipe.read(role='server')
+    if message is None:
         return
-    message = buffer['message']
-    buffer['message'] = None
     
     og.log.info(f"message: {message}")
     # `skillset[message[0]][0]` is like run_xxx. 
     # It only set the action to be taken
-    skillset[message[0]][0](buffer, local_vars, *message[1:])
+    skillset[message[0]][0](pipe, local_vars, *message[1:])
 
 
-def generate_action(buffer: dict, local_vars: dict):
+def generate_action(pipe: PipeManager, local_vars: dict):
     """
     Generate action for the robot according to `active_actions`.
     This function is called at each time step.
@@ -239,10 +211,18 @@ def generate_action(buffer: dict, local_vars: dict):
 
     # Like execute_xxx, it applies the action to the robot action vector
     skill_executed = local_vars['active_actions']['move_action']
-    if skill_executed is not None:
+    if isinstance(skill_executed, MoveException) and not skill_executed.recovered:
+        # If the robot collides with the environment, get an recovery action
+        skill_executed = skill_executed.get_recovery_action()
+        local_vars['active_actions']['move_action'].recovered_steps -= 1
+        if local_vars['active_actions']['move_action'].recovered_steps <= 0:
+            # If the robot has recovered from the exception, make it ready
+            local_vars['active_actions']['move_action'].recovered = True
+            robot.ready = True
+    if skill_executed is not None and not isinstance(skill_executed, MoveException):
         skill_execute_func = skillset[skill_executed['func']][1]
         args = skill_executed['args']
-        action = skill_execute_func(buffer, local_vars, **args)
+        action = skill_execute_func(pipe, local_vars, **args)
     
     local_vars['action'] = action
     return

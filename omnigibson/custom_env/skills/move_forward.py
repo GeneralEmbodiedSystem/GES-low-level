@@ -1,14 +1,16 @@
 """
 Define the move_forward skill.
 """
+from servers.utils import PipeManager
 
 
-def run_move_forward(buffer: dict, local_vars: dict, vel_f: float):
+def run_move_forward(pipe: PipeManager, local_vars: dict, vel_f: float):
     """Move the robot forward. This function only set a `move_forward` state. 
     the actual movement (generate action at each time) is done in execute_move_forward
 
     Args:
-        buffer: a dict used to communicate between the simulator process and the server process.
+        pipe: a wrapper of shared memory used to communicate between 
+            the simulator process and the server process.
         local_vars: a dict used to store local variables, which are shared with
             other functions.
         vel_f (float): velocity to move forward (`vel_b >= 0`).
@@ -20,14 +22,18 @@ def run_move_forward(buffer: dict, local_vars: dict, vel_f: float):
         }
     }
     # The velocity has been set, so we can send the ack
-    buffer['response'] = 'move_forward success'
+    pipe.write(
+        data="move_forward success",
+        role="server"
+    )
 
 
-def execute_move_forward(buffer: dict, local_vars: dict, vx: float):
+def execute_move_forward(pipe: PipeManager, local_vars: dict, vx: float):
     """generate action for move_forward (the actual movement)
 
     Args:
-        buffer: a dict used to communicate between the simulator process and the server process.
+        pipe: a wrapper of shared memory used to communicate between 
+            the simulator process and the server process.
         local_vars: a dict used to store local variables, which are shared with
             other functions.
         vx: velocity to move along x axis. It is positive when moving forward.
