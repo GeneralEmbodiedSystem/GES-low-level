@@ -20,6 +20,7 @@ robot0_cfg:
     - depth
   action_type: continuous
   action_normalize: true
+  self_collisions: false
   grasping_mode: sticky  # or physical
 
 other_init_cfg:
