@@ -1,4 +1,4 @@
-# env description: there are some trash on the breakfast_table, robot needs to put them into the trash_can 
+# env description: there are yogurt and crackers on the table in the kitchen, robot needs to put them on the table in front of the sofa 
 scene_cfg:
   type: InteractiveTraversableScene
   scene_model: Beechwood_0_int

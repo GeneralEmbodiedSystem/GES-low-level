@@ -66,6 +66,7 @@ def main():
         #         print("your operation is:", user_input)
         #         """skill is like: 
         #         ("move_forward", 0.1)
+        #         ("move_backward", 0.1)
         #         ("brake", )
         #         ("turn_left", 90)
         #         ("turn_right", 90)

@@ -1,4 +1,4 @@
-# env description: I am in front of a table, and there are a laptop, a mousepad, a mouse... robot needs to give me cup and box_of_yogurt which are on the coffee_table
+# env description: I am in front of a conference table, and there are a laptop, a mousepad, a mouse... robot needs to help me put the cup and the box of yogurt on the coffee table to the left of the laptop
 scene_cfg:
   type: InteractiveTraversableScene
   scene_model: Beechwood_0_int
