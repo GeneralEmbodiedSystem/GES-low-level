@@ -40,24 +40,53 @@ OmniGibson需要在一个python 3.7的环境下运行。
 
 ### Move Body
 
-1. `move_x(distance: float)`
-    - Description: The robot moves forward a distance d. If d is negative, the robot moves backward.
+1. `move_forward(vel_f: float)`
+    - Description: Move the robot forward. 
     - Parameter: 
-        1. `distance`: The distance the robot needs to move forward or backward. `distance` in [-1, -0.1] means move back. `distance` in [0.1, 1] means move forward. The unit of distance is **meters**.
+        1. `vel_f` (float): velocity to move forward (`vel_b >= 0`). The unit of velocity is **m/s**. The range of `vel_f` is [0, 0.3].
     - Return: 
-        1. `success`: a bool indicating whether the operation is successful.
+        1. a string indicating whether the operation is successful.
 
-2. `move_y(distance: float)`
-    - Description: The robot translates a distance d to the left. If d is negative, the robot translates to the right.
+2. `move_backward(vel_b: float)`
+    - Description: Move the robot backward.
     - Parameter: 
-        1. `distance`: The distance the robot needs to translate to the left or right. `distance` in [-1, -0.1] means move right. `distance` in [0.1, 1] means move left. The unit of distance is **meters**.
+        1. `vel_b` (float): velocity to move backward (`vel_b >= 0`). The unit of velocity is **m/s**. The range of `vel_b` is [0, 0.3].
     - Return: 
-        1. `success`: a bool indicating whether the operation is successful. 
+        1. a string indicating whether the operation is successful.
 
-3. `turn(angle: int)`
-    - Description: The robot as a whole rotates counterclockwise by an angle. If the angle is negative, the robot rotates clockwise.
+3. `move_left(vel_l: float)`
+    - Description: Move the robot left.
     - Parameter: 
-        1. `angle`: The angle the robot needs to rotate counterclockwise(a.k.a. turn left). If it is negative, the robot rotates clockwise(a.k.a. turn right). `angle` is an integer in [-180, 180] expressed in **angle system**. `angle` in [-180, -1] means turn right. `angle` in [1, 180] means turn left.
+        1. `vel_l` (float): velocity to move left (`vel_l >= 0`). The unit of velocity is **m/s**. The range of `vel_l` is [0, 0.3].
     - Return: 
-        1. `success`: a bool indicating whether the operation is successful.
+        1. a string indicating whether the operation is successful.
+
+
+4. `move_right(vel_r: float)`
+    - Description: Move the robot right.
+    - Parameter: 
+        1. `vel_r` (float): velocity to move right (`vel_r >= 0`). The unit of velocity is **m/s**. The range of `vel_r` is [0, 0.3].
+    - Return: 
+        1. a string indicating whether the operation is successful.
+
+
+5. `turn_left(angle: int)`
+    - Description: Turn the robot left.
+    - Parameter: 
+        1. `angle`: The angle the robot needs to rotate counterclockwise(a.k.a. turn left). `angle` is an integer in [1, 180] expressed in **angle system**. `angle` in [1, 180] means turn left.
+    - Return: 
+        1. a string indicating whether the operation is successful.
+
+6. `turn_right(angle: int)`
+    - Description: Turn the robot right.
+    - Parameter: 
+        1. `angle`: The angle the robot needs to rotate clockwise(a.k.a. turn right). `angle` is an integer in [1, 180] expressed in **angle system**. `angle` in [1, 180] means turn right.
+    - Return: 
+        1. a string indicating whether the operation is successful.
+
+7. `get_velocity()`
+    - Description: Get the current velocity of the robot.
+    - Parameter: None
+    - Return: 
+        1. a string which means the current velocity of the robot.
 
