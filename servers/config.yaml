@@ -2,7 +2,7 @@
 tmp_path: "~/tmp"
 # Tools that are enabled
 tools_enabled: ["get_image", "move_forward", "move_backward", "move_left",
-                "move_right", "brake", "turn_left", "turn_right"]
+                "move_right", "brake", "turn_left", "turn_right", "get_velocity"]
 tools:
     # Default tool params
     default:
@@ -31,6 +31,8 @@ tools:
     turn_left:
 
     turn_right:
+
+    get_velocity:
 
 # Shared memory for communication between 
 # server processes and simulation process
