@@ -65,6 +65,8 @@ class TiagoAdvanced(Tiago):
         super()._post_load()
         # self._eyes = get_prim_at_path(f"{self._prim_path}/eyes")
         self.focal_length = 10.0 # zoom out
+        # Whether the robot is ready to perform actions
+        self.ready = True
     
     def look_at(self, goal_pos: np.ndarray):
         '''

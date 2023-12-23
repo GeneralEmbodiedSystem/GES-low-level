@@ -15,6 +15,7 @@ import omnigibson as og
 from omnigibson.macros import gm
 from omnigibson.sensors import VisionSensor
 from servers import PipeManager
+from omnigibson.custom_env.exceptions import MoveException
 from omnigibson.custom_env.utils import handle_collision
 from omnigibson.custom_env.skills.get_image import run_get_image
 from omnigibson.custom_env.skills.move_forward import run_move_forward, execute_move_forward
@@ -152,11 +153,15 @@ def main(random_selection=False, headless=False, short_exec=False):
     # max_steps = -1 if not short_exec else 600
     # step = 0
     # action_random_selection = False
+
+    # Ignore the floors when checking collision
+    ignore_objs = tuple(env.scene.object_registry("category", "floors", []))
     
     try:
         while True:
             action = np.zeros(robot.action_dim)
-            execute_message(pipe, locals())
+            if robot.ready:
+                execute_message(pipe, locals())
 
             """
             TiagoAdvance action idx (action_dim=19):
@@ -171,7 +176,7 @@ def main(random_selection=False, headless=False, short_exec=False):
             """
             generate_action(pipe, locals())
             # If a collision happens, brake the robot
-            handle_collision(locals())
+            handle_collision(locals(), ignore_objs)
             env.step(action)
     except KeyboardInterrupt:
         # Always shut down the environment cleanly at the end
@@ -206,7 +211,15 @@ def generate_action(pipe: PipeManager, local_vars: dict):
 
     # Like execute_xxx, it applies the action to the robot action vector
     skill_executed = local_vars['active_actions']['move_action']
-    if skill_executed is not None:
+    if isinstance(skill_executed, MoveException) and not skill_executed.recovered:
+        # If the robot collides with the environment, get an recovery action
+        skill_executed = skill_executed.get_recovery_action()
+        local_vars['active_actions']['move_action'].recovered_steps -= 1
+        if local_vars['active_actions']['move_action'].recovered_steps <= 0:
+            # If the robot has recovered from the exception, make it ready
+            local_vars['active_actions']['move_action'].recovered = True
+            robot.ready = True
+    if skill_executed is not None and not isinstance(skill_executed, MoveException):
         skill_execute_func = skillset[skill_executed['func']][1]
         args = skill_executed['args']
         action = skill_execute_func(pipe, local_vars, **args)

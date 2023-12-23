@@ -2,6 +2,7 @@
 Define the get_velocity skill.
 """
 from servers.utils import PipeManager
+from omnigibson.custom_env.exceptions import MoveException
 
 
 def run_get_velocity(pipe: PipeManager, local_vars: dict):
@@ -17,6 +18,11 @@ def run_get_velocity(pipe: PipeManager, local_vars: dict):
     if move_action is None:
         pipe.write(
             data="The robot is still.",
+            role="server"
+        )
+    elif isinstance(move_action, MoveException):
+        pipe.write(
+            data=str(move_action),
             role="server"
         )
     else:
