@@ -91,3 +91,6 @@ site/
 
 # simulator related
 start_simulator.sh
+
+# vedio
+*.mp4

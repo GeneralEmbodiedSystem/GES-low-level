@@ -7,6 +7,7 @@ Example script demo'ing robot manipulation control with grasping.
 from typing import Union, Dict, List, Any
 
 import pprint
+import cv2
 
 import numpy as np
 
@@ -34,6 +35,11 @@ import omni.usd
 
 from pxr import Gf
 
+from utils.prim_utils import get_pos_by_prim_path, get_pos_by_prim_path_physxApi
+from utils.simulator_utils import custom_step
+from utils.skill_utils import lift_trunk_body, execute_grasp, execute_ik, execute_look_at, \
+    execute_record, execute_release
+
 from omnigibson.utils.ui_utils import create_module_logger
 log = create_module_logger(module_name=__name__)
 
@@ -58,33 +64,6 @@ GRASPING_MODES = dict(
 gm.USE_GPU_DYNAMICS = False
 gm.ENABLE_FLATCACHE = True
 
-
-def get_pos_by_prim_path(prim_path: str):
-    '''
-    @param prim_path: e.g. /world/robot/eyes
-    @return position/translate: np.ndarray([x, y, z])
-    '''
-    stage = omni.usd.get_context().get_stage()
-    prim = stage.GetPrimAtPath(prim_path)
-    matrix: Gf.Matrix4d = omni.usd.get_world_transform_matrix(prim)
-    translate: Gf.Vec3d = matrix.ExtractTranslation()
-    return np.array(translate)
-
-# https://forums.developer.nvidia.com/t/world-position-not-updating-during-simulation-run/245372/5
-def get_pos_by_prim_path_physxApi(prim_path: str):
-    '''
-    @param prim_path: e.g. /world/robot/eyes/base_link
-    @return position/translate: np.ndarray([x, y, z])
-    '''
-    curr_transform = get_physx_interface().get_rigidbody_transformation(prim_path)
-    rv_success = curr_transform["ret_val"]
-    if rv_success:
-        curr_pos_f3 = curr_transform["position"]
-        curr_pos = Gf.Vec3d(curr_pos_f3[0], curr_pos_f3[1], curr_pos_f3[2])
-        curr_rot_f4 = curr_transform["rotation"]
-        curr_rot_quat = Gf.Quatd(curr_rot_f4[3], curr_rot_f4[0], curr_rot_f4[1], curr_rot_f4[2])
-        return curr_pos
-    return None
 
 def main(random_selection=False, headless=False, short_exec=False):
     """
@@ -115,16 +94,19 @@ def main(random_selection=False, headless=False, short_exec=False):
     # Define objects to load
     # 整体上x 和 y小一些，可以让robot和物体放到客厅里去。现在的房间太小了
     position_mapping = {
-        'delicious_apple': np.array([0.65, -0.1, 0.310]),
+        # 'delicious_apple': np.array([0.65, -0.1, 0.310]),
+        'delicious_apple': np.array([1.5, -0.1, 0.310]),
         'alarm_clock': np.array([1.53, 0.1, 0.97]),
         'water_bottle': np.array([1.33, -0.5, 0.97]),
         'brilliant_light': np.array([3.0, 3.0, 4.0]),
-        'box': np.array([0.55, -0.1, 0.2995]),
+        'box': np.array([0.61, -0.1, 0.2995]),
         # 'viewer_camera': np.array([1.20465, 1.51194, 2.14789]),
         'viewer_camera': np.array([1.71316, -0.39746, 0.78216]),
         'robot': np.array([0, 0, 0.0]),
         'breakfast_table': np.array([0.7, -0.1, 0.22]),
-    } # object_name to position
+        'trash_can': np.array([0.7, 0.4, 0.22]),
+    }
+
     orientation_mapping = {
         # 'viewer_camera': np.array([0.144, 0.424, 0.846, 0.28757]),
         'viewer_camera': np.array([0.43339, 0.31573, 0.49696, 0.68229]),
@@ -140,7 +122,7 @@ def main(random_selection=False, headless=False, short_exec=False):
         'action_type': "continuous",
         'action_normalize': True,
         'grasping_mode': 'sticky',
-        'self_collisions': True,
+        'self_collisions': False,
         'position': position_mapping['robot'],
         'prim_path': "/World/robot",
         'fixed_base': False,
@@ -206,6 +188,7 @@ def main(random_selection=False, headless=False, short_exec=False):
             'type': "PrimitiveObject",
             'name': "box",
             'primitive_type': "Cube",
+            # 'visual_only': True,
             'rgba': [1.0, 0, 0, 1.0],
             'size': 0.05,
             'fixed_base': False,
@@ -216,11 +199,22 @@ def main(random_selection=False, headless=False, short_exec=False):
             'name': "breakfast_table",
             'category': "breakfast_table",
             'model': "lcsizg",
-            'bounding_box': [0.5, 0.5, 0.25],
+            # 'visual_only': True,
+            'bounding_box': [0.5, 0.5, 0.2745],
             'fit_avg_dim_volume': False,
-            'fixed_base': False,
+            'fixed_base': True,
             'position': position_mapping['breakfast_table'],
             'orientation': orientation_mapping['breakfast_table'],
+        },
+        {
+            'type': "DatasetObject",
+            'name': "trash_can",
+            'category': "trash_can",
+            'model': "aefcem",
+            'bounding_box': [0.25, 0.25, 0.2],
+            'size': 0.06,
+            # 'visual_only': True,
+            'position': position_mapping['trash_can'],
         },
     ]
     def object_index(object_name: str):
@@ -276,6 +270,7 @@ def main(random_selection=False, headless=False, short_exec=False):
 
     # --------------------ik controller to reach the target object--------------------
     control_idx = np.concatenate([robot.trunk_control_idx, robot.arm_control_idx[robot.default_arm]])
+    # print(f'default joint pos: {robot.get_joint_positions()[control_idx]}')
     ik_solver = IKSolver(
         robot_description_path=robot.robot_arm_descriptor_yamls[robot.default_arm],
         robot_urdf_path=robot.urdf_path,
@@ -289,7 +284,7 @@ def main(random_selection=False, headless=False, short_exec=False):
             sensor.image_height = 720
             sensor.image_width = 720
     
-    log.warning(f"vision_res: {omit_convert_dict(robot.get_image())}")
+    # log.warning(f"vision_res: {omit_convert_dict(robot.get_image())}")
 
 
     # # Print out relevant keyboard info if using keyboard teleop
@@ -300,10 +295,13 @@ def main(random_selection=False, headless=False, short_exec=False):
     # print("Press ESC to quit")
 
     # Loop control until user quits
-    max_steps = -1 if not short_exec else 100
+    # max_steps = -1 if not short_exec else 100
+    max_steps = 1600
+    record_flag = True
     step = 0
     buffer = dict(); buffer['tgt_joint_pos'] = dict()
     while step != max_steps:
+        # print(f'now joint pos: {robot.get_joint_positions()[control_idx]}')
         # print("env.objects_config", env.objects_config)  # no position here
         # apple_pos = get_pos_by_prim_path("/World/delicious_apple/base_link") - position_mapping['delicious_apple']  # notice the pos!
         apple_pos = get_pos_by_prim_path_physxApi("/World/delicious_apple/base_link") # this is world position
@@ -311,14 +309,32 @@ def main(random_selection=False, headless=False, short_exec=False):
         robot_pos = get_pos_by_prim_path_physxApi("/World/robot/base_link") # this is world position
         # print(f'robot_pos: {robot_pos}')
         tgt_pos = box_pos
-        # print("tgt pos", tgt_pos)  # apple
+        # print("tgt pos", tgt_pos)
+        above_tgt_pos1 = tgt_pos.copy(); above_tgt_pos1[-1] += 0.1
+        above_tgt_pos2 = tgt_pos.copy()
         
         # grasp(robot)
         
         action = np.zeros(robot.action_dim)
         if step == 100:
-            execute_ik(ik_solver, robot, tgt_pos, buffer)
-        execute_grasp(robot, buffer, 'left')
+            execute_ik(ik_solver, robot, above_tgt_pos1, buffer)
+        elif step == 600:
+            execute_ik(ik_solver, robot, above_tgt_pos2, buffer)
+        elif step == 750:
+            execute_grasp(robot, buffer, 'left')
+        elif step == 900:
+            trash_can_pos = get_pos_by_prim_path_physxApi("/World/trash_can/base_link")
+            trash_can_above_pos = trash_can_pos.copy()
+            trash_can_above_pos[-1] = 0.5
+            execute_ik(ik_solver, robot, trash_can_above_pos, buffer)
+        elif step == 1400:
+            execute_release(robot, buffer, 'left')
+        
+        # elif step == 1500:
+        #     execute_ik(ik_solver, robot, tgt_pos, buffer)
+        
+        # execute_ik(ik_solver, robot, tgt_pos, buffer)
+        # execute_grasp(robot, buffer, 'left')
         # og.log.info(f'mk action_idx: {action_idx}, action_val: {action_val}')
         # print(f'joint pos: {robot.get_joint_positions()}')
         
@@ -334,78 +350,19 @@ def main(random_selection=False, headless=False, short_exec=False):
         # env.step(action)
         # for _ in range(10):
         execute_look_at(robot, tgt_pos, buffer)
+        
         custom_step(robot, buffer)
         step += 1
+        print(f'step: {step}')
+        
+        if record_flag:
+            if step == max_steps:
+                execute_record(og.sim.viewer_camera, buffer, './viewer_camera.mp4', 60, True)
+            else:
+                execute_record(og.sim.viewer_camera, buffer)
 
     # Always shut down the environment cleanly at the end
     env.close()
-
-# Define a helper function for executing specific end-effector commands using the ik solver
-def execute_ik(ik_solver: IKSolver, robot: TiagoAdvanced, pos, buffer: dict, quat=None, max_iter=100):
-    control_idx = np.concatenate([robot.trunk_control_idx, robot.arm_control_idx[robot.default_arm]])
-    joint_pos = ik_solver.solve(
-        target_pos=pos - get_pos_by_prim_path_physxApi("/World/robot/base_link"), # local target quaternion orientation in robot's base coordinate frame
-        target_quat=quat,
-        max_iterations=max_iter,
-        initial_joint_pos=robot.get_joint_positions()[control_idx],
-    )
-    if joint_pos is not None:
-        # og.log.info("Solution found. Setting new arm configuration.")
-        pass
-    else:
-        # og.log.info("EE position not reachable.")
-        pass
-    print(f'joint_pos: {joint_pos}')
-
-    # set tgt position
-    # robot.set_joint_positions(joint_pos, indices=control_idx, drive=True)
-    buffer['tgt_joint_pos']['ik'] = (joint_pos, control_idx)
-
-def execute_look_at(robot: TiagoAdvanced, look_at_pos, buffer: dict):
-    camera_joint_pos, camera_idx = robot.look_at(goal_pos=look_at_pos)
-    buffer['tgt_joint_pos']['camera'] = (camera_joint_pos, camera_idx)
-
-def execute_grasp(robot: TiagoAdvanced, buffer: dict, left_or_right: str = 'left'):
-    grasp_idx_mapping = {
-        'left': 11,
-        'right': 18,
-    }
-    # # grasp_idx = grasp_idx_mapping[left_or_right]
-    # gripper_idx = robot.gripper_control_idx[left_or_right]
-    # # print(f'gripper idx: {gripper_idx}')
-    # robot.set_joint_positions(
-    #     # np.array([0., 0.]),
-    #     # np.array([0.045, 0.045]),
-    #     # np.array([1, 1]),
-    #     np.array([100, 100]),
-    #     indices=gripper_idx,
-    #     drive=True,
-    # )
-    buffer['tgt_joint_pos']['grasp'] = ([0., 0.], robot.gripper_control_idx[left_or_right])
-
-def custom_step(robot: TiagoAdvanced, buffer: dict):
-    tgt_joint_poses, tgt_control_idxes = [], []
-    for k, v in buffer['tgt_joint_pos'].items():
-        tgt_joint_poses.append(v[0])
-        tgt_control_idxes.append(v[1])
-    if len(tgt_joint_poses) > 0:
-        robot.set_joint_positions(
-            np.concatenate(tgt_joint_poses), 
-            indices=np.concatenate(tgt_control_idxes),
-            drive=True,
-        )
-    
-    # simulator step
-    og.sim.step()
-
-# [0.045, 0.045]
-
-def lift_trunk_body(robot: TiagoAdvanced):
-    robot.set_joint_positions(
-        np.array([1.]),
-        indices=robot.trunk_control_idx,
-        # drive=True,
-    )
 
 def extract_valid_pos_and_val(action):
     idx_valid = action.nonzero()[0]
