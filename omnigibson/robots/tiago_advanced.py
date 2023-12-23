@@ -220,7 +220,7 @@ class TiagoAdvanced(Tiago):
             pos[self.gripper_control_idx[arm]] = np.array([0.045, 0.045])  # open gripper
             pos[self.arm_control_idx[arm]] = np.array(
                 # [-1.10, 1.47, 2.71, 1.71, -1.57, 1.39, 0]
-                [-0.7173956, 1.570797, 2.4387307, 2.1595283, 0.56682402, 0.35669315, 1.3414247 ]
+                [-0.7173956, 1.570797, 2.4387307, 2.1595283, 0.56682402, 0.35669315, 1.3414247]
             )
         return pos
 
