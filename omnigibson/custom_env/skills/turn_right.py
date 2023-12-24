@@ -4,7 +4,7 @@ Define the turn_right skill.
 from servers.utils import PipeManager
 
 
-def run_turn_right(pipe: PipeManager, local_vars: dict, angle: int):
+def emit_turn_right(pipe: PipeManager, local_vars: dict, angle: int):
     """Turn the robot right. This function only set a `turn_right` state. 
     the actual movement (generate action at each time) is done in execute_turn_right
 

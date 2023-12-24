@@ -54,7 +54,7 @@ def main():
 
     # start communication with high level server
     try:
-        # start_server(pipe_manager)
+        start_server(pipe_manager)
 
         # ------------------ Start Test Skills ------------------
         pipe = pipe_manager

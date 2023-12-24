@@ -5,7 +5,7 @@ from servers.utils import PipeManager
 from omnigibson.custom_env.exceptions import MoveException
 
 
-def run_get_velocity(pipe: PipeManager, local_vars: dict):
+def emit_get_velocity(pipe: PipeManager, local_vars: dict):
     """Get the velocity (including direction) of the robot. 
 
     Args:

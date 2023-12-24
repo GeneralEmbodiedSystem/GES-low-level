@@ -4,7 +4,7 @@ Define the move_right skill.
 from servers.utils import PipeManager
 
 
-def run_move_right(pipe: PipeManager, local_vars: dict, vel_r: float):
+def emit_move_right(pipe: PipeManager, local_vars: dict, vel_r: float):
     """Move the robot right. This function only set a `move_right` state. 
     the actual movement (generate action at each time) is done in execute_move_right
 

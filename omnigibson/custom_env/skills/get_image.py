@@ -16,7 +16,7 @@ with open(SERVER_CONFIG_PATH, 'r') as f:
 TMP_PATH = server_config['tmp_path']
 
 
-def run_get_image(pipe: PipeManager, local_vars: dict,
+def emit_get_image(pipe: PipeManager, local_vars: dict,
                   written_len: int, shm_name: str, 
                   shm_size: int):
     # Transfer rgba image to rgb image

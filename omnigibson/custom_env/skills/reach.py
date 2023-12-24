@@ -5,12 +5,14 @@ from servers.utils import PipeManager
 
 import numpy as np
 
+from omni.physx import get_physx_interface
+from pxr import Gf
 from omnigibson.robots.tiago_advanced import TiagoAdvanced
 from omnigibson.utils.control_utils import IKSolver
 from omnigibson.utils.hand_skill_utils import check_joint_move
 
 
-def run_reach(pipe: PipeManager, local_vars: dict, object: str):
+def emit_reach(pipe: PipeManager, local_vars: dict, object: str):
     """Control arm to reach a object.
 
     Args:
@@ -114,32 +116,12 @@ def execute_ik(ik_solver, robot: TiagoAdvanced, pos, buffer: dict, quat=None, ma
     # robot.set_joint_positions(joint_pos, indices=control_idx, drive=True)
     buffer['tgt_joint_pos']['ik'] = (joint_pos, control_idx)
 
-# def hand_custom_step(robot: TiagoAdvanced, buffer: dict):
-#     tgt_joint_poses, tgt_control_idxes = [], []
-#     for k, v in buffer['tgt_joint_pos'].items():
-#         tgt_joint_poses.append(v[0])
-#         tgt_control_idxes.append(v[1])
-#     if len(tgt_joint_poses) > 0:
-#         tgt_joint_pos = np.concatenate(tgt_joint_poses)
-#         tgt_control_idx = np.concatenate(tgt_control_idxes)
-#         robot.set_joint_positions(
-#             tgt_joint_pos, 
-#             indices=tgt_control_idx,
-#             drive=True,
-#         )
-    
-#     # simulator step
-#     og.sim.step()
-
 
 def get_pos_by_prim_path_physxApi(prim_path: str):
     '''
     @param prim_path: e.g. /world/robot/eyes/base_link
     @return position/translate: np.ndarray([x, y, z])
     '''
-    from omni.physx import get_physx_interface
-    from pxr import Gf
-    
     curr_transform = get_physx_interface().get_rigidbody_transformation(prim_path)
     rv_success = curr_transform["ret_val"]
     if rv_success:

@@ -4,7 +4,7 @@ Define the turn_left skill.
 from servers.utils import PipeManager
 
 
-def run_turn_left(pipe: PipeManager, local_vars: dict, angle: int):
+def emit_turn_left(pipe: PipeManager, local_vars: dict, angle: int):
     """Turn the robot left. This function only set a `turn_left` state. 
     the actual movement (generate action at each time) is done in execute_turn_left
 

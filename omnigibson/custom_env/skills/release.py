@@ -13,7 +13,7 @@ from omnigibson.utils.hand_skill_utils import check_joint_move
 left_or_right = 'left'
 
 
-def run_release(pipe: PipeManager, local_vars: dict):
+def emit_release(pipe: PipeManager, local_vars: dict):
     """Control gripper to release.
 
     Args:

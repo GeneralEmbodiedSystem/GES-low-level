@@ -4,7 +4,7 @@ Define the move_backward skill.
 from servers.utils import PipeManager
 
 
-def run_move_backward(pipe: PipeManager, local_vars: dict, vel_b: float):
+def emit_move_backward(pipe: PipeManager, local_vars: dict, vel_b: float):
     """Move the robot backward. This function only set a `move_backward` state. 
     the actual movement (generate action at each time) is done in execute_move_backward
 

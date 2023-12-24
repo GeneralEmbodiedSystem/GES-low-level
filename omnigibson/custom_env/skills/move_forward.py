@@ -4,7 +4,7 @@ Define the move_forward skill.
 from servers.utils import PipeManager
 
 
-def run_move_forward(pipe: PipeManager, local_vars: dict, vel_f: float):
+def emit_move_forward(pipe: PipeManager, local_vars: dict, vel_f: float):
     """Move the robot forward. This function only set a `move_forward` state. 
     the actual movement (generate action at each time) is done in execute_move_forward
 

@@ -4,7 +4,7 @@ Define the move_left skill.
 from servers.utils import PipeManager
 
 
-def run_move_left(pipe: PipeManager, local_vars: dict, vel_l: float):
+def emit_move_left(pipe: PipeManager, local_vars: dict, vel_l: float):
     """Move the robot left. This function only set a `move_left` state. 
     the actual movement (generate action at each time) is done in execute_move_left
 

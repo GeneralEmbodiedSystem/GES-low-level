@@ -1,9 +1,4 @@
 # -*- coding: UTF-8 -*-
-
-# mount tmpfs:
-# mkdir ~/tmpfs
-# sudo mount -t tmpfs -o size=512M tmpfs ~/tmpfs/
-
 """
 Example script demo'ing robot manipulation control with grasping.
 """
@@ -17,15 +12,18 @@ from omnigibson.sensors import VisionSensor
 from servers import PipeManager
 from omnigibson.custom_env.exceptions import MoveException
 from omnigibson.custom_env.utils import handle_collision
-from omnigibson.custom_env.skills.get_image import run_get_image
-from omnigibson.custom_env.skills.move_forward import run_move_forward, execute_move_forward
-from omnigibson.custom_env.skills.move_backward import run_move_backward, execute_move_backward
-from omnigibson.custom_env.skills.move_left import run_move_left, execute_move_left
-from omnigibson.custom_env.skills.move_right import run_move_right, execute_move_right
-from omnigibson.custom_env.skills.turn_left import run_turn_left, execute_turn_left
-from omnigibson.custom_env.skills.turn_right import run_turn_right, execute_turn_right
-from omnigibson.custom_env.skills.brake import run_brake
-from omnigibson.custom_env.skills.get_velocity import run_get_velocity
+from omnigibson.custom_env.skills.get_image import emit_get_image
+from omnigibson.custom_env.skills.move_forward import emit_move_forward, execute_move_forward
+from omnigibson.custom_env.skills.move_backward import emit_move_backward, execute_move_backward
+from omnigibson.custom_env.skills.move_left import emit_move_left, execute_move_left
+from omnigibson.custom_env.skills.move_right import emit_move_right, execute_move_right
+from omnigibson.custom_env.skills.turn_left import emit_turn_left, execute_turn_left
+from omnigibson.custom_env.skills.turn_right import emit_turn_right, execute_turn_right
+from omnigibson.custom_env.skills.brake import emit_brake
+from omnigibson.custom_env.skills.get_velocity import emit_get_velocity
+from omnigibson.custom_env.skills.reach import emit_reach, execute_reach
+from omnigibson.custom_env.skills.grasp import emit_grasp, execute_grasp
+from omnigibson.custom_env.skills.release import emit_release, execute_release
 
 
 from omnigibson.utils.ui_utils import create_module_logger
@@ -33,15 +31,18 @@ log = create_module_logger(module_name=__name__)
 
 # write your skills and corresponding function here!!
 skillset = {
-    'get_image': (run_get_image, ),
-    'move_forward': (run_move_forward, execute_move_forward),
-    'move_backward': (run_move_backward, execute_move_backward),
-    'move_left': (run_move_left, execute_move_left),
-    'move_right': (run_move_right, execute_move_right),
-    'turn_left': (run_turn_left, execute_turn_left),
-    'turn_right': (run_turn_right, execute_turn_right),
-    'brake': (run_brake, ),
-    'get_velocity': (run_get_velocity, )
+    'get_image': (emit_get_image, ),
+    'move_forward': (emit_move_forward, execute_move_forward),
+    'move_backward': (emit_move_backward, execute_move_backward),
+    'move_left': (emit_move_left, execute_move_left),
+    'move_right': (emit_move_right, execute_move_right),
+    'turn_left': (emit_turn_left, execute_turn_left),
+    'turn_right': (emit_turn_right, execute_turn_right),
+    'brake': (emit_brake, ),
+    'get_velocity': (emit_get_velocity, ),
+    'reach': (emit_reach, execute_reach),
+    'grasp': (emit_grasp, execute_grasp),
+    'release': (emit_release, execute_release),
 }
 
 # Don't use GPU dynamics and Use flatcache for performance boost
@@ -139,9 +140,11 @@ def main(random_selection=False, headless=False, short_exec=False):
         #     "timeout": 100
         # },
         # None means no action (still)
+        # Actions related to base movement
         "move_action": None,
-        # TODO: implement the action related to arm moving
-        "hand_action": None
+        # Actions related to arm movement
+        "arm_action": None,
+        # TODO: Actions related to head movement
     }
 
     # Other helpful user info
@@ -159,6 +162,9 @@ def main(random_selection=False, headless=False, short_exec=False):
     
     try:
         while True:
+            # If a collision happens, brake the robot
+            handle_collision(locals(), ignore_objs)
+            # Prepare the action vector
             action = np.zeros(robot.action_dim)
             if robot.ready:
                 execute_message(pipe, locals())
@@ -175,9 +181,11 @@ def main(random_selection=False, headless=False, short_exec=False):
             [12, 18]: right arm.
             """
             generate_action(pipe, locals())
-            # If a collision happens, brake the robot
-            handle_collision(locals(), ignore_objs)
-            env.step(action)
+            if action is None:
+                # Use the physx interface to step the action
+                step_arm_action_by_physx(robot, locals())
+            else:
+                env.step(action)
     except KeyboardInterrupt:
         # Always shut down the environment cleanly at the end
         env.close()
@@ -226,6 +234,30 @@ def generate_action(pipe: PipeManager, local_vars: dict):
     
     local_vars['action'] = action
     return
+
+
+def step_arm_action_by_physx(robot, local_vars: dict):
+    """
+    In this function, we use the physx interface (og.sim.step())
+    to step the arm action instead of using the env.step() function.
+    This is due to unknown compatibility issues.
+    """
+    physx_action = local_vars['active_actions']['hand_action']
+    tgt_joint_poses, tgt_control_idxes = [], []
+    for k, v in physx_action['tgt_joint_pos'].items():
+        tgt_joint_poses.append(v[0])
+        tgt_control_idxes.append(v[1])
+    if len(tgt_joint_poses) > 0:
+        tgt_joint_pos = np.concatenate(tgt_joint_poses)
+        tgt_control_idx = np.concatenate(tgt_control_idxes)
+        robot.set_joint_positions(
+            tgt_joint_pos, 
+            indices=tgt_control_idx,
+            drive=True,
+        )
+    
+    # simulator step
+    og.sim.step()
 
 
 if __name__ == "__main__":
