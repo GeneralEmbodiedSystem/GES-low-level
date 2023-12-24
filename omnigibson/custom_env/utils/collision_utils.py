@@ -57,6 +57,10 @@ def handle_collision(local_vars: dict, ignore_objs: tuple) -> None:
     if move_action is None or isinstance(move_action, MoveException):
         return
     
+    if move_action['func'] not in ['move_forward', 'move_backward', 
+        'move_left', 'move_right']:
+        return
+    
     lidar_depths = []
     robot = local_vars['robot']
     robot_exception = MoveException(move_action['func'][5:])
