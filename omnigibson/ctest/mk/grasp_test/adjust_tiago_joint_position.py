@@ -16,7 +16,7 @@ my_world.scene.add_default_ground_plane()
 
 assets_root_path = get_assets_root_path()
 
-tiago_usd_path = '/home/mad0g4/Desktop/code/GES-low-level/omnigibson/data/assets/models/tiago/tiago_dual_omnidirectional_stanford/tiago_dual_omnidirectional_stanford.usd'
+tiago_usd_path = '/home/mad0g4/Desktop/code/GES-low-level/omnigibson/data/assets/models/tiago/tiago_dual_omnidirectional_stanford/tiago_dual_omnidirectional_stanford_33.usd'
 
 def attach_usd_to_prim(prim_path: str, usd_path: str):
     prim = get_prim_at_path(prim_path)
@@ -28,8 +28,8 @@ def attach_usd_to_prim(prim_path: str, usd_path: str):
             carb.log_error("no valid usd path defined to create new robot")
 
 # prim_path = '/World/jetbot'
-prim_path = '/jetbot'
-robot_name = 'jetbot'
+prim_path = '/tiago'
+robot_name = 'tiago'
 attach_usd_to_prim(prim_path, tiago_usd_path)
 
 robot = my_world.scene.add(

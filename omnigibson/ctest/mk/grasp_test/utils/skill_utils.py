@@ -94,9 +94,11 @@ def execute_ik(ik_solver: IKSolver, robot: TiagoAdvanced, pos, buffer: dict, qua
         # target_pos=pos, # local target quaternion orientation in robot's base coordinate frame
         # target_pos=pos - get_pos_by_prim_path_physxApi("/World/robot/base_link"), # local target quaternion orientation in robot's base coordinate frame
         target_pos=pos - robot.get_position(), # local target quaternion orientation in robot's base coordinate frame
+        # target_quat=quat if quat is None else quat - robot.get_orientation(),
         target_quat=quat,
         max_iterations=max_iter,
         initial_joint_pos=robot.get_joint_positions()[control_idx],
+        tolerance_pos = 0.00001
     )
     if joint_pos is not None:
         # og.log.info("Solution found. Setting new arm configuration.")
@@ -124,4 +126,4 @@ def execute_grasp(robot: TiagoAdvanced, buffer: dict, left_or_right: str = 'left
     buffer['tgt_joint_pos']['grasp'] = ([0., 0.], robot.gripper_control_idx[left_or_right])
 
 def execute_release(robot: TiagoAdvanced, buffer: dict, left_or_right: str = 'left'):
-    buffer['tgt_joint_pos']['grasp'] = ([0.045, 0.045], robot.gripper_control_idx[left_or_right])
+    buffer['tgt_joint_pos']['release'] = ([0.045, 0.045], robot.gripper_control_idx[left_or_right])

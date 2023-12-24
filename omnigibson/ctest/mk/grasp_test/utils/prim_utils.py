@@ -1,21 +1,18 @@
 import numpy as np
 
-import carb
-import omni
-
-from omni.isaac.core.prims import GeometryPrim, XFormPrim
-from omni.isaac.core.utils.prims import get_prim_at_path
-from omni.physx import get_physx_interface
-import omni.usd
-
-from pxr import Gf
-
 
 def get_pos_by_prim_path(prim_path: str):
     '''
     @param prim_path: e.g. /world/robot/eyes
     @return position/translate: np.ndarray([x, y, z])
     '''
+    from omni.isaac.core.prims import GeometryPrim, XFormPrim
+    from omni.isaac.core.utils.prims import get_prim_at_path
+    import omni.usd
+    import omni
+
+    from pxr import Gf
+    
     stage = omni.usd.get_context().get_stage()
     prim = stage.GetPrimAtPath(prim_path)
     matrix: Gf.Matrix4d = omni.usd.get_world_transform_matrix(prim)
@@ -28,6 +25,9 @@ def get_pos_by_prim_path_physxApi(prim_path: str):
     @param prim_path: e.g. /world/robot/eyes/base_link
     @return position/translate: np.ndarray([x, y, z])
     '''
+    from omni.physx import get_physx_interface
+    from pxr import Gf
+    
     curr_transform = get_physx_interface().get_rigidbody_transformation(prim_path)
     rv_success = curr_transform["ret_val"]
     if rv_success:

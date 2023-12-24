@@ -239,15 +239,17 @@ def benchmark_scene(scene_name, optimized=False, import_robot=True, random_selec
         marker_pos = get_pos_by_prim_path_physxApi("/World/marker/base_link") # this is world position
         # print(f'robot_pos: {robot_pos}')
         tgt_pos = marker_pos
-        # print("tgt pos", tgt_pos)
+        print("tgt pos", tgt_pos)
         
         # grasp(robot)
         
-        if step == 100:
+        if step % 3 == 0:
+            # execute_ik(ik_solver, robot, tgt_pos, buffer, quat=np.array([0, 0, 0, 1]),
+            #            weight_pos=100000.0, weight_quat=0.001)
             execute_ik(ik_solver, robot, tgt_pos, buffer)
         # execute_grasp(robot, buffer, 'left')
         # og.log.info(f'mk action_idx: {action_idx}, action_val: {action_val}')
-        print(f'joint pos: {robot.get_joint_positions()[control_idx]}')
+        # print(f'joint pos: {robot.get_joint_positions()[control_idx]}')
         
         # teleop_action = action_generator.get_teleop_action()
         # teleop_action[2:] = 0 # no press key output 2 0??

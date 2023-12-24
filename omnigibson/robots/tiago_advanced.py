@@ -210,6 +210,10 @@ class TiagoAdvanced(Tiago):
     #     return cfg
     
     @property
+    def ik_control_idx(self):
+        return np.concatenate([self.trunk_control_idx, self.arm_control_idx[self.default_arm]])
+    
+    @property
     def tucked_default_joint_pos(self):
         pos = np.zeros(self.n_dof)
         # Keep the current joint positions for the base joints
