@@ -1,11 +1,6 @@
 from servers.utils import SocketManager, PipeManager
 
 
-# Define the speed modes
-WALK_SPEED = 0.2
-CRAWL_SPEED = 0.05
-
-
 def move_left(socket_manager: SocketManager, pipe: PipeManager):
     """
     Move the robot left
@@ -13,7 +8,7 @@ def move_left(socket_manager: SocketManager, pipe: PipeManager):
     try:
         # Receive the request data
         response_data = socket_manager.read_request()
-        mode = response_data['mode']
+        dist = response_data['dist']
 
     except Exception as e:
         print("Error receive data: ", e)
@@ -21,23 +16,17 @@ def move_left(socket_manager: SocketManager, pipe: PipeManager):
         return
     
     # Execute move
-    if mode == 'walk':
-        velocity = WALK_SPEED
-    elif mode == 'crawl':
-        velocity = CRAWL_SPEED
-    else:
-        print("Invalid speed mode: %s" % mode)
-        print("Closing connection.")
-        return
     pipe.write(
-        data=("move_left", velocity),
+        data=("move_left", dist),
         role="client"
     )
     
-    while pipe.read(role="client") is None:
-        pass
+    while True:
+        data = pipe.read(role="client")
+        if data is not None:
+            break
 
     # Send the response
     socket_manager.write_request({
-        'success': True
+        'result': data
     })

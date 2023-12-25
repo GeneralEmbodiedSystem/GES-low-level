@@ -2,7 +2,7 @@
 tmp_path: "~/tmp"
 # Tools that are enabled
 tools_enabled: ["get_image", "move_forward", "move_backward", "move_left",
-                "move_right", "brake", "turn_left", "turn_right"]
+                "move_right", "turn_left", "turn_right"]
 tools:
     # Default tool params
     default:
@@ -25,8 +25,6 @@ tools:
     move_left:
 
     move_right:
-
-    brake:
 
     turn_left:
 

@@ -1,12 +1,6 @@
 from servers.utils import SocketManager, PipeManager
 
 
-# Define the speed modes
-RUN_SPEED = 0.3
-WALK_SPEED = 0.1
-CRAWL_SPEED = 0.05
-
-
 def move_forward(socket_manager: SocketManager, pipe: PipeManager):
     """
     Move the robot forward
@@ -14,7 +8,7 @@ def move_forward(socket_manager: SocketManager, pipe: PipeManager):
     try:
         # Receive the request data
         response_data = socket_manager.read_request()
-        mode = response_data['mode']
+        dist = response_data['dist']
 
     except Exception as e:
         print("Error receive data: ", e)
@@ -22,26 +16,17 @@ def move_forward(socket_manager: SocketManager, pipe: PipeManager):
         return
     
     # Execute move
-    if mode == 'run':
-        velocity = RUN_SPEED
-    elif mode == 'walk':
-        velocity = WALK_SPEED
-    elif mode == 'crawl':
-        velocity = CRAWL_SPEED
-    else:
-        print("Invalid speed mode: %s" % mode)
-        print("Closing connection.")
-        return
-    
     pipe.write(
-        data=("move_forward", velocity),
+        data=("move_forward", dist),
         role="client"
     )
     
-    while pipe.read(role="client") is None:
-        pass
+    while True:
+        data = pipe.read(role="client")
+        if data is not None:
+            break
 
     # Send the response
     socket_manager.write_request({
-        'success': True
+        'result': data
     })
