@@ -115,7 +115,7 @@ objects_cfg:
     model: ipdvzo
     bounding_box: null
     fit_avg_dim_volume: true
-    fixed_base: false
+    fixed_base: true
     position: [-0.06, 1.277, 0.348]
 
   - type: DatasetObject

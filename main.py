@@ -29,6 +29,7 @@ def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--simulator_path", "-sp", type=str, default=None, 
                         help="specify which body_simulator.py to use, for mk testing.")
+    parser.add_argument("--record", "-r", type=int, default=None)
     args = parser.parse_args()
     
     return args
@@ -41,6 +42,8 @@ def start_simulator(*args):
         source {join(start_up_config["system_cfg"]["CONDA_DIR_PATH"], 'bin/activate')} {start_up_config["system_cfg"]["CONDA_ENV_NAME"]}
         python --version
         python {EXECUTE_FILE} --config_file {start_up_config["system_cfg"]["ENV_CONFIG_FILE"]}'''
+    if args.record is not None:
+        bash_components += f' -r {args.record}'
     bash_path = 'omnigibson/custom_env/start_simulator.sh'
     with open(bash_path, 'w') as f:
         f.write(bash_components)

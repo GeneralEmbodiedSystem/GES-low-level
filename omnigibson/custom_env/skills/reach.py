@@ -1,16 +1,21 @@
 """
 Define the reach skill.
 """
-from servers.utils import PipeManager
-
+from typing import Union
 import numpy as np
+
+from servers.utils import PipeManager
 
 from omni.physx import get_physx_interface
 from pxr import Gf
 from omnigibson.robots.tiago_advanced import TiagoAdvanced
 from omnigibson.utils.control_utils import IKSolver
-from omnigibson.utils.hand_skill_utils import check_joint_move
 
+from omnigibson.custom_env.utils.physx_utils import get_pos_by_prim_path_physxApi
+from omnigibson.custom_env.utils.robot_utils import get_ik_solver
+from omnigibson.custom_env.utils.eular_utils import calculate_distance
+
+from omnigibson.utils.hand_skill_utils import check_joint_move
 
 left_or_right = 'left'
 
@@ -27,25 +32,32 @@ def emit_reach(pipe: PipeManager, global_states: dict, object: str):
             'delicious_apple' in '/World/delicious_apple'
     """
     
+    # extract the robot
     robot: TiagoAdvanced = global_states['robot']
     
     # define ik solver
-    ik_solver = IKSolver(
-        robot_description_path=robot.robot_arm_descriptor_yamls[robot.default_arm],
-        robot_urdf_path=robot.urdf_path,
-        default_joint_pos=robot.get_joint_positions()[robot.ik_control_idx],
-        eef_name=robot.eef_link_names[robot.default_arm],
-    )
+    ik_solver = get_ik_solver(robot)
     
-    # rule-based procedures
-    # [(x1, y1, z1), (x2, y2, z2)]
+    # waypoints: [((x1, y1, z1), eps1), ((x2, y2, z2), eps2)]
+    # eps means the max distance error to the waypoint we can tolerate
     waypoints = []
-    reach_process = {
+    waypoints_scratch = {
         'waypoints': waypoints,
-        'waypoint_index': 0,
+        'current_waypoint_index': 0,
     }
-    if 'trash_can' in object:
-        pass
+    
+    # plan rule-based waypoints
+    object_pos = get_pos_by_prim_path_physxApi(f'/World/{object}/base_link')
+    if object in ['trash_can']:
+        waypoints.append((object_pos + np.array([0.0, 0.0, 0.3]), 1e-4))
+    else:
+        waypoints.append((object_pos + np.array([0.0, 0.0, 0.15]), 1e-5))
+        waypoints.append((object_pos, 1e-1))
+        # waypoints.append((object, 5e-2))
+    
+    # define single_reach_scratch init state generation function
+    def single_reach_scratch_init_func():
+        return {}
     
     # define the object name to reach in local vars
     global_states['active_actions']['hand_action'] = {
@@ -53,17 +65,20 @@ def emit_reach(pipe: PipeManager, global_states: dict, object: str):
         'args': {
             'object': object,
         },
-        # 'procedures': 
-        'last_joint_pos': None,
-        'ik_has_effect': True,
         'ik_solver': ik_solver,
+        
+        'waypoints_scratch': waypoints_scratch,
+        
+        'single_reach_scratch': None, # no use currently
+        'single_reach_scratch_init_func': single_reach_scratch_init_func, # no use currently
     }
     
     # hand action buffer
     buffer: dict = global_states['active_actions']['hand_action']
 
-    execute_ik(ik_solver, robot, get_pos_by_prim_path_physxApi(f'/World/{object}/base_link'), buffer)
-    buffer['tgt_joint_pos']['release'] = ([0.045, 0.045], robot.gripper_control_idx[left_or_right]) # release
+    # start navigate to waypoint
+    start_navigate_to_waypoint(buffer, robot)
+    print('operator: start navigate to next waypoint')
 
 
 def execute_reach(pipe: PipeManager, global_states: dict, object: str):
@@ -84,39 +99,97 @@ def execute_reach(pipe: PipeManager, global_states: dict, object: str):
     
     # hand action buffer
     buffer: dict = global_states['active_actions']['hand_action']
+    single_reach_scratch: dict = buffer['single_reach_scratch']
     
     # extract params from buffer
     ik_solver: IKSolver = buffer['ik_solver']
+    waypoints_scratch = buffer['waypoints_scratch']
+    waypoints = waypoints_scratch['waypoints']
+    current_waypoint_index = waypoints_scratch['current_waypoint_index']
     
     # check end of a ik according to the joint pos delta
-    end_ik_flag = check_joint_move(robot, buffer, robot.gripper_control_idx[left_or_right])
+    eef_name = robot.eef_link_names[robot.default_arm]
+    this_tgt_waypoint = parse_waypoint_pos(waypoints[current_waypoint_index][0])
+    eef_current_pos = get_pos_by_prim_path_physxApi(f'{robot.prim_path}/{eef_name}')
+    to_move_distance = calculate_distance(this_tgt_waypoint, eef_current_pos)
+    # eps = 1e-5 # can not end, but can successfully reach
+    eps = waypoints[current_waypoint_index][1]
+    reach_waypoint_flag = (to_move_distance < eps)
+    joint_move_flag = check_joint_move(robot, single_reach_scratch, robot.gripper_control_idx[left_or_right])
     
-    # update ik_has_effect, ik_has_effect==True if the robot reach at least once 
-    # in this ik.
-    ik_has_effect = buffer.get('ik_has_effect', False)
-    ik_has_effect |= (not end_ik_flag)
-    buffer['ik_has_effect'] = ik_has_effect
+    print(f'operator: to_move_distance: {to_move_distance}')
     
-
-    if not ik_has_effect and end_ik_flag:
-        pipe.write(
-            data="reach success",
-            role="server"
-        )
-        global_states['active_actions']['hand_action'] = None
-        
-        print(f'mk reach {object} success')
-        
-        # hand action is over
-        return action
+    # this waypoint navigation ends
+    if reach_waypoint_flag:
+        end_navigation_of_a_waypoint(buffer, robot)
+        print('operator: reach waypoint success!')
     
-    if end_ik_flag:
-        execute_ik(ik_solver, robot, get_pos_by_prim_path_physxApi(f'/World/{object}/base_link'), buffer)
+        if check_waypoints_end(buffer):
+            pipe.write(
+                data="reach success",
+                role="server"
+            )
+            global_states['active_actions']['hand_action'] = None
+            
+            print(f'operator: reach {object} success')
+            
+            # hand action is over
+            return action
+        else:
+            start_navigate_to_waypoint(buffer, robot)
+            print('operator: start navigate to next waypoint')
+    elif not joint_move_flag:
+        execute_ik(ik_solver, robot, np.array(parse_waypoint_pos(waypoints[current_waypoint_index][0])), buffer)
     
     # return None means using hand_custom_step(robot, global_states['active_actions']['hand_action']) 
     # instead of env.step(action).
     return None
 
+def parse_waypoint_pos(waypoint: Union[str, np.ndarray]):
+    if isinstance(waypoint, str):
+        return get_pos_by_prim_path_physxApi(f'/World/{waypoint}/base_link')
+    return waypoint
+
+def start_navigate_to_waypoint(buffer: dict, robot: TiagoAdvanced):
+    # extra params
+    waypoints_scratch = buffer['waypoints_scratch']
+    waypoints = waypoints_scratch['waypoints']
+    current_waypoint_index = waypoints_scratch['current_waypoint_index']
+    
+    # init single_reach_scratch
+    buffer['single_reach_scratch'] = buffer['single_reach_scratch_init_func']()
+    
+    # ik
+    execute_ik(buffer['ik_solver'], robot, np.array(parse_waypoint_pos(waypoints[current_waypoint_index][0])), buffer)
+    
+    # keep releasing when reach
+    buffer['tgt_joint_pos']['release'] = ([0.045, 0.045], robot.gripper_control_idx[left_or_right])
+
+def end_navigation_of_a_waypoint(buffer: dict, robot: TiagoAdvanced):
+    # extra params
+    waypoints_scratch = buffer['waypoints_scratch']
+    
+    # increase current_waypoint_index
+    waypoints_scratch['current_waypoint_index'] += 1
+    
+    # empty single_reach_scratch
+    buffer['single_reach_scratch'] = None
+    
+    # empty target joint pos
+    if 'tgt_joint_pos' in buffer:
+        for to_pop in ['release', 'ik']:
+            if to_pop in buffer['tgt_joint_pos']:
+                buffer['tgt_joint_pos'].pop(to_pop)
+
+def check_waypoints_end(buffer: dict):
+    # extra params
+    waypoints_scratch = buffer['waypoints_scratch']
+    waypoints = waypoints_scratch['waypoints']
+    current_waypoint_index = waypoints_scratch['current_waypoint_index']
+    
+    if current_waypoint_index >= len(waypoints):
+        return True
+    return False
 
 # Define a helper function for executing specific end-effector commands using the ik solver
 def execute_ik(ik_solver, robot: TiagoAdvanced, pos, buffer: dict, quat=None, max_iter=100):
@@ -138,9 +211,13 @@ def execute_ik(ik_solver, robot: TiagoAdvanced, pos, buffer: dict, quat=None, ma
 
 def get_pos_by_prim_path_physxApi(prim_path: str):
     '''
-    @param prim_path: e.g. /world/robot/eyes/base_link
-    @return position/translate: np.ndarray([x, y, z])
+    get position of the prim_path in physxApi
+    
+    Args:
+        prim_path: prim_path of the object
+            e.g. /world/robot/eyes/base_link
     '''
+    
     curr_transform = get_physx_interface().get_rigidbody_transformation(prim_path)
     rv_success = curr_transform["ret_val"]
     if rv_success:

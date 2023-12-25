@@ -27,8 +27,7 @@ from omnigibson.robots import TiagoAdvanced
 
 from omnigibson.utils.transform_utils import quat2euler
 
-from omnigibson.controllers.ik_controller import InverseKinematicsController
-from omnigibson.controllers.null_joint_controller import NullJointController
+from omnigibson.custom_env.utils.camera_utils import execute_record
 
 from omnigibson.utils.ui_utils import create_module_logger
 log = create_module_logger(module_name=__name__)
@@ -68,16 +67,20 @@ def lift_trunk_body(robot): # TiagoAdvanced
         # drive=True,  # if drive=True, the robot will gradually move to the target position. else it will be set to the target position immediately
     )
 
+def get_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--config_file", "-c", type=str, default="table_food_trash_can_env.yaml")
+    parser.add_argument("--record", "-r", type=int, default=None)
+    args = parser.parse_args()
+    
+    return args
 
-def main(random_selection=False, headless=False, short_exec=False):
+def main(random_selection=False, headless=False, short_exec=False, args=get_args()):
     """
     Robot grasping mode demo with selection
     Queries the user to select a type of grasping mode
     """
     # environment config, including scene, robot, and objects
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--config_file", type=str, default="table_food_trash_can_env.yaml")
-    args = parser.parse_args()
     sim_config_path = './omnigibson/custom_env/configs/' + args.config_file
     with open(sim_config_path, 'r') as f:
         sim_config = yaml.load(f, Loader=yaml.FullLoader)
@@ -122,6 +125,11 @@ def main(random_selection=False, headless=False, short_exec=False):
 
     # Init Lidar sensors
     robot.init_scan_sensor()
+    
+    # Init record frames cache
+    if args.record is not None:
+        print(f'record {args.record} frames!')
+        record_frames = []
 
     # Make the robot's camera(s) high-res
     for sensor in robot.sensors.values():
@@ -176,13 +184,19 @@ def main(random_selection=False, headless=False, short_exec=False):
     # Ignore the floors when checking collision
     ignore_objs = tuple(env.scene.object_registry("category", "floors", []))
     
+    # 
+    
     # set GLOBAL_STATE buffer (dict)
     global_states = dict()
     global_states_keys = ['env', 'robot', 'active_actions']
+    if args.record is not None:
+        global_states_keys.append('record_frames')
+    
     for global_states_key in global_states_keys:
         global_states[global_states_key] = eval(global_states_key)
     
     try:
+        steps = 0
         while True:
             # If a collision happens, brake the robot
             handle_collision(global_states, ignore_objs)
@@ -205,6 +219,13 @@ def main(random_selection=False, headless=False, short_exec=False):
             """
             generate_action(pipe, global_states)  # call execute_xxx and set action
             update_env(robot, global_states)
+            steps += 1
+            
+            if args.record is not None:
+                if steps < args.record:
+                    execute_record(og.sim.viewer_camera, global_states, './viewer.mp4')
+                elif steps == args.record:
+                    execute_record(og.sim.viewer_camera, global_states, './viewer.mp4', end=True)
     except KeyboardInterrupt:
         # Always shut down the environment cleanly at the end
         env.close()
