@@ -180,9 +180,6 @@ def main(random_selection=False, headless=False, short_exec=False):
     for global_states_key in global_states_keys:
         global_states[global_states_key] = eval(global_states_key)
     
-    print(f'base control idx: {robot.base_control_idx}')
-    print(f'action_dim: {robot.action_dim}')
-    
     try:
         while True:
             # If a collision happens, brake the robot

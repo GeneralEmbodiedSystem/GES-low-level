@@ -66,6 +66,8 @@ def execute_grasp(pipe: PipeManager, global_states: dict):
         )
         global_states['active_actions']['hand_action'] = None
         
+        print(f'mk grasp success')
+        
         # hand action is over
         return action
     
