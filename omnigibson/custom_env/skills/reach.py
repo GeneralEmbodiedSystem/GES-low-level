@@ -11,6 +11,7 @@ from omnigibson.robots.tiago_advanced import TiagoAdvanced
 from omnigibson.utils.control_utils import IKSolver
 from omnigibson.utils.hand_skill_utils import check_joint_move
 
+left_or_right = 'left'
 
 def emit_reach(pipe: PipeManager, local_vars: dict, object: str):
     """Control arm to reach a object.
@@ -74,7 +75,7 @@ def execute_reach(pipe: PipeManager, local_vars: dict, object: str):
     ik_solver: IKSolver = buffer['ik_solver']
     
     # check end of a ik according to the joint pos delta
-    end_ik_flag = check_joint_move(robot, buffer, robot.gripper_control_idx[robot.ik_control_idx])
+    end_ik_flag = check_joint_move(robot, buffer, robot.gripper_control_idx[left_or_right])
     
     # update ik_has_effect, ik_has_effect==True if the robot reach at least once 
     # in this ik.
@@ -83,6 +84,8 @@ def execute_reach(pipe: PipeManager, local_vars: dict, object: str):
     buffer['ik_has_effect'] = ik_has_effect
     
     # last ik do not move && last ik ends
+    print(f'ik_has_effect: {ik_has_effect}, end_ik_flag: {end_ik_flag}')
+    
     if not ik_has_effect and end_ik_flag:
         pipe.write(
             data="reach success",
@@ -114,7 +117,11 @@ def execute_ik(ik_solver, robot: TiagoAdvanced, pos, buffer: dict, quat=None, ma
 
     # set tgt position
     # robot.set_joint_positions(joint_pos, indices=control_idx, drive=True)
+    if 'tgt_joint_pos' not in buffer:
+        buffer['tgt_joint_pos'] = {}
     buffer['tgt_joint_pos']['ik'] = (joint_pos, control_idx)
+    print(f'tgt joint pos: {joint_pos}')
+    # print('ik ready')
 
 
 def get_pos_by_prim_path_physxApi(prim_path: str):

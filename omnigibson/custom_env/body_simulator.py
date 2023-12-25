@@ -58,6 +58,13 @@ TMP_PATH = server_config['tmp_path']
 SHM_NAME_INTER = server_config['shm_ser_sim']['name']
 SHM_SIZE_INTER = server_config['shm_ser_sim']['size']
 
+def lift_trunk_body(robot): # TiagoAdvanced
+    robot.set_joint_positions(
+        np.array([1.]),
+        indices=robot.trunk_control_idx,
+        # drive=True,  # if drive=True, the robot will gradually move to the target position. else it will be set to the target position immediately
+    )
+
 
 def main(random_selection=False, headless=False, short_exec=False):
     """
@@ -105,6 +112,9 @@ def main(random_selection=False, headless=False, short_exec=False):
     # TODO: remove hard code
     robot.set_position(sim_config["other_init_cfg"]["robot_position"])  # robot0_cfg["position"]
     robot.reset()
+    
+    lift_trunk_body(robot)
+    og.sim.step()
     # robot.keep_still()
 
     # Init Lidar sensors
@@ -143,7 +153,7 @@ def main(random_selection=False, headless=False, short_exec=False):
         # Actions related to base movement
         "move_action": None,
         # Actions related to arm movement
-        "arm_action": None,
+        "hand_action": None,
         # TODO: Actions related to head movement
     }
 
@@ -160,14 +170,23 @@ def main(random_selection=False, headless=False, short_exec=False):
     # Ignore the floors when checking collision
     ignore_objs = tuple(env.scene.object_registry("category", "floors", []))
     
+    # set GLOBAL_STATE buffer (dict)
+    global_states = dict()
+    global_states_keys = ['env', 'robot', 'active_actions']
+    for global_states_key in global_states_keys:
+        global_states[global_states_key] = eval(global_states_key)
+    
     try:
         while True:
             # If a collision happens, brake the robot
-            handle_collision(locals(), ignore_objs)
+            handle_collision(global_states, ignore_objs)
             # Prepare the action vector
-            action = np.zeros(robot.action_dim)
+            if global_states['active_actions']['hand_action'] is None:
+                global_states['action'] = np.zeros(robot.action_dim)
+            else:
+                global_states['action'] = None
             if robot.ready:
-                execute_message(pipe, locals())
+                execute_message(pipe, global_states)  # calll emit_xxx and prepare for generate_action()
 
             """
             TiagoAdvance action idx (action_dim=19):
@@ -180,10 +199,16 @@ def main(random_selection=False, headless=False, short_exec=False):
             [5, 11]: left arm. for example, the dim 5 means left hand front/back 
             [12, 18]: right arm.
             """
-            generate_action(pipe, locals())
+            generate_action(pipe, global_states)  # call execute_xxx and set action
+            action = global_states['action']
+            
+            if active_actions['hand_action'] is not None:
+                # print("ji ni tai mei ", action)
+                pass
             if action is None:
                 # Use the physx interface to step the action
-                step_arm_action_by_physx(robot, locals())
+                # print("step arm action by physx")
+                step_arm_action_by_physx(robot, global_states)
             else:
                 env.step(action)
     except KeyboardInterrupt:
@@ -218,32 +243,43 @@ def generate_action(pipe: PipeManager, local_vars: dict):
     action = local_vars['action']
 
     # Like execute_xxx, it applies the action to the robot action vector
-    skill_executed = local_vars['active_actions']['move_action']
-    if isinstance(skill_executed, MoveException) and not skill_executed.recovered:
-        # If the robot collides with the environment, get an recovery action
-        skill_executed = skill_executed.get_recovery_action()
-        local_vars['active_actions']['move_action'].recovered_steps -= 1
-        if local_vars['active_actions']['move_action'].recovered_steps <= 0:
-            # If the robot has recovered from the exception, make it ready
-            local_vars['active_actions']['move_action'].recovered = True
-            robot.ready = True
-    if skill_executed is not None and not isinstance(skill_executed, MoveException):
-        skill_execute_func = skillset[skill_executed['func']][1]
-        args = skill_executed['args']
-        action = skill_execute_func(pipe, local_vars, **args)
+    skill_executed_list = [local_vars['active_actions']['move_action'],
+                            local_vars['active_actions']['hand_action']]
+    for skill_executed in skill_executed_list:
+        if isinstance(skill_executed, MoveException) and not skill_executed.recovered:
+            # If the robot collides with the environment, get an recovery action
+            skill_executed = skill_executed.get_recovery_action()
+            local_vars['active_actions']['move_action'].recovered_steps -= 1
+            if local_vars['active_actions']['move_action'].recovered_steps <= 0:
+                # If the robot has recovered from the exception, make it ready
+                local_vars['active_actions']['move_action'].recovered = True
+                robot.ready = True
+        if skill_executed is not None and not isinstance(skill_executed, MoveException):
+            skill_execute_func = skillset[skill_executed['func']][1]
+            args = skill_executed['args']
+            action = skill_execute_func(pipe, local_vars, **args)
     
     local_vars['action'] = action
+    # if 'hand_action' in local_vars['active_actions']:
+    #     print("hand_action", local_vars['active_actions']['hand_action'])
+    #     if "move_action" in local_vars['active_actions']:
+    #         print("move_action", local_vars['active_actions']['move_action'])
+    #     print("action", action)
+    if local_vars['active_actions']['hand_action'] is not None:
+        # print("WO G ", action)
+        pass
     return
 
 
 def step_arm_action_by_physx(robot, local_vars: dict):
     """
-    In this function, we use the physx interface (og.sim.step())
+    In this function, we use the physx interface (og.sim.step()) 
     to step the arm action instead of using the env.step() function.
     This is due to unknown compatibility issues.
     """
     physx_action = local_vars['active_actions']['hand_action']
     tgt_joint_poses, tgt_control_idxes = [], []
+    # print("physx_action", physx_action)
     for k, v in physx_action['tgt_joint_pos'].items():
         tgt_joint_poses.append(v[0])
         tgt_control_idxes.append(v[1])

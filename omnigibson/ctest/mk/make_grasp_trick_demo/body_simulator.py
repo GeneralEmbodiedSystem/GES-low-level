@@ -160,11 +160,14 @@ def main(random_selection=False, headless=False, short_exec=False):
     # Ignore the floors when checking collision
     ignore_objs = tuple(env.scene.object_registry("category", "floors", []))
     
+    # set GLOBAL_STATE buffer (dict)
+    global_states = dict()
+    
     try:
         while True:
             action = np.zeros(robot.action_dim)
             if robot.ready:
-                execute_message(pipe, locals())
+                execute_message(pipe, global_states)
 
             """
             TiagoAdvance action idx (action_dim=19):
@@ -177,9 +180,9 @@ def main(random_selection=False, headless=False, short_exec=False):
             [5, 11]: left arm. for example, the dim 5 means left hand front/back 
             [12, 18]: right arm.
             """
-            generate_action(pipe, locals())
+            generate_action(pipe, global_states)
             # If a collision happens, brake the robot
-            handle_collision(locals(), ignore_objs)
+            handle_collision(global_states, ignore_objs)
             env.step(action)
     except KeyboardInterrupt:
         # Always shut down the environment cleanly at the end

@@ -37,7 +37,7 @@ def lift_trunk_body(robot: TiagoAdvanced):
     robot.set_joint_positions(
         np.array([1.]),
         indices=robot.trunk_control_idx,
-        # drive=True,
+        # drive=True,  # if drive=True, the robot will gradually move to the target position. else it will be set to the target position immediately
     )
 
 # Transfer rgba image to rgb image

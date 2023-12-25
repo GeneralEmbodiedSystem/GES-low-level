@@ -64,6 +64,10 @@ def main(args=get_args()):
 
     # start communication with high level server
     try:
+        # pipe.write(
+        #     data=("reach", "box_of_yogurt"),
+        #     role="client"
+        # )
         # start_server(pipe_manager)
 
         # ------------------ Start Test Skills ------------------
@@ -74,6 +78,18 @@ def main(args=get_args()):
             if ready:  # If there is input to read
                 user_input = sys.stdin.readline().strip()
                 print("your operation is:", user_input)
+                while True: # check the legality of input
+                    try:
+                        result = eval(user_input)
+                        if not isinstance(result, tuple):
+                            print("The input is not a tuple, please input again:")
+                            continue
+                        else:
+                            print("ok")
+                            break
+                    except Exception as e:
+                        print("Input Error. Please input again: ", e)
+                        continue
                 """skill is like: 
                 ("move_forward", 0.1)
                 ("move_backward", 0.1)
@@ -83,9 +99,12 @@ def main(args=get_args()):
                 ("move_left", 0.1)
                 ("move_right", 0.1)
                 ("get_velocity",)
+                ("reach", "box_of_yogurt")
+                ("grasp", )
+                ("release", )
                 """
                 pipe.write(
-                    data=eval(user_input),
+                    data=result,
                     role="client"
                 )
             

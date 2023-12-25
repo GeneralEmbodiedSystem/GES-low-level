@@ -33,6 +33,8 @@ def emit_grasp(pipe: PipeManager, local_vars: dict):
     # hand action buffer
     buffer: dict = local_vars['active_actions']['hand_action']
 
+    if 'tgt_joint_pos' not in buffer:
+        buffer['tgt_joint_pos'] = {}
     buffer['tgt_joint_pos']['grasp'] = ([0., 0.], robot.gripper_control_idx[left_or_right])
 
 
