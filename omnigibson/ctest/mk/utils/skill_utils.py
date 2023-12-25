@@ -40,6 +40,9 @@ def lift_trunk_body(robot: TiagoAdvanced):
         # drive=True,
     )
 
+def convert_degree_to_radian(degree: float):
+    return degree / 180 * np.pi
+
 # Transfer rgba image to rgb image
 def rgba2rgb(rgba, background=(255,255,255)):
     row, col, ch = rgba.shape
@@ -122,10 +125,28 @@ def execute_look_at(robot: TiagoAdvanced, look_at_pos, buffer: dict):
     camera_joint_pos, camera_idx = robot.look_at(goal_pos=look_at_pos)
     buffer['tgt_joint_pos']['camera'] = (camera_joint_pos, camera_idx)
 
-# TODO: implementation
-def execute_look_up(robot: TiagoAdvanced, look_at_pos, buffer: dict):
-    camera_joint_pos, camera_idx = robot.look_at(goal_pos=look_at_pos)
-    buffer['tgt_joint_pos']['camera'] = (camera_joint_pos, camera_idx)
+
+def execute_look_up(robot: TiagoAdvanced, buffer: dict, degree: float):
+    assert degree >= 0 and degree <= 60
+    tilt = convert_degree_to_radian(degree)
+    buffer['tgt_joint_pos']['camera'] = (
+        np.array([0., tilt]),
+        robot.camera_control_idx
+    )
+
+def execute_look_down(robot: TiagoAdvanced, buffer: dict, degree: float):
+    assert degree >= 0 and degree <= 60
+    tilt = convert_degree_to_radian(degree)
+    buffer['tgt_joint_pos']['camera'] = (
+        np.array([0., -tilt]),
+        robot.camera_control_idx
+    )
+
+def execute_look_forward(robot: TiagoAdvanced, buffer: dict):
+    buffer['tgt_joint_pos']['camera'] = (
+        np.array([0., 0.]),
+        robot.camera_control_idx
+    )
 
 def execute_grasp(robot: TiagoAdvanced, buffer: dict, left_or_right: str = 'left'):
     buffer['tgt_joint_pos']['grasp'] = ([0., 0.], robot.gripper_control_idx[left_or_right])

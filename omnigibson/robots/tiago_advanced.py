@@ -229,6 +229,15 @@ class TiagoAdvanced(Tiago):
         return pos
 
     @property
+    def camera_control_idx(self):
+        """
+        Returns:
+            n-array: Indices in low-level control vector corresponding to [pan, tilt] camera joints.
+        """
+        # actually it's [pan, tilt]
+        return np.array([9, 12])
+
+    @property
     def front_right_scan_sensor(self):
         '''
         @return (VisionSensor, None): the Lidar sensor on the front right of TiagoAdvanced
