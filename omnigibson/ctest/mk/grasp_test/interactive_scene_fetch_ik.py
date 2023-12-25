@@ -28,7 +28,7 @@ import omni
 from utils.prim_utils import get_pos_by_prim_path, get_pos_by_prim_path_physxApi
 from utils.simulator_utils import custom_step
 from utils.skill_utils import lift_trunk_body, execute_grasp, execute_ik, execute_look_at, \
-    execute_record
+    execute_record, execute_look_down, execute_look_forward, execute_look_up
 
 # Params to be set as needed.
 SCENES = ["Beechwood_0_int"]
@@ -249,6 +249,14 @@ def benchmark_scene(scene_name, optimized=False, import_robot=True, random_selec
             # execute_ik(ik_solver, robot, tgt_pos, buffer, quat=np.array([0, 0, 0, 1]),
             #            weight_pos=100000.0, weight_quat=0.001)
             execute_ik(ik_solver, robot, tgt_pos, buffer)
+        
+        # camera look
+        if step % 150 == 0:
+            execute_look_up(robot, buffer, 45)
+        elif step % 150 == 50:
+            execute_look_forward(robot, buffer)
+        elif step % 150 == 100:
+            execute_look_down(robot, buffer, 45)
         # execute_grasp(robot, buffer, 'left')
         # og.log.info(f'mk action_idx: {action_idx}, action_val: {action_val}')
         # print(f'joint pos: {robot.get_joint_positions()[control_idx]}')
@@ -264,7 +272,7 @@ def benchmark_scene(scene_name, optimized=False, import_robot=True, random_selec
         # og.log.info(f'mk action: {action}')
         # env.step(action)
         # for _ in range(10):
-        execute_look_at(robot, tgt_pos, buffer)
+        # execute_look_at(robot, tgt_pos, buffer)
         
         custom_step(robot, buffer)
         step += 1
