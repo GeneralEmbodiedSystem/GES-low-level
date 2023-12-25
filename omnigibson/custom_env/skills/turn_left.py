@@ -3,6 +3,8 @@ Define the turn_left skill.
 """
 from servers.utils import PipeManager
 
+from omnigibson.custom_env.utils.constant_utils import MEASURED_TURN_SPEED
+
 
 def emit_turn_left(pipe: PipeManager, global_states: dict, angle: int):
     """Turn the robot left. This function only set a `turn_left` state. 
@@ -45,7 +47,7 @@ def execute_turn_left(pipe: PipeManager, global_states: dict, angle: int):
 
     if global_states['turn_steps'] < angle:
         global_states['turn_steps'] += 1
-        action[2] = 0.341
+        action[2] = MEASURED_TURN_SPEED
     else:
         pipe.write(
             data="turn_left success",

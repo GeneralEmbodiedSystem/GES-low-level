@@ -321,19 +321,21 @@ def main(random_selection=False, headless=False, short_exec=False):
         # grasp(robot)
         
         action = np.zeros(robot.action_dim)
-        if step == 100:
-            execute_ik(ik_solver, robot, above_tgt_pos1, buffer)
-        elif step == 600:
-            execute_ik(ik_solver, robot, above_tgt_pos2, buffer)
-        elif step == 750:
-            execute_grasp(robot, buffer, 'left')
-        elif step == 900:
-            trash_can_pos = get_pos_by_prim_path_physxApi("/World/trash_can/base_link")
-            trash_can_above_pos = trash_can_pos.copy()
-            trash_can_above_pos[-1] = 0.5
-            execute_ik(ik_solver, robot, trash_can_above_pos, buffer)
-        elif step == 1400:
-            execute_release(robot, buffer, 'left')
+        DUMMY = True
+        if not DUMMY:
+            if step == 100:
+                execute_ik(ik_solver, robot, above_tgt_pos1, buffer)
+            elif step == 600:
+                execute_ik(ik_solver, robot, above_tgt_pos2, buffer)
+            elif step == 750:
+                execute_grasp(robot, buffer, 'left')
+            elif step == 900:
+                trash_can_pos = get_pos_by_prim_path_physxApi("/World/trash_can/base_link")
+                trash_can_above_pos = trash_can_pos.copy()
+                trash_can_above_pos[-1] = 0.5
+                execute_ik(ik_solver, robot, trash_can_above_pos, buffer)
+            elif step == 1400:
+                execute_release(robot, buffer, 'left')
         
         # elif step == 1500:
         #     execute_ik(ik_solver, robot, tgt_pos, buffer)
@@ -354,9 +356,13 @@ def main(random_selection=False, headless=False, short_exec=False):
         # og.log.info(f'mk action: {action}')
         # env.step(action)
         # for _ in range(10):
-        execute_look_at(robot, tgt_pos, buffer)
+        
+        
+        # execute_look_at(robot, tgt_pos, buffer)
         
         custom_step(robot, buffer)
+        # env.step(action)
+        
         step += 1
         print(f'step: {step}')
         
