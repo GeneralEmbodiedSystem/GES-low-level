@@ -31,3 +31,13 @@ def check_turn_end(init_z_angle, left_or_right, turn_radian, now_z_angle):
     
     # out of range, end
     return True
+
+def calculate_distance(start_pos, end_pos):
+    '''
+    calculate the distance between two points
+    
+    Args:
+        start_pos (list): the start position of the robot
+        end_pos (list): the end position of the robot
+    '''
+    return np.linalg.norm(np.array(start_pos) - np.array(end_pos))

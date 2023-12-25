@@ -1,9 +1,15 @@
 """
 Define the move_left skill.
 """
+import numpy as np
+
 from servers.utils import PipeManager
 
+from omnigibson.utils.transform_utils import quat2euler
+
+from omnigibson.robots import TiagoAdvanced
 from omnigibson.custom_env.utils.constant_utils import MOVE_LEFT_VEL
+from omnigibson.custom_env.utils.eular_utils import calculate_distance
 
 
 def emit_move_left(pipe: PipeManager, global_states: dict, dist: float):
@@ -17,15 +23,16 @@ def emit_move_left(pipe: PipeManager, global_states: dict, dist: float):
             other functions.
         dist (float): distance (in meter) to move left (`dist > 0`).
     """
-    robot = global_states['robot']
+    # extra robot
+    robot: TiagoAdvanced = global_states['robot']
+    
     global_states['active_actions']['move_action'] = {
         'func': 'move_left',
         'args': {
             'dist': dist
-        }
+        },
+        'init_pos': robot.get_position(),
     }
-    # Current position of the robot
-    global_states['init_y'] = robot.get_position()[1]
 
     # We have now send the command to the simulation,
     # but we need to wait for the robot to actually move
@@ -42,13 +49,18 @@ def execute_move_left(pipe: PipeManager, global_states: dict, dist: float):
             other functions.
         dist (float): distance (in meter) to move left (`dist > 0`).
     """
+    # extract params
     action = global_states['action']
-    robot = global_states['robot']
-    init_y = global_states['init_y']
-    move_exception = global_states['active_actions']['move_exception']
+    robot: TiagoAdvanced = global_states['robot']
+    init_pos = global_states['active_actions']['move_action']['init_pos']
+    # move_exception = global_states['active_actions']['move_exception']
 
-    if abs(robot.get_position()[1] - init_y) <= dist:
-        action[1] = MOVE_LEFT_VEL
+    z_radian = quat2euler(robot.get_orientation())[2]
+    x_vel = MOVE_LEFT_VEL * np.sin(z_radian)
+    y_vel = MOVE_LEFT_VEL * np.cos(z_radian)
+
+    if calculate_distance(init_pos, robot.get_position()) <= dist:
+        action[0] = x_vel; action[1] = y_vel
     else:
         pipe.write(
             data="move_left success",
