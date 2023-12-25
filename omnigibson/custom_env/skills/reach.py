@@ -11,7 +11,9 @@ from omnigibson.robots.tiago_advanced import TiagoAdvanced
 from omnigibson.utils.control_utils import IKSolver
 from omnigibson.utils.hand_skill_utils import check_joint_move
 
+
 left_or_right = 'left'
+
 
 def emit_reach(pipe: PipeManager, global_states: dict, object: str):
     """Control arm to reach a object.
@@ -35,9 +37,14 @@ def emit_reach(pipe: PipeManager, global_states: dict, object: str):
         eef_name=robot.eef_link_names[robot.default_arm],
     )
     
-    print('''I'm in reach operator!!''')
-    
     # rule-based procedures
+    reach_procedures = []
+    reach_process = {
+        'reach_procedures': reach_procedures,
+        'reach_phase': 0,
+    }
+    if 'trash_can' in object:
+        
     
     # define the object name to reach in local vars
     global_states['active_actions']['hand_action'] = {
@@ -55,6 +62,7 @@ def emit_reach(pipe: PipeManager, global_states: dict, object: str):
     buffer: dict = global_states['active_actions']['hand_action']
 
     execute_ik(ik_solver, robot, get_pos_by_prim_path_physxApi(f'/World/{object}/base_link'), buffer)
+    buffer['tgt_joint_pos']['release'] = ([0.045, 0.045], robot.gripper_control_idx[left_or_right]) # release
 
 
 def execute_reach(pipe: PipeManager, global_states: dict, object: str):
@@ -95,6 +103,8 @@ def execute_reach(pipe: PipeManager, global_states: dict, object: str):
             role="server"
         )
         global_states['active_actions']['hand_action'] = None
+        
+        print(f'mk reach {object} success')
         
         # hand action is over
         return action
