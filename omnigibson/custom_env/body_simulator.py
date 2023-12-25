@@ -18,7 +18,6 @@ from omnigibson.custom_env.skills.move_left import emit_move_left, execute_move_
 from omnigibson.custom_env.skills.move_right import emit_move_right, execute_move_right
 from omnigibson.custom_env.skills.turn_left import emit_turn_left, execute_turn_left
 from omnigibson.custom_env.skills.turn_right import emit_turn_right, execute_turn_right
-from omnigibson.custom_env.skills.brake import emit_brake
 from omnigibson.custom_env.skills.reach import emit_reach, execute_reach
 from omnigibson.custom_env.skills.grasp import emit_grasp, execute_grasp
 from omnigibson.custom_env.skills.release import emit_release, execute_release
@@ -41,7 +40,6 @@ skillset = {
     'move_right': (emit_move_right, execute_move_right),
     'turn_left': (emit_turn_left, execute_turn_left),
     'turn_right': (emit_turn_right, execute_turn_right),
-    'brake': (emit_brake, ),
     'reach': (emit_reach, execute_reach),
     'grasp': (emit_grasp, execute_grasp),
     'release': (emit_release, execute_release),

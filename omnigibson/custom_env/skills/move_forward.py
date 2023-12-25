@@ -64,7 +64,7 @@ def execute_move_forward(pipe: PipeManager, global_states: dict, dist: float):
         action[0] = x_vel; action[1] = y_vel
     else:
         pipe.write(
-            data="move_forward success",
+            data="Robot moved forward successfully.",
             role="server"
         )
         # Erase the corresponding active action

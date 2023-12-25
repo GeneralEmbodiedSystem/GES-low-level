@@ -64,7 +64,7 @@ def execute_move_backward(pipe: PipeManager, global_states: dict, dist: float):
     else:
         # Send ack to the server
         pipe.write(
-            data="move_backward success",
+            data="Robot moved backward successfully.",
             role="server"
         )
         # Erase the corresponding active action
