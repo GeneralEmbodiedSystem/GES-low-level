@@ -13,19 +13,19 @@ from omnigibson.utils.hand_skill_utils import check_joint_move
 
 left_or_right = 'left'
 
-def emit_reach(pipe: PipeManager, local_vars: dict, object: str):
+def emit_reach(pipe: PipeManager, global_states: dict, object: str):
     """Control arm to reach a object.
 
     Args:
         pipe: a wrapper of shared memory used to communicate between 
             the simulator process and the server process.
-        local_vars: a dict used to store local variables, which are shared with
+        global_states: a dict used to store local variables, which are shared with
             other functions.
         object (str): the name in prim path defined in isaac, e.g. 
             'delicious_apple' in '/World/delicious_apple'
     """
     
-    robot: TiagoAdvanced = local_vars['robot']
+    robot: TiagoAdvanced = global_states['robot']
     
     # define ik solver
     ik_solver = IKSolver(
@@ -36,7 +36,7 @@ def emit_reach(pipe: PipeManager, local_vars: dict, object: str):
     )
     
     # define the object name to reach in local vars
-    local_vars['active_actions']['hand_action'] = {
+    global_states['active_actions']['hand_action'] = {
         'func': 'reach',
         'args': {
             'object': object,
@@ -47,29 +47,29 @@ def emit_reach(pipe: PipeManager, local_vars: dict, object: str):
     }
     
     # hand action buffer
-    buffer: dict = local_vars['active_actions']['hand_action']
+    buffer: dict = global_states['active_actions']['hand_action']
 
     execute_ik(ik_solver, robot, get_pos_by_prim_path_physxApi(f'/World/{object}/base_link'), buffer)
 
 
-def execute_reach(pipe: PipeManager, local_vars: dict, object: str):
+def execute_reach(pipe: PipeManager, global_states: dict, object: str):
     """generate action for reach
 
     Args:
         pipe: a wrapper of shared memory used to communicate between 
             the simulator process and the server process.
-        local_vars: a dict used to store local variables, which are shared with
+        global_states: a dict used to store local variables, which are shared with
             other functions.
         object (str): the name in prim path defined in isaac, e.g. 
             'delicious_apple' in '/World/delicious_apple'
     """
     # We need to wait for the robot to actually turn
     # So we keep sending the same action until the robot has turned enough
-    action = local_vars['action']
-    robot: TiagoAdvanced = local_vars['robot']
+    action = global_states['action']
+    robot: TiagoAdvanced = global_states['robot']
     
     # hand action buffer
-    buffer: dict = local_vars['active_actions']['hand_action']
+    buffer: dict = global_states['active_actions']['hand_action']
     
     # extract params from buffer
     ik_solver: IKSolver = buffer['ik_solver']
@@ -83,15 +83,12 @@ def execute_reach(pipe: PipeManager, local_vars: dict, object: str):
     ik_has_effect |= (not end_ik_flag)
     buffer['ik_has_effect'] = ik_has_effect
     
-    # last ik do not move && last ik ends
-    print(f'ik_has_effect: {ik_has_effect}, end_ik_flag: {end_ik_flag}')
-    
     if not ik_has_effect and end_ik_flag:
         pipe.write(
             data="reach success",
             role="server"
         )
-        local_vars['active_actions']['hand_action'] = None
+        global_states['active_actions']['hand_action'] = None
         
         # hand action is over
         return action
@@ -99,7 +96,7 @@ def execute_reach(pipe: PipeManager, local_vars: dict, object: str):
     if end_ik_flag:
         execute_ik(ik_solver, robot, get_pos_by_prim_path_physxApi(f'/World/{object}/base_link'), buffer)
     
-    # return None means using hand_custom_step(robot, local_vars['active_actions']['hand_action']) 
+    # return None means using hand_custom_step(robot, global_states['active_actions']['hand_action']) 
     # instead of env.step(action).
     return None
 
@@ -120,8 +117,6 @@ def execute_ik(ik_solver, robot: TiagoAdvanced, pos, buffer: dict, quat=None, ma
     if 'tgt_joint_pos' not in buffer:
         buffer['tgt_joint_pos'] = {}
     buffer['tgt_joint_pos']['ik'] = (joint_pos, control_idx)
-    print(f'tgt joint pos: {joint_pos}')
-    # print('ik ready')
 
 
 def get_pos_by_prim_path_physxApi(prim_path: str):

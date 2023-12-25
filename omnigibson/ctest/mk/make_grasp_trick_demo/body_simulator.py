@@ -189,7 +189,7 @@ def main(random_selection=False, headless=False, short_exec=False):
         env.close()
 
 
-def execute_message(pipe: PipeManager, local_vars: dict):
+def execute_message(pipe: PipeManager, global_states: dict):
     '''this function only set the low level to a given state. the actual movement(generate action at each time) is done in generate_action
     @param message(tuple): (CMD, *args)
         (get_image, ...)
@@ -204,33 +204,33 @@ def execute_message(pipe: PipeManager, local_vars: dict):
     og.log.info(f"message: {message}")
     # `skillset[message[0]][0]` is like emit_xxx. 
     # It only set the action to be taken
-    skillset[message[0]][0](pipe, local_vars, *message[1:])
+    skillset[message[0]][0](pipe, global_states, *message[1:])
 
 
-def generate_action(pipe: PipeManager, local_vars: dict):
+def generate_action(pipe: PipeManager, global_states: dict):
     """
     Generate action for the robot according to `active_actions`.
     This function is called at each time step.
     """
-    env, robot = local_vars['env'], local_vars['robot']
-    action = local_vars['action']
+    env, robot = global_states['env'], global_states['robot']
+    action = global_states['action']
 
     # Like execute_xxx, it applies the action to the robot action vector
-    skill_executed = local_vars['active_actions']['move_action']
+    skill_executed = global_states['active_actions']['move_action']
     if isinstance(skill_executed, MoveException) and not skill_executed.recovered:
         # If the robot collides with the environment, get an recovery action
         skill_executed = skill_executed.get_recovery_action()
-        local_vars['active_actions']['move_action'].recovered_steps -= 1
-        if local_vars['active_actions']['move_action'].recovered_steps <= 0:
+        global_states['active_actions']['move_action'].recovered_steps -= 1
+        if global_states['active_actions']['move_action'].recovered_steps <= 0:
             # If the robot has recovered from the exception, make it ready
-            local_vars['active_actions']['move_action'].recovered = True
+            global_states['active_actions']['move_action'].recovered = True
             robot.ready = True
     if skill_executed is not None and not isinstance(skill_executed, MoveException):
         skill_execute_func = skillset[skill_executed['func']][1]
         args = skill_executed['args']
-        action = skill_execute_func(pipe, local_vars, **args)
+        action = skill_execute_func(pipe, global_states, **args)
     
-    local_vars['action'] = action
+    global_states['action'] = action
     return
 
 
