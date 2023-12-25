@@ -44,7 +44,7 @@ def emit_reach(pipe: PipeManager, global_states: dict, object: str):
         'reach_phase': 0,
     }
     if 'trash_can' in object:
-        
+        pass
     
     # define the object name to reach in local vars
     global_states['active_actions']['hand_action'] = {

@@ -25,6 +25,8 @@ from omnigibson.custom_env.skills.release import emit_release, execute_release
 
 from omnigibson.robots import TiagoAdvanced
 
+from omnigibson.utils.transform_utils import quat2euler
+
 from omnigibson.controllers.ik_controller import InverseKinematicsController
 from omnigibson.controllers.null_joint_controller import NullJointController
 
@@ -308,7 +310,15 @@ def update_env(robot: TiagoAdvanced, global_states: dict):
             drive=True,
         )
     
+    file_log(f'''robot orientation: {robot.get_orientation()}
+quat2euler: {quat2euler(robot.get_orientation())}
+''')
+    
     og.sim.step()
+
+def file_log(log: str):
+    with open('./tmp.log', 'w') as f:
+        f.write(log)
 
 if __name__ == "__main__":
     main()
