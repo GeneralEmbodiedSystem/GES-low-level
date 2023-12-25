@@ -8,7 +8,7 @@ from servers.utils import PipeManager
 from omnigibson.utils.transform_utils import quat2euler
 
 from omnigibson.robots import TiagoAdvanced
-from omnigibson.custom_env.utils.constant_utils import TURN_SPEED
+from omnigibson.custom_env.utils.constant_utils import TURN_RIGHT_SPEED
 from omnigibson.custom_env.utils.eular_utils import check_turn_end
 
 
@@ -62,7 +62,7 @@ def execute_turn_right(pipe: PipeManager, global_states: dict, angle: int):
     radian = angle / 180 * np.pi
     
     if not check_turn_end(init_z_angle, left_or_right, radian, quat2euler(robot.get_orientation())[2]):
-        action[2] = TURN_SPEED
+        action[2] = TURN_RIGHT_SPEED
     else:
         pipe.write(
             data="turn_right success",

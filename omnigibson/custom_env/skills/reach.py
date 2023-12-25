@@ -38,10 +38,11 @@ def emit_reach(pipe: PipeManager, global_states: dict, object: str):
     )
     
     # rule-based procedures
-    reach_procedures = []
+    # [(x1, y1, z1), (x2, y2, z2)]
+    waypoints = []
     reach_process = {
-        'reach_procedures': reach_procedures,
-        'reach_phase': 0,
+        'waypoints': waypoints,
+        'waypoint_index': 0,
     }
     if 'trash_can' in object:
         pass
