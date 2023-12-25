@@ -35,7 +35,7 @@ OmniGibson需要在一个python 3.7的环境下运行。
     - Parameter: None
     - Return: a Dict, with these key-value pairs:
         1. `image_rgb`: Get the RGB image seen by the robot from the current perspective.
-        2. `image_depth`:  Get the depth image seen by the robot from the current perspective.
+        2. `image_depth`:  Get the depth image seen by the robot from the current perspective. The values are not normalized.
 
 
 ### Move Body

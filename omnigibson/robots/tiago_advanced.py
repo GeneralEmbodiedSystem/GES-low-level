@@ -67,6 +67,8 @@ class TiagoAdvanced(Tiago):
         self.focal_length = 10.0 # zoom out
         # Whether the robot is ready to perform actions
         self.ready = True
+        # Add more modalities
+        self.vision_sensor.add_modality("depth_linear")
     
     def look_at(self, goal_pos: np.ndarray):
         '''
