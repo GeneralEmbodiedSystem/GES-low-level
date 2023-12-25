@@ -1,5 +1,5 @@
 """
-Define the grasp skill.
+Define the look forward skill.
 """
 from servers.utils import PipeManager
 
@@ -35,8 +35,8 @@ def emit_look_forward(pipe: PipeManager, local_vars: dict):
 
     execute_look_forward(robot, buffer)
 
-def execute_grasp(pipe: PipeManager, local_vars: dict):
-    """generate action for grasp
+def execute_look_forward(pipe: PipeManager, local_vars: dict):
+    """generate action for look forward
 
     Args:
         pipe: a wrapper of shared memory used to communicate between 
@@ -52,7 +52,7 @@ def execute_grasp(pipe: PipeManager, local_vars: dict):
     # hand action buffer
     buffer: dict = local_vars['active_actions'][ACTION_CATAGORY]
     
-    # check end of a grasp according to the joint pos delta
+    # check end of a look forward according to the joint pos delta
     end_ik_flag = check_joint_move(robot, buffer, robot.camera_control_idx)
     
     # last ik do not move && last ik ends

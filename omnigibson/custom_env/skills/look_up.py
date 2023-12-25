@@ -1,5 +1,5 @@
 """
-Define the grasp skill.
+Define the look up skill.
 """
 from servers.utils import PipeManager
 
@@ -38,8 +38,8 @@ def emit_look_up(pipe: PipeManager, local_vars: dict, degree: float):
 
     execute_look_up(robot, buffer, degree)
 
-def execute_grasp(pipe: PipeManager, local_vars: dict, degree: float):
-    """generate action for grasp
+def execute_look_up(pipe: PipeManager, local_vars: dict, degree: float):
+    """generate action for look up
 
     Args:
         pipe: a wrapper of shared memory used to communicate between 
@@ -56,7 +56,7 @@ def execute_grasp(pipe: PipeManager, local_vars: dict, degree: float):
     # hand action buffer
     buffer: dict = local_vars['active_actions'][ACTION_CATAGORY]
     
-    # check end of a grasp according to the joint pos delta
+    # check end of a look up according to the joint pos delta
     end_ik_flag = check_joint_move(robot, buffer, robot.camera_control_idx)
     
     # last ik do not move && last ik ends

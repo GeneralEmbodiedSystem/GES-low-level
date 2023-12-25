@@ -1,5 +1,5 @@
 """
-Define the grasp skill.
+Define the look down skill.
 """
 from servers.utils import PipeManager
 
@@ -38,8 +38,8 @@ def emit_look_down(pipe: PipeManager, local_vars: dict, degree: float):
 
     execute_look_down(robot, buffer, degree)
 
-def execute_grasp(pipe: PipeManager, local_vars: dict, degree: float):
-    """generate action for grasp
+def execute_look_down(pipe: PipeManager, local_vars: dict, degree: float):
+    """generate action for look down
 
     Args:
         pipe: a wrapper of shared memory used to communicate between 
@@ -56,7 +56,7 @@ def execute_grasp(pipe: PipeManager, local_vars: dict, degree: float):
     # hand action buffer
     buffer: dict = local_vars['active_actions'][ACTION_CATAGORY]
     
-    # check end of a grasp according to the joint pos delta
+    # check end of a look down according to the joint pos delta
     end_ik_flag = check_joint_move(robot, buffer, robot.camera_control_idx)
     
     # last ik do not move && last ik ends
