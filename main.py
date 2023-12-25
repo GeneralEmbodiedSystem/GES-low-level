@@ -4,8 +4,8 @@ import os
 from os.path import join
 import sys
 import select
-
 import yaml
+import argparse
 
 from servers import start_server, PipeManager
 
@@ -25,19 +25,29 @@ TMP_PATH = server_config['tmp_path']
 SHM_NAME_INTER = server_config['shm_ser_sim']['name']
 SHM_SIZE_INTER = server_config['shm_ser_sim']['size']
 
+def get_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--simulator_path", "-sp", type=str, default=None, 
+                        help="specify which body_simulator.py to use, for mk testing.")
+    args = parser.parse_args()
+    
+    return args
 
-def start_simulator():
+def start_simulator(*args):
+    args = args[0]
+    
+    EXECUTE_FILE = start_up_config["system_cfg"]["EXECUTE_FILE"] if args.simulator_path is None else args.simulator_path
     bash_components = f'''#!/bin/bash
         source {join(start_up_config["system_cfg"]["CONDA_DIR_PATH"], 'bin/activate')} {start_up_config["system_cfg"]["CONDA_ENV_NAME"]}
         python --version
-        python {start_up_config["system_cfg"]["EXECUTE_FILE"]} --config_file {start_up_config["system_cfg"]["ENV_CONFIG_FILE"]}'''
+        python {EXECUTE_FILE} --config_file {start_up_config["system_cfg"]["ENV_CONFIG_FILE"]}'''
     bash_path = 'omnigibson/custom_env/start_simulator.sh'
     with open(bash_path, 'w') as f:
         f.write(bash_components)
     os.system(f"bash {bash_path}")
 
 
-def main():
+def main(args=get_args()):
     # This is for internal communication between the simulator process 
     # and the server process. Here, the 'client' is the server process,
     # which forwards the remote client's request to the simulator.
@@ -49,12 +59,12 @@ def main():
     )
     
     # start simulator
-    simulator_p = mp.Process(target=start_simulator)
+    simulator_p = mp.Process(target=start_simulator, args=(args,))
     simulator_p.start()
 
     # start communication with high level server
     try:
-        start_server(pipe_manager)
+        # start_server(pipe_manager)
 
         # ------------------ Start Test Skills ------------------
         pipe = pipe_manager

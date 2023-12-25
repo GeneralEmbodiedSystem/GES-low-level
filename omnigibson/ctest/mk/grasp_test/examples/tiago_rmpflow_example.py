@@ -3,6 +3,8 @@ import numpy as np
 import os
 from os.path import join, exists
 
+from copy import deepcopy
+
 # import omnigibson as og
 # from omnigibson.macros import gm
 # from omnigibson.sensors import VisionSensor
@@ -135,7 +137,8 @@ class TiagoRmpFlowExample():
                 # scale=[0.04, 0.04, 0.04],
                 # position=np.array([0.5, 0.0, 0.7]),
                 # position=np.array([0.3657, 0.56207, 0.7]),
-                position=np.array([0.56539, -0.20931, 0.09604]),
+                # position=np.array([0.56539, -0.20931, 0.09604]), # RIGHT FRONT
+                position=np.array([0.18518, 0.65411, 0.32218]), # RIGHT LEFT
                 # position=np.array([-0.32251, 0.45554, 0.24932]),
                 orientation=euler_angles_to_quats([0, np.pi, 0]),
                 color=np.array([1.0, 0.0, 0.0])
@@ -202,10 +205,20 @@ class TiagoRmpFlowExample():
             # Set the robot gains to be deliberately poor
             # bad_proportional_gains = self._articulation.get_articulation_controller().get_gains()[0] / 50
             # print(f'gains: {self._articulation.get_articulation_controller().get_gains()}')
-            now_gains = self._articulation.get_articulation_controller().get_gains()[0]
-            bad_proportional_gains = now_gains / 1e7
-            print(f'bad_proportional_gains: {bad_proportional_gains}')
-            self._articulation.get_articulation_controller().set_gains(kps = bad_proportional_gains)
+            kps = np.array(
+                # [1200000., 120000., 1200000., 120000., 5000., 3000., 10000., 1200., 1200.]
+                [1200000., 120000., 5000., 3000., 10000., 1200., 1200.]
+            )
+            kds = np.array(
+                # [600000., 60000., 300000., 30000., 3000., 3000., 3000., 1000., 1000.]
+                [300000., 30000., 3000., 3000., 3000., 1000., 1000.]
+            )
+            now_gains = deepcopy(self._articulation.get_articulation_controller().get_gains())
+            now_gains[0][self._left_arm_indices] = kps
+            now_gains[1][self._left_arm_indices] = kds
+            self._articulation.get_articulation_controller().set_gains(
+                kps=now_gains[0], kds=now_gains[1]
+            )
 
         #Use the ArticulationMotionPolicy wrapper object to connect rmpflow to the Franka robot articulation.
         self._articulation_rmpflow = ArticulationMotionPolicy(self._articulation, self._rmpflow)
