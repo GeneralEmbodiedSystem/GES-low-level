@@ -16,7 +16,7 @@ class MoveException(BaseRobotException):
         self.cur_recover_step = 0
     
     def __str__(self):
-        return "Collision detected: robot cannot move {}. It has stopped now.".format(self.direction)
+        return "Robot cannot move {} because of collision detected.".format(self.direction)
 
     def get_recovery_action(self, action):
         if self.direction == "forward":

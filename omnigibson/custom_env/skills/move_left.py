@@ -63,7 +63,7 @@ def execute_move_left(pipe: PipeManager, global_states: dict, dist: float):
         action[0] = x_vel; action[1] = y_vel
     else:
         pipe.write(
-            data="move_left success",
+            data="Robot moved left successfully.",
             role="server"
         )
         # Erase the corresponding active action

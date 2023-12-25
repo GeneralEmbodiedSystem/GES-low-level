@@ -65,7 +65,7 @@ def execute_turn_right(pipe: PipeManager, global_states: dict, angle: int):
         action[2] = TURN_RIGHT_SPEED
     else:
         pipe.write(
-            data="turn_right success",
+            data="Robot turned right successfully.",
             role="server"
         )
         # Erase the corresponding active action
