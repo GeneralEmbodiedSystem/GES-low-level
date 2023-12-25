@@ -3,8 +3,7 @@ Define the move_left skill.
 """
 from servers.utils import PipeManager
 
-
-MOVE_LEFT_VEL = 0.2
+from omnigibson.custom_env.utils.constant_utils import MOVE_LEFT_VEL
 
 
 def emit_move_left(pipe: PipeManager, global_states: dict, dist: float):

@@ -3,8 +3,9 @@ Define the move_forward skill.
 """
 from servers.utils import PipeManager
 
+import omnigibson.utils.transform_utils as T
 
-MOVE_FORWARD_VEL = 0.2
+from omnigibson.custom_env.utils.constant_utils import MOVE_FORWARD_VEL
 
 
 def emit_move_forward(pipe: PipeManager, global_states: dict, dist: float):

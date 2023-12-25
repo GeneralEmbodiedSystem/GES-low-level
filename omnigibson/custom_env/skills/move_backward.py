@@ -3,8 +3,9 @@ Define the move_backward skill.
 """
 from servers.utils import PipeManager
 
+import omnigibson.utils.transform_utils as T
 
-MOVE_BACKWARD_VEL = -0.2
+from omnigibson.custom_env.utils.constant_utils import MOVE_BACKWARD_VEL
 
 
 def emit_move_backward(pipe: PipeManager, global_states: dict, dist: float):

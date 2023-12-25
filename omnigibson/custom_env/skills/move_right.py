@@ -3,8 +3,8 @@ Define the move_right skill.
 """
 from servers.utils import PipeManager
 
+from omnigibson.custom_env.utils.constant_utils import MOVE_RIGHT_VEL
 
-MOVE_RIGHT_VEL = -0.2
 
 
 def emit_move_right(pipe: PipeManager, global_states: dict, dist: float):
