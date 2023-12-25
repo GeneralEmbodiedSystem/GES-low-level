@@ -25,6 +25,10 @@ from omnigibson.custom_env.skills.reach import emit_reach, execute_reach
 from omnigibson.custom_env.skills.grasp import emit_grasp, execute_grasp
 from omnigibson.custom_env.skills.release import emit_release, execute_release
 
+from omnigibson.robots import TiagoAdvanced
+
+from omnigibson.controllers.ik_controller import InverseKinematicsController
+from omnigibson.controllers.null_joint_controller import NullJointController
 
 from omnigibson.utils.ui_utils import create_module_logger
 log = create_module_logger(module_name=__name__)
@@ -107,7 +111,7 @@ def main(random_selection=False, headless=False, short_exec=False):
     env = og.Environment(configs=cfg, action_timestep=1/60., physics_timestep=1/60.)
 
     # Reset the robot
-    robot = env.robots[0]
+    robot: TiagoAdvanced = env.robots[0]
 
     # TODO: remove hard code
     # robot.set_position(sim_config["other_init_cfg"]["robot_position"])  # robot0_cfg["position"]
@@ -177,10 +181,14 @@ def main(random_selection=False, headless=False, short_exec=False):
     for global_states_key in global_states_keys:
         global_states[global_states_key] = eval(global_states_key)
     
+    print(f'base control idx: {robot.base_control_idx}')
+    print(f'action_dim: {robot.action_dim}')
+    
     try:
         while True:
             # If a collision happens, brake the robot
             handle_collision(global_states, ignore_objs)
+            
             # Prepare the action vector
             global_states['action'] = np.zeros(robot.action_dim)
             if robot.ready:
@@ -198,21 +206,10 @@ def main(random_selection=False, headless=False, short_exec=False):
             [12, 18]: right arm.
             """
             generate_action(pipe, global_states)  # call execute_xxx and set action
-            action = global_states['action']
-            
-            if active_actions['hand_action'] is not None:
-                # print("ji ni tai mei ", action)
-                pass
-            if active_actions['hand_action'] is not None:
-                # Use the physx interface to step the action
-                # print("step arm action by physx")
-                step_arm_action_by_physx(robot, global_states)
-            else:
-                env.step(action)
+            custom_step(robot, global_states)
     except KeyboardInterrupt:
         # Always shut down the environment cleanly at the end
         env.close()
-
 
 def execute_message(pipe: PipeManager, global_states: dict):
     '''this function only set the low level to a given state. the actual movement(generate action at each time) is done in generate_action
@@ -269,30 +266,47 @@ def generate_action(pipe: PipeManager, global_states: dict):
     return
 
 
-def step_arm_action_by_physx(robot, global_states: dict):
+def custom_step(robot: TiagoAdvanced, global_states: dict):
     """
     In this function, we use the physx interface (og.sim.step()) 
     to step the arm action instead of using the env.step() function.
     This is due to unknown compatibility issues.
     """
-    physx_action = global_states['active_actions']['hand_action']
-    tgt_joint_poses, tgt_control_idxes = [], []
-    # print("physx_action", physx_action)
-    for k, v in physx_action['tgt_joint_pos'].items():
-        tgt_joint_poses.append(v[0])
-        tgt_control_idxes.append(v[1])
-    if len(tgt_joint_poses) > 0:
-        tgt_joint_pos = np.concatenate(tgt_joint_poses)
-        tgt_control_idx = np.concatenate(tgt_control_idxes)
+    # extract vars
+    action = global_states['action']
+    
+    if action is None:
+        # concat hand action
+        # TODO: add head action
+        physx_action = global_states['active_actions']['hand_action']
+        tgt_joint_poses, tgt_joint_idxes = [], []
+        # print("physx_action", physx_action)
+        for k, v in physx_action['tgt_joint_pos'].items():
+            tgt_joint_poses.append(v[0])
+            tgt_joint_idxes.append(v[1])
+        if len(tgt_joint_poses) > 0:
+            tgt_joint_pos = np.concatenate(tgt_joint_poses)
+            tgt_joint_idx = np.concatenate(tgt_joint_idxes)
+            robot.set_joint_positions(
+                tgt_joint_pos, 
+                indices=tgt_joint_idx,
+                drive=True,
+            )
         robot.set_joint_positions(
             tgt_joint_pos, 
-            indices=tgt_control_idx,
+            indices=tgt_joint_idx,
+            drive=True,
+        )
+    else:
+        tgt_joint_vel = action[:3]
+        tgt_joint_idx = robot.base_control_idx
+        robot.set_joint_velocities(
+            tgt_joint_vel, 
+            indices=tgt_joint_idx, 
             drive=True,
         )
     
-    # simulator step
     og.sim.step()
-
 
 if __name__ == "__main__":
     main()

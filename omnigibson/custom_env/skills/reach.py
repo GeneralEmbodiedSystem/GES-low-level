@@ -35,12 +35,17 @@ def emit_reach(pipe: PipeManager, global_states: dict, object: str):
         eef_name=robot.eef_link_names[robot.default_arm],
     )
     
+    print('''I'm in reach operator!!''')
+    
+    # rule-based procedures
+    
     # define the object name to reach in local vars
     global_states['active_actions']['hand_action'] = {
         'func': 'reach',
         'args': {
             'object': object,
         },
+        # 'procedures': 
         'last_joint_pos': None,
         'ik_has_effect': True,
         'ik_solver': ik_solver,
