@@ -119,7 +119,10 @@ class FrankaRmpFlowExample():
 
             # Set the robot gains to be deliberately poor
             # bad_proportional_gains = self._articulation.get_articulation_controller().get_gains()[0]/50
-            bad_proportional_gains = self._articulation.get_articulation_controller().get_gains()[0] / 5
+            gains = self._articulation.get_articulation_controller().get_gains() # kps & kds
+            print(f'gains: {gains}')
+            bad_proportional_gains = gains[0]
+            print(f'bad_proportional_gains: {bad_proportional_gains}')
             self._articulation.get_articulation_controller().set_gains(kps = bad_proportional_gains)
 
         #Use the ArticulationMotionPolicy wrapper object to connect rmpflow to the Franka robot articulation.

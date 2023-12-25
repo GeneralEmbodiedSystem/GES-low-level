@@ -5,6 +5,8 @@ Example script demo'ing robot manipulation control with grasping.
 # TODO: make sticky mode valid
 # TODO: high position first, then fix hand not rotate, then reach the goal
 from typing import Union, Dict, List, Any
+import sys
+sys.path.append('..')
 
 import pprint
 import cv2
