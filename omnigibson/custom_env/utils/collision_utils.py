@@ -47,7 +47,7 @@ def handle_collision(global_states: dict, ignore_objs: tuple) -> None:
     Check whether the robot collides with the environment and handle the collision.
 
     Args:
-        global_states: a dict used to store local variables, which are shared with
+        global_states: a dict used to store global variables, which are shared with
             other functions.
         ignore_objs: the objects to be ignored when checking the collision.
             It will be IGNORED by Lidar.

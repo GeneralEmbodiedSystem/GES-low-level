@@ -19,7 +19,7 @@ def emit_reach(pipe: PipeManager, global_states: dict, object: str):
     Args:
         pipe: a wrapper of shared memory used to communicate between 
             the simulator process and the server process.
-        global_states: a dict used to store local variables, which are shared with
+        global_states: a dict used to store global variables, which are shared with
             other functions.
         object (str): the name in prim path defined in isaac, e.g. 
             'delicious_apple' in '/World/delicious_apple'
@@ -58,7 +58,7 @@ def execute_reach(pipe: PipeManager, global_states: dict, object: str):
     Args:
         pipe: a wrapper of shared memory used to communicate between 
             the simulator process and the server process.
-        global_states: a dict used to store local variables, which are shared with
+        global_states: a dict used to store global variables, which are shared with
             other functions.
         object (str): the name in prim path defined in isaac, e.g. 
             'delicious_apple' in '/World/delicious_apple'

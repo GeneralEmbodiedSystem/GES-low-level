@@ -11,7 +11,7 @@ def emit_move_backward(pipe: PipeManager, global_states: dict, vel_b: float):
     Args:
         pipe: a wrapper of shared memory used to communicate between 
             the simulator process and the server process.
-        global_states: a dict used to store local variables, which are shared with
+        global_states: a dict used to store global variables, which are shared with
             other functions.
         vel_b (float): velocity to move backward (`vel_b >= 0`).
     """
@@ -34,7 +34,7 @@ def execute_move_backward(pipe: PipeManager, global_states: dict, vx: float):
     Args:
         pipe: a wrapper of shared memory used to communicate between 
             the simulator process and the server process.
-        global_states: a dict used to store local variables, which are shared with
+        global_states: a dict used to store global variables, which are shared with
             other functions.
         vx: velocity to move along x axis. It is negative when moving backward.
     """

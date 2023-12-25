@@ -11,7 +11,7 @@ def emit_brake(pipe: PipeManager, global_states: dict):
     Args:
         pipe: a wrapper of shared memory used to communicate between 
             the simulator process and the server process.
-        global_states: a dict used to store local variables, which are shared with
+        global_states: a dict used to store global variables, which are shared with
             other functions.
     """
     global_states['active_actions']['move_action'] = None

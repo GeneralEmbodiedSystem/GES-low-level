@@ -11,7 +11,7 @@ def emit_move_left(pipe: PipeManager, global_states: dict, vel_l: float):
     Args:
         pipe: a wrapper of shared memory used to communicate between 
             the simulator process and the server process.
-        global_states: a dict used to store local variables, which are shared with
+        global_states: a dict used to store global variables, which are shared with
             other functions.
         vel_l (float): velocity to move left (`vel_l >= 0`).
     """
@@ -34,7 +34,7 @@ def execute_move_left(pipe: PipeManager, global_states: dict, vy: float):
     Args:
         pipe: a wrapper of shared memory used to communicate between 
             the simulator process and the server process.
-        global_states: a dict used to store local variables, which are shared with
+        global_states: a dict used to store global variables, which are shared with
             other functions.
         vy: velocity to move along y axis. It is positive when moving left.
     """

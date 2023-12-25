@@ -19,7 +19,7 @@ def emit_look_down(pipe: PipeManager, global_states: dict, degree: float):
     Args:
         pipe: a wrapper of shared memory used to communicate between 
             the simulator process and the server process.
-        global_states: a dict used to store local variables, which are shared with
+        global_states: a dict used to store global variables, which are shared with
             other functions.
         degree: the degree of the camera to look down.
     """
@@ -44,7 +44,7 @@ def execute_look_down(pipe: PipeManager, global_states: dict, degree: float):
     Args:
         pipe: a wrapper of shared memory used to communicate between 
             the simulator process and the server process.
-        global_states: a dict used to store local variables, which are shared with
+        global_states: a dict used to store global variables, which are shared with
             other functions.
         degree: the degree of the camera to look down.
     """
