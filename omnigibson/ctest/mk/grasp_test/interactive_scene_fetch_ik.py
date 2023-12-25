@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 # mk origin ik(to avoid forget)
+import sys
+sys.path.append('..')
 
 import os
 import time

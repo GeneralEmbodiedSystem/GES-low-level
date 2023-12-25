@@ -59,7 +59,7 @@ tiago_rmp_example.setup()
 tiago_rmp_example.reset()
 
 while(True):
-    # tiago_rmp_example.update()
-    tiago_rmp_example._my_world.step()
+    tiago_rmp_example.update()
+    # tiago_rmp_example._my_world.step()
 
 
