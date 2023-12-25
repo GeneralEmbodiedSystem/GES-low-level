@@ -310,7 +310,7 @@ def benchmark_scene(scene_name, optimized=False, import_robot=True, random_selec
     P.terminate()
     return
 
-def execute_message(cache: dict, local_vars: dict):
+def execute_message(cache: dict, global_states: dict):
     '''
     @param message(tuple): (CMD, *args)
         (get_image, )
@@ -326,12 +326,12 @@ def execute_message(cache: dict, local_vars: dict):
     message_execute_func_mapping = {
         'get_image': run_get_image,
     }
-    message_execute_func_mapping[message[0]](cache, local_vars, *message[1:])
+    message_execute_func_mapping[message[0]](cache, global_states, *message[1:])
     # generate action
-    generate_action(cache, local_vars)
+    generate_action(cache, global_states)
 
-def run_get_image(cache: dict, local_vars: dict):
-    robot: Union[FetchAdvanced, TiagoAdvanced] = local_vars['robot']
+def run_get_image(cache: dict, global_states: dict):
+    robot: Union[FetchAdvanced, TiagoAdvanced] = global_states['robot']
     image_res = robot.get_image()
     rgb_image, depth_image = image_res['rgb'], image_res['depth']
     print(convert_ndarray_in_dict_to_shape(image_res))
@@ -339,10 +339,10 @@ def run_get_image(cache: dict, local_vars: dict):
     # shared_memory = cache['shared_memory']
     # ...
 
-def run_movex(cache: dict, local_vars: dict, distance: float):
+def run_movex(cache: dict, global_states: dict, distance: float):
     return
 
-def generate_action(cache: dict, local_vars: dict):
+def generate_action(cache: dict, global_states: dict):
     return
 
 def keyboardInput_to_delta(inp, delta=0.01):

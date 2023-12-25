@@ -16,7 +16,7 @@ with open(SERVER_CONFIG_PATH, 'r') as f:
 TMP_PATH = server_config['tmp_path']
 
 
-def emit_get_image(pipe: PipeManager, local_vars: dict,
+def emit_get_image(pipe: PipeManager, global_states: dict,
                   written_len: int, shm_name: str, 
                   shm_size: int):
     # Transfer rgba image to rgb image
@@ -34,7 +34,7 @@ def emit_get_image(pipe: PipeManager, local_vars: dict,
 
         return np.asarray(rgb, dtype='uint8')
     
-    robot: Union[FetchAdvanced, TiagoAdvanced] = local_vars['robot']
+    robot: Union[FetchAdvanced, TiagoAdvanced] = global_states['robot']
     image_res = robot.get_image()
     image_rgb, image_depth = image_res['rgb'], image_res['depth']
     image_rgb = rgba2rgb(image_rgb)

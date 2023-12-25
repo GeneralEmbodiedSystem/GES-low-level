@@ -42,18 +42,18 @@ def detect_collision_by_contact_bodies(robot: object, ignore_objs: tuple) -> boo
     return len(robot.states[ContactBodies].get_value(ignore_objs=ignore_objs)) > 0
 
 
-def handle_collision(local_vars: dict, ignore_objs: tuple) -> None:
+def handle_collision(global_states: dict, ignore_objs: tuple) -> None:
     """
     Check whether the robot collides with the environment and handle the collision.
 
     Args:
-        local_vars: a dict used to store local variables, which are shared with
+        global_states: a dict used to store local variables, which are shared with
             other functions.
         ignore_objs: the objects to be ignored when checking the collision.
             It will be IGNORED by Lidar.
     """
 
-    move_action = local_vars['active_actions']['move_action']
+    move_action = global_states['active_actions']['move_action']
     if move_action is None or isinstance(move_action, MoveException):
         return
     
@@ -62,13 +62,13 @@ def handle_collision(local_vars: dict, ignore_objs: tuple) -> None:
         return
     
     lidar_depths = []
-    robot = local_vars['robot']
+    robot = global_states['robot']
     robot_exception = MoveException(move_action['func'][5:])
 
     if detect_collision_by_contact_bodies(robot, ignore_objs):
         print("COLLISION!")
         # If the robot collides with the environment, raise an exception
-        local_vars['active_actions']['move_action'] = robot_exception
+        global_states['active_actions']['move_action'] = robot_exception
         # The robot will stop moving
         # The exception will exist until the server process send a new action
         # Make the robot not ready
@@ -98,5 +98,5 @@ def handle_collision(local_vars: dict, ignore_objs: tuple) -> None:
     
     if len(lidar_depths) > 0 and detect_collision_by_lidar(lidar_depths):
         print("COLLISION!")
-        local_vars['active_actions']['move_action'] = robot_exception
+        global_states['active_actions']['move_action'] = robot_exception
         robot.ready = False

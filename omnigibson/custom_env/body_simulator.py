@@ -110,8 +110,8 @@ def main(random_selection=False, headless=False, short_exec=False):
     robot = env.robots[0]
 
     # TODO: remove hard code
-    robot.set_position(sim_config["other_init_cfg"]["robot_position"])  # robot0_cfg["position"]
-    robot.reset()
+    # robot.set_position(sim_config["other_init_cfg"]["robot_position"])  # robot0_cfg["position"]
+    # robot.reset()
     
     lift_trunk_body(robot)
     og.sim.step()
@@ -132,6 +132,7 @@ def main(random_selection=False, headless=False, short_exec=False):
         position=np.array(sim_config["viewer_camera_cfg"]["position"]),
         orientation=np.array(sim_config["viewer_camera_cfg"]["orientation"]),
     )
+    og.sim.step()
 
     # Create teleop controller
     # action_generator = KeyboardRobotController(robot=robot)  
@@ -158,7 +159,7 @@ def main(random_selection=False, headless=False, short_exec=False):
     }
 
     # Other helpful user info
-    print(f"Running demo with grasping mode {grasping_mode} and scene mode{scene_cfg['scene_model']}.")
+    print(f"Running demo with grasping mode {grasping_mode} and scene mode{scene_cfg.get('scene_model', None)}.")
     print("Use CTRL+C to quit")
 
     # Loop control until user quits
@@ -213,7 +214,7 @@ def main(random_selection=False, headless=False, short_exec=False):
         env.close()
 
 
-def execute_message(pipe: PipeManager, local_vars: dict):
+def execute_message(pipe: PipeManager, global_states: dict):
     '''this function only set the low level to a given state. the actual movement(generate action at each time) is done in generate_action
     @param message(tuple): (CMD, *args)
         (get_image, ...)
@@ -228,60 +229,59 @@ def execute_message(pipe: PipeManager, local_vars: dict):
     og.log.info(f"message: {message}")
     # `skillset[message[0]][0]` is like run_xxx. 
     # It only set the action to be taken
-    skillset[message[0]][0](pipe, local_vars, *message[1:])
+    skillset[message[0]][0](pipe, global_states, *message[1:])
 
 
-def generate_action(pipe: PipeManager, local_vars: dict):
+def generate_action(pipe: PipeManager, global_states: dict):
     """
     Generate action for the robot according to `active_actions`.
     This function is called at each time step.
     """
-    env, robot = local_vars['env'], local_vars['robot']
-    action = local_vars['action']
+    env, robot = global_states['env'], global_states['robot']
+    action = global_states['action']
 
     # Like execute_xxx, it applies the action to the robot action vector
-    skill_executed_list = [local_vars['active_actions']['move_action'],
-                            local_vars['active_actions']['hand_action']]
+    skill_executed_list = [global_states['active_actions']['move_action'],
+                            global_states['active_actions']['hand_action']]
     for skill_executed in skill_executed_list:
         if isinstance(skill_executed, MoveException) and not skill_executed.recovered:
             # If the robot collides with the environment, get an recovery action
             skill_executed = skill_executed.get_recovery_action()
-            local_vars['active_actions']['move_action'].recovered_steps -= 1
-            if local_vars['active_actions']['move_action'].recovered_steps <= 0:
+            global_states['active_actions']['move_action'].recovered_steps -= 1
+            if global_states['active_actions']['move_action'].recovered_steps <= 0:
                 # If the robot has recovered from the exception, make it ready
-                local_vars['active_actions']['move_action'].recovered = True
+                global_states['active_actions']['move_action'].recovered = True
                 robot.ready = True
         if skill_executed is not None and not isinstance(skill_executed, MoveException):
             skill_execute_func = skillset[skill_executed['func']][1]
             args = skill_executed['args']
-            action = skill_execute_func(pipe, local_vars, **args)
+            action = skill_execute_func(pipe, global_states, **args)
     
-    local_vars['action'] = action
-    # if 'hand_action' in local_vars['active_actions']:
-    #     print("hand_action", local_vars['active_actions']['hand_action'])
-    #     if "move_action" in local_vars['active_actions']:
-    #         print("move_action", local_vars['active_actions']['move_action'])
+    global_states['action'] = action
+    # if 'hand_action' in global_states['active_actions']:
+    #     print("hand_action", global_states['active_actions']['hand_action'])
+    #     if "move_action" in global_states['active_actions']:
+    #         print("move_action", global_states['active_actions']['move_action'])
     #     print("action", action)
-    if local_vars['active_actions']['hand_action'] is not None:
+    if global_states['active_actions']['hand_action'] is not None:
         # print("WO G ", action)
         pass
     return
 
 
-def step_arm_action_by_physx(robot, local_vars: dict):
+def step_arm_action_by_physx(robot, global_states: dict):
     """
     In this function, we use the physx interface (og.sim.step()) 
     to step the arm action instead of using the env.step() function.
     This is due to unknown compatibility issues.
     """
-    physx_action = local_vars['active_actions']['hand_action']
+    physx_action = global_states['active_actions']['hand_action']
     tgt_joint_poses, tgt_control_idxes = [], []
     # print("physx_action", physx_action)
     for k, v in physx_action['tgt_joint_pos'].items():
         tgt_joint_poses.append(v[0])
         tgt_control_idxes.append(v[1])
     if len(tgt_joint_poses) > 0:
-        # print("tgt_joint_poses", tgt_joint_poses)
         tgt_joint_pos = np.concatenate(tgt_joint_poses)
         tgt_control_idx = np.concatenate(tgt_control_idxes)
         robot.set_joint_positions(

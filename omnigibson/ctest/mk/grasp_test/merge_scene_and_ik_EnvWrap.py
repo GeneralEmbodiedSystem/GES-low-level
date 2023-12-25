@@ -85,13 +85,16 @@ def main(random_selection=False, headless=False, short_exec=False):
     scene_model = 'Beechwood_0_int'
     
     # create scene
+    # scene_cfg = dict(
+    #     type=scene_type,
+    #     scene_model=scene_model,
+    #     load_object_categories=["floors", "walls", "ceilings"],
+    # )
+    
+    # create simple scene
     scene_cfg = dict(
-        type=scene_type,
-        scene_model=scene_model,
-        load_object_categories=["floors", "walls", "ceilings"],
+        type='Scene',
     )
-
-
 
     # Define objects to load
     # 整体上x 和 y小一些，可以让robot和物体放到客厅里去。现在的房间太小了
