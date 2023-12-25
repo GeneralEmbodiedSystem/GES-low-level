@@ -181,10 +181,7 @@ def main(random_selection=False, headless=False, short_exec=False):
             # If a collision happens, brake the robot
             handle_collision(global_states, ignore_objs)
             # Prepare the action vector
-            if global_states['active_actions']['hand_action'] is None:
-                global_states['action'] = np.zeros(robot.action_dim)
-            else:
-                global_states['action'] = None
+            global_states['action'] = np.zeros(robot.action_dim)
             if robot.ready:
                 execute_message(pipe, global_states)  # calll emit_xxx and prepare for generate_action()
 
@@ -205,7 +202,7 @@ def main(random_selection=False, headless=False, short_exec=False):
             if active_actions['hand_action'] is not None:
                 # print("ji ni tai mei ", action)
                 pass
-            if action is None:
+            if active_actions['hand_action'] is not None:
                 # Use the physx interface to step the action
                 # print("step arm action by physx")
                 step_arm_action_by_physx(robot, global_states)
@@ -284,6 +281,7 @@ def step_arm_action_by_physx(robot, local_vars: dict):
         tgt_joint_poses.append(v[0])
         tgt_control_idxes.append(v[1])
     if len(tgt_joint_poses) > 0:
+        # print("tgt_joint_poses", tgt_joint_poses)
         tgt_joint_pos = np.concatenate(tgt_joint_poses)
         tgt_control_idx = np.concatenate(tgt_control_idxes)
         robot.set_joint_positions(

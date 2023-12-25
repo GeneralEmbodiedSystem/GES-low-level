@@ -84,7 +84,7 @@ def execute_reach(pipe: PipeManager, local_vars: dict, object: str):
     buffer['ik_has_effect'] = ik_has_effect
     
     # last ik do not move && last ik ends
-    print(f'ik_has_effect: {ik_has_effect}, end_ik_flag: {end_ik_flag}')
+    # print(f'ik_has_effect: {ik_has_effect}, end_ik_flag: {end_ik_flag}')
     
     if not ik_has_effect and end_ik_flag:
         pipe.write(
@@ -117,10 +117,10 @@ def execute_ik(ik_solver, robot: TiagoAdvanced, pos, buffer: dict, quat=None, ma
 
     # set tgt position
     # robot.set_joint_positions(joint_pos, indices=control_idx, drive=True)
-    if 'tgt_joint_pos' not in buffer:
+    if 'tgt_joint_pos' not in buffer: 
         buffer['tgt_joint_pos'] = {}
     buffer['tgt_joint_pos']['ik'] = (joint_pos, control_idx)
-    print(f'tgt joint pos: {joint_pos}')
+    # print(f'tgt joint pos: {joint_pos}')
     # print('ik ready')
 
 
