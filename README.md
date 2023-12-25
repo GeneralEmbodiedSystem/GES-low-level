@@ -40,53 +40,68 @@ OmniGibson需要在一个python 3.7的环境下运行。
 
 ### Move Body
 
-1. `move_forward(vel_f: float)`
-    - Description: Move the robot forward. 
-    - Parameter: 
-        1. `vel_f` (float): velocity to move forward (`vel_b >= 0`). The unit of velocity is **m/s**. The range of `vel_f` is [0, 0.3].
-    - Return: 
-        1. a string indicating whether the operation is successful.
+1. `move_forward(mode: str)`
+    - Description: Control the robot to move forward. The robot will
+        continue to move forward until next command is received or
+        the robot is blocked by an obstacle.
+    - Parameter:
+        1. `mode`: a string indicating the moving mode. It can be
+            'run', 'walk', or 'crawl'.
+    - Return:
+        1. `success`: a bool indicating whether the robot has started moving.
 
-2. `move_backward(vel_b: float)`
-    - Description: Move the robot backward.
-    - Parameter: 
-        1. `vel_b` (float): velocity to move backward (`vel_b >= 0`). The unit of velocity is **m/s**. The range of `vel_b` is [0, 0.3].
-    - Return: 
-        1. a string indicating whether the operation is successful.
+2. `move_backward(mode: str)`
+   - Description: Control the robot to move backward. The robot will
+       continue to move backward until next command is received or
+       the robot is blocked by an obstacle.
+   - Parameter:
+       1. `mode`: a string indicating the moving mode. It can be
+           'walk' or 'crawl'. 'run' is NOT supported for safety.
+   - Return:
+       1. `success`: a bool indicating whether the robot has started moving.
 
-3. `move_left(vel_l: float)`
-    - Description: Move the robot left.
-    - Parameter: 
-        1. `vel_l` (float): velocity to move left (`vel_l >= 0`). The unit of velocity is **m/s**. The range of `vel_l` is [0, 0.3].
-    - Return: 
-        1. a string indicating whether the operation is successful.
+3. `move_left(mode: str)`
+    - Description: Control the robot to move left. The robot will
+        continue to move left until next command is received or
+        the robot is blocked by an obstacle.
+    - Parameter:
+        1. `mode`: a string indicating the moving mode. It can be
+            'walk' or 'crawl'. 'run' is NOT supported for safety.
+    - Return:
+        1. `success`: a bool indicating whether the robot has started moving.
 
 
-4. `move_right(vel_r: float)`
-    - Description: Move the robot right.
-    - Parameter: 
-        1. `vel_r` (float): velocity to move right (`vel_r >= 0`). The unit of velocity is **m/s**. The range of `vel_r` is [0, 0.3].
-    - Return: 
-        1. a string indicating whether the operation is successful.
+4. `move_right(mode: str)`
+    - Description: Control the robot to move right. The robot will
+        continue to move right until next command is received or
+        the robot is blocked by an obstacle.
+    - Parameter:
+        1. `mode`: a string indicating the moving mode. It can be
+            'walk' or 'crawl'. 'run' is NOT supported for safety.
+    - Return:
+        1. `success`: a bool indicating whether the robot has started moving.
 
 
 5. `turn_left(angle: int)`
-    - Description: Turn the robot left.
-    - Parameter: 
-        1. `angle`: The angle the robot needs to rotate counterclockwise(a.k.a. turn left). `angle` is an integer in [1, 180] expressed in **angle system**. `angle` in [1, 180] means turn left.
-    - Return: 
-        1. a string indicating whether the operation is successful.
+    - Description: Control the robot to turn left by an angle.
+    - Parameter:
+        1. `angle`: a POSITIVE INTEGER in [1, 180]
+            indicating the degrees that robot needs to turn left.
+    - Return:
+        1. `success`: a bool indicating whether the robot has completed turning.
 
 6. `turn_right(angle: int)`
-    - Description: Turn the robot right.
-    - Parameter: 
-        1. `angle`: The angle the robot needs to rotate clockwise(a.k.a. turn right). `angle` is an integer in [1, 180] expressed in **angle system**. `angle` in [1, 180] means turn right.
-    - Return: 
-        1. a string indicating whether the operation is successful.
+    - Description: Control the robot to turn right by an angle.
+    - Parameter:
+        1. `angle`: a POSITIVE INTEGER in [1, 180]
+            indicating the degrees that robot needs to turn right.
+    - Return:
+        1. `success`: a bool indicating whether the robot has completed turning.
 
-7. `get_velocity()`
-    - Description: Get the current velocity of the robot.
+7. `brake()`
+    - Description: Control the robot to brake. The robot will
+        stop immediately.
     - Parameter: None
-    - Return: 
-        1. a string which means the current velocity of the robot.
+    - Return:
+        1. `success`: a bool indicating whether the operation is successful.
 
