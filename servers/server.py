@@ -5,7 +5,7 @@ import psutil
 
 from servers.utils import SocketManager, PipeManager
 from servers.skills import get_image, move_forward, move_backward, \
-    move_left, move_right, brake, turn_left, turn_right, get_velocity
+    move_left, move_right, brake, turn_left, turn_right
 
 
 # Functions
@@ -18,7 +18,6 @@ functions = [
     brake,
     turn_left,
     turn_right,
-    get_velocity
 ]
 
 # Function codes
@@ -30,7 +29,6 @@ MOVE_RIGHT = 4
 BRAKE = 5
 TURN_LEFT = 6
 TURN_RIGHT = 7
-GET_VELOCITY = 8
 
 
 def check_port_occupied(port):

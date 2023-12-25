@@ -10,7 +10,6 @@ import omnigibson as og
 from omnigibson.macros import gm
 from omnigibson.sensors import VisionSensor
 from servers import PipeManager
-from omnigibson.custom_env.exceptions import MoveException
 from omnigibson.custom_env.utils import handle_collision
 from omnigibson.custom_env.skills.get_image import emit_get_image
 from omnigibson.custom_env.skills.move_forward import emit_move_forward, execute_move_forward
@@ -20,7 +19,6 @@ from omnigibson.custom_env.skills.move_right import emit_move_right, execute_mov
 from omnigibson.custom_env.skills.turn_left import emit_turn_left, execute_turn_left
 from omnigibson.custom_env.skills.turn_right import emit_turn_right, execute_turn_right
 from omnigibson.custom_env.skills.brake import emit_brake
-from omnigibson.custom_env.skills.get_velocity import emit_get_velocity
 from omnigibson.custom_env.skills.reach import emit_reach, execute_reach
 from omnigibson.custom_env.skills.grasp import emit_grasp, execute_grasp
 from omnigibson.custom_env.skills.release import emit_release, execute_release
@@ -39,7 +37,6 @@ skillset = {
     'turn_left': (emit_turn_left, execute_turn_left),
     'turn_right': (emit_turn_right, execute_turn_right),
     'brake': (emit_brake, ),
-    'get_velocity': (emit_get_velocity, ),
     'reach': (emit_reach, execute_reach),
     'grasp': (emit_grasp, execute_grasp),
     'release': (emit_release, execute_release),
@@ -153,6 +150,8 @@ def main(random_selection=False, headless=False, short_exec=False):
         # None means no action (still)
         # Actions related to base movement
         "move_action": None,
+        # Exception related to base movement
+        "move_exception": None,
         # Actions related to arm movement
         "hand_action": None,
         # TODO: Actions related to head movement
@@ -184,7 +183,7 @@ def main(random_selection=False, headless=False, short_exec=False):
             # Prepare the action vector
             global_states['action'] = np.zeros(robot.action_dim)
             if robot.ready:
-                execute_message(pipe, global_states)  # calll emit_xxx and prepare for generate_action()
+                emit_message(pipe, global_states)  # call emit_xxx and prepare for generate_action()
 
             """
             TiagoAdvance action idx (action_dim=19):
@@ -201,9 +200,6 @@ def main(random_selection=False, headless=False, short_exec=False):
             action = global_states['action']
             
             if active_actions['hand_action'] is not None:
-                # print("ji ni tai mei ", action)
-                pass
-            if active_actions['hand_action'] is not None:
                 # Use the physx interface to step the action
                 # print("step arm action by physx")
                 step_arm_action_by_physx(robot, global_states)
@@ -214,7 +210,7 @@ def main(random_selection=False, headless=False, short_exec=False):
         env.close()
 
 
-def execute_message(pipe: PipeManager, global_states: dict):
+def emit_message(pipe: PipeManager, global_states: dict):
     '''this function only set the low level to a given state. the actual movement(generate action at each time) is done in generate_action
     @param message(tuple): (CMD, *args)
         (get_image, ...)
@@ -239,34 +235,37 @@ def generate_action(pipe: PipeManager, global_states: dict):
     """
     env, robot = global_states['env'], global_states['robot']
     action = global_states['action']
+    move_exception = global_states['active_actions']['move_exception']
 
     # Like execute_xxx, it applies the action to the robot action vector
     skill_executed_list = [global_states['active_actions']['move_action'],
                             global_states['active_actions']['hand_action']]
-    for skill_executed in skill_executed_list:
-        if isinstance(skill_executed, MoveException) and not skill_executed.recovered:
-            # If the robot collides with the environment, get an recovery action
-            skill_executed = skill_executed.get_recovery_action()
-            global_states['active_actions']['move_action'].recovered_steps -= 1
-            if global_states['active_actions']['move_action'].recovered_steps <= 0:
-                # If the robot has recovered from the exception, make it ready
-                global_states['active_actions']['move_action'].recovered = True
-                robot.ready = True
-        if skill_executed is not None and not isinstance(skill_executed, MoveException):
-            skill_execute_func = skillset[skill_executed['func']][1]
-            args = skill_executed['args']
-            action = skill_execute_func(pipe, global_states, **args)
+    
+    # Recover exception
+    if move_exception is not None:
+        if move_exception.cur_recover_step == 0:
+            # TODO: put this in specific skill
+            # Report the exception to the server
+            pipe.write(
+                data=str(move_exception),
+                role="server"
+            )
+        move_exception.cur_recover_step += 1
+        # If the robot collides with the environment, get an recovery action
+        action = move_exception.get_recovery_action(action)
+        if move_exception.cur_recover_step >= move_exception.recover_steps:
+            # If the robot has recovered from the exception, make it ready
+            global_states['active_actions']['move_exception'] = None
+            robot.ready = True
+    else:
+        # Execute the skills
+        for skill_executed in skill_executed_list:
+            if skill_executed is not None:
+                skill_execute_func = skillset[skill_executed['func']][1]
+                args = skill_executed['args']
+                action = skill_execute_func(pipe, global_states, **args)
     
     global_states['action'] = action
-    # if 'hand_action' in global_states['active_actions']:
-    #     print("hand_action", global_states['active_actions']['hand_action'])
-    #     if "move_action" in global_states['active_actions']:
-    #         print("move_action", global_states['active_actions']['move_action'])
-    #     print("action", action)
-    if global_states['active_actions']['hand_action'] is not None:
-        # print("WO G ", action)
-        pass
-    return
 
 
 def step_arm_action_by_physx(robot, global_states: dict):

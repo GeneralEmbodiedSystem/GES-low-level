@@ -4,31 +4,36 @@ Define the move_right skill.
 from servers.utils import PipeManager
 
 
-def emit_move_right(pipe: PipeManager, global_states: dict, vel_r: float):
+MOVE_RIGHT_VEL = -0.2
+
+
+def emit_move_right(pipe: PipeManager, global_states: dict, dist: float):
     """Move the robot right. This function only set a `move_right` state. 
-    the actual movement (generate action at each time) is done in execute_move_right
+    The actual movement (generate action at each time) is done in execute_move_right
 
     Args:
         pipe: a wrapper of shared memory used to communicate between 
             the simulator process and the server process.
         global_states: a dict used to store global variables, which are shared with
             other functions.
-        vel_r (float): velocity to move right (`vel_r >= 0`).
+        dist (float): distance (in meter) to move right (`dist > 0`).
     """
+    robot = global_states['robot']
     global_states['active_actions']['move_action'] = {
         'func': 'move_right',
         'args': {
-            'vy': -vel_r
+            'dist': dist
         }
     }
-    # The velocity has been set, so we can send the ack
-    pipe.write(
-        data="move_right success",
-        role="server"
-    )
+    # Current position of the robot
+    global_states['init_y'] = robot.get_position()[1]
+
+    # We have now send the command to the simulation,
+    # but we need to wait for the robot to actually move
+    # So we do not send the ack right now
 
 
-def execute_move_right(pipe: PipeManager, global_states: dict, vy: float):
+def execute_move_right(pipe: PipeManager, global_states: dict, dist: float):
     """generate action for move_right (the actual movement)
 
     Args:
@@ -36,9 +41,21 @@ def execute_move_right(pipe: PipeManager, global_states: dict, vy: float):
             the simulator process and the server process.
         global_states: a dict used to store global variables, which are shared with
             other functions.
-        vy: velocity to move along y axis. It is negative when moving right.
+        dist (float): distance (in meter) to move right (`dist > 0`).
     """
     action = global_states['action']
-    action[1] = vy
+    robot = global_states['robot']
+    init_y = global_states['init_y']
+    move_exception = global_states['active_actions']['move_exception']
 
+    if abs(robot.get_position()[1] - init_y) <= dist:
+        action[1] = MOVE_RIGHT_VEL
+    else:
+        pipe.write(
+            data="move_right success",
+            role="server"
+        )
+        # Erase the corresponding active action
+        global_states['active_actions']['move_action'] = None
+    
     return action

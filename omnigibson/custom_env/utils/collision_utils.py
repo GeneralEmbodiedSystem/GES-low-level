@@ -54,27 +54,29 @@ def handle_collision(global_states: dict, ignore_objs: tuple) -> None:
     """
 
     move_action = global_states['active_actions']['move_action']
-    if move_action is None or isinstance(move_action, MoveException):
+    move_exception = global_states['active_actions']['move_exception']
+    if move_action is None or move_exception is not None:
         return
     
     if move_action['func'] not in ['move_forward', 'move_backward', 
         'move_left', 'move_right']:
         return
     
-    lidar_depths = []
     robot = global_states['robot']
     robot_exception = MoveException(move_action['func'][5:])
 
     if detect_collision_by_contact_bodies(robot, ignore_objs):
         print("COLLISION!")
         # If the robot collides with the environment, raise an exception
-        global_states['active_actions']['move_action'] = robot_exception
+        global_states['active_actions']['move_exception'] = robot_exception
         # The robot will stop moving
-        # The exception will exist until the server process send a new action
+        global_states['active_actions']['move_action'] = None 
+        # The exception will exist until recovery
         # Make the robot not ready
         robot.ready = False
         return
 
+    lidar_depths = []
     if move_action['func'] == 'move_forward':
         lidar_depths = [
             robot.front_right_scan_sensor.get_obs()['scan'],
@@ -96,7 +98,8 @@ def handle_collision(global_states: dict, ignore_objs: tuple) -> None:
             robot.rear_right_scan_sensor.get_obs()['scan']
         ]
     
-    if len(lidar_depths) > 0 and detect_collision_by_lidar(lidar_depths):
+    if detect_collision_by_lidar(lidar_depths):
         print("COLLISION!")
-        global_states['active_actions']['move_action'] = robot_exception
+        global_states['active_actions']['move_exception'] = robot_exception
+        global_states['active_actions']['move_action'] = None 
         robot.ready = False
