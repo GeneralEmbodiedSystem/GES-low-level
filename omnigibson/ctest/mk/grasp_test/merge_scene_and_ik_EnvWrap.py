@@ -301,8 +301,9 @@ def main(random_selection=False, headless=False, short_exec=False):
 
     # Loop control until user quits
     # max_steps = -1 if not short_exec else 100
-    max_steps = 1600
-    record_flag = True
+    max_steps = -1
+    # max_steps = 1600
+    record_flag = False
     step = 0
     buffer = dict(); buffer['tgt_joint_pos'] = dict()
     while step != max_steps:
@@ -359,6 +360,12 @@ def main(random_selection=False, headless=False, short_exec=False):
         
         
         # execute_look_at(robot, tgt_pos, buffer)
+        
+        # robot.set_joint_velocities(
+        #     np.array([-0.2, 0, 0]), 
+        #     indices=robot.base_control_idx, 
+        #     drive=True,
+        # )
         
         custom_step(robot, buffer)
         # env.step(action)

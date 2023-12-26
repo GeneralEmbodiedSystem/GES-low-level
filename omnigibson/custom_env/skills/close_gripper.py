@@ -1,5 +1,5 @@
 """
-Define the release skill.
+Define the close_gripper skill.
 """
 from servers.utils import PipeManager
 
@@ -7,14 +7,14 @@ import numpy as np
 
 from omnigibson.robots.tiago_advanced import TiagoAdvanced
 from omnigibson.utils.control_utils import IKSolver
-from omnigibson.utils.hand_skill_utils import check_joint_move
+from omnigibson.custom_env.utils.eular_utils import check_joint_still
 
 
 left_or_right = 'left'
 
 
-def emit_release(pipe: PipeManager, global_states: dict):
-    """Control gripper to release.
+def emit_close_gripper(pipe: PipeManager, global_states: dict):
+    """Control gripper to close.
 
     Args:
         pipe: a wrapper of shared memory used to communicate between 
@@ -22,24 +22,22 @@ def emit_release(pipe: PipeManager, global_states: dict):
         global_states: a dict used to store global variables, which are shared with
             other functions.
     """
-    
-    robot: TiagoAdvanced = global_states['robot']
-    
     global_states['active_actions']['hand_action'] = {
-        'func': 'release',
+        'func': 'close_gripper',
         'args': {},
     }
     
-    # hand action buffer
-    buffer: dict = global_states['active_actions']['hand_action']
+    # robot states buffer
+    if 'robot_states' not in global_states['active_actions']:
+        global_states['active_actions']['robot_states'] = {}
+    buffer: dict = global_states['active_actions']['robot_states']
+    
+    # set gripper state
+    buffer['gripper_state'] = 'close'
 
-    if 'tgt_joint_pos' not in buffer:
-        buffer['tgt_joint_pos'] = {}
-    buffer['tgt_joint_pos']['release'] = ([0.045, 0.045], robot.gripper_control_idx[left_or_right])
 
-
-def execute_release(pipe: PipeManager, global_states: dict):
-    """generate action for release
+def execute_close_gripper(pipe: PipeManager, global_states: dict):
+    """generate action for closing gripper
 
     Args:
         pipe: a wrapper of shared memory used to communicate between 
@@ -55,18 +53,18 @@ def execute_release(pipe: PipeManager, global_states: dict):
     # hand action buffer
     buffer: dict = global_states['active_actions']['hand_action']
     
-    # check end of a release according to the joint pos delta
-    end_ik_flag = check_joint_move(robot, buffer, robot.gripper_control_idx[left_or_right])
+    # check end of a closing gripper action according to the joint pos delta
+    end_ik_flag = check_joint_still(robot, buffer, robot.gripper_control_idx[left_or_right])
     
     # last ik do not move && last ik ends
     if end_ik_flag:
         pipe.write(
-            data="release success",
-            role="server"
+            data="close_gripper success",
+            role="server",
         )
         global_states['active_actions']['hand_action'] = None
         
-        print(f'mk release success')
+        print(f'mk close_gripper success')
         
         # hand action is over
         return action

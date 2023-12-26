@@ -18,9 +18,10 @@ from omnigibson.custom_env.skills.move_left import emit_move_left, execute_move_
 from omnigibson.custom_env.skills.move_right import emit_move_right, execute_move_right
 from omnigibson.custom_env.skills.turn_left import emit_turn_left, execute_turn_left
 from omnigibson.custom_env.skills.turn_right import emit_turn_right, execute_turn_right
-from omnigibson.custom_env.skills.reach import emit_reach, execute_reach
-from omnigibson.custom_env.skills.grasp import emit_grasp, execute_grasp
-from omnigibson.custom_env.skills.release import emit_release, execute_release
+from omnigibson.custom_env.skills.move_gripper_to import emit_move_gripper_to, execute_move_gripper_to
+from omnigibson.custom_env.skills.close_gripper import emit_close_gripper, execute_close_gripper
+from omnigibson.custom_env.skills.open_gripper import emit_open_gripper, execute_open_gripper
+from omnigibson.custom_env.skills.raise_gripper import emit_raise_gripper, execute_raise_gripper
 
 from omnigibson.robots import TiagoAdvanced
 
@@ -40,9 +41,10 @@ skillset = {
     'move_right': (emit_move_right, execute_move_right),
     'turn_left': (emit_turn_left, execute_turn_left),
     'turn_right': (emit_turn_right, execute_turn_right),
-    'reach': (emit_reach, execute_reach),
-    'grasp': (emit_grasp, execute_grasp),
-    'release': (emit_release, execute_release),
+    'move_gripper_to': (emit_move_gripper_to, execute_move_gripper_to),
+    'close_gripper': (emit_close_gripper, execute_close_gripper),
+    'open_gripper': (emit_open_gripper, execute_open_gripper),
+    'raise_gripper': (emit_raise_gripper, execute_raise_gripper),
 }
 
 # Don't use GPU dynamics and Use flatcache for performance boost
@@ -93,6 +95,10 @@ def main(random_selection=False, headless=False, short_exec=False, args=get_args
         TMP_PATH, SHM_NAME_INTER, 
         SHM_SIZE_INTER, create=False
     )
+    
+    # disable collision detection when recording demo
+    # enable collision detection when use agent
+    collision_detection = True
 
     # Create environment configuration to use
     scene_cfg = sim_config["scene_cfg"]
@@ -114,15 +120,20 @@ def main(random_selection=False, headless=False, short_exec=False, args=get_args
     robot: TiagoAdvanced = env.robots[0]
 
     # TODO: remove hard code
-    # robot.set_position(sim_config["other_init_cfg"]["robot_position"])  # robot0_cfg["position"]
-    # robot.reset()
+    robot.set_position(sim_config["other_init_cfg"]["robot_position"])  # robot0_cfg["position"]
+    robot.reset()
     
     lift_trunk_body(robot)
     og.sim.step()
     # robot.keep_still()
 
     # Init Lidar sensors
-    robot.init_scan_sensor()
+    if collision_detection:
+        robot.init_scan_sensor()
+    
+    # limit the max joint velocities of the robot
+    robot.max_joint_velocities[robot.ik_control_idx] /= 1
+    robot.max_joint_efforts[robot.ik_control_idx] /= 1
     
     # Init record frames cache
     if args.record is not None:
@@ -166,6 +177,10 @@ def main(random_selection=False, headless=False, short_exec=False, args=get_args
         "move_exception": None,
         # Actions related to arm movement
         "hand_action": None,
+        # robot_states
+        'robot_states': {
+            'gripper_state': 'open', # 'open' or 'close'
+        }
         # TODO: Actions related to head movement
     }
 
@@ -180,9 +195,10 @@ def main(random_selection=False, headless=False, short_exec=False, args=get_args
     # action_random_selection = False
 
     # Ignore the floors when checking collision
-    ignore_objs = tuple(env.scene.object_registry("category", "floors", []))
-    
-    # 
+    ignore_objs = tuple(
+        env.scene.object_registry("category", "floors", []),
+        # env.scene.object_registry("category", "box_of_yogurt", []),
+    )
     
     # set GLOBAL_STATE buffer (dict)
     global_states = dict()
@@ -197,7 +213,8 @@ def main(random_selection=False, headless=False, short_exec=False, args=get_args
         steps = 0
         while True:
             # If a collision happens, brake the robot
-            handle_collision(global_states, ignore_objs)
+            if collision_detection:
+                handle_collision(global_states, ignore_objs)
             
             # Prepare the action vector
             global_states['action'] = np.zeros(robot.action_dim)
@@ -295,43 +312,64 @@ def update_env(robot: TiagoAdvanced, global_states: dict):
     to step the action instead of using the env.step() function.
     This is due to unknown compatibility issues.
     """
+    # prior params
+    left_or_right = 'left'
+    
     # extract vars
     action = global_states['action']
     
-    if action is None:
-        # concat hand action
-        # TODO: add head action
+    # init tgt positions and velocities list
+    tgt_joint_poses, tgt_joint_pos_idxes = [], []
+    tgt_joint_vels, tgt_joint_vel_idxes = [], []
+    
+    # target position control
+    # gripper movement control
+    if 'hand_action' in global_states['active_actions']:
         physx_action = global_states['active_actions']['hand_action']
-        tgt_joint_poses, tgt_joint_idxes = [], []
-        # print("physx_action", physx_action)
-        for k, v in physx_action['tgt_joint_pos'].items():
-            tgt_joint_poses.append(v[0])
-            tgt_joint_idxes.append(v[1])
-        if len(tgt_joint_poses) > 0:
-            tgt_joint_pos = np.concatenate(tgt_joint_poses)
-            tgt_joint_idx = np.concatenate(tgt_joint_idxes)
-            robot.set_joint_positions(
-                tgt_joint_pos, 
-                indices=tgt_joint_idx,
-                drive=True,
-            )
+        if isinstance(physx_action, dict):
+            # print("physx_action", physx_action)
+            if 'tgt_joint_pos' in physx_action:
+                for k, v in physx_action['tgt_joint_pos'].items():
+                    tgt_joint_poses.append(v[0])
+                    tgt_joint_pos_idxes.append(v[1])
+    # gripper open or close state control
+    if 'robot_states' in global_states['active_actions']:
+        if 'gripper_state' in global_states['active_actions']['robot_states']:
+            gripper_state = global_states['active_actions']['robot_states']['gripper_state']
+            if gripper_state == 'open':
+                tgt_joint_poses.append([0.045, 0.045])
+            else:
+                tgt_joint_poses.append([0.0, 0.0])
+            tgt_joint_pos_idxes.append(robot.gripper_control_idx[left_or_right])
+    # implement the position control
+    if len(tgt_joint_poses) > 0:
+        tgt_joint_pos = np.concatenate(tgt_joint_poses)
+        tgt_joint_pos_idx = np.concatenate(tgt_joint_pos_idxes)
         robot.set_joint_positions(
             tgt_joint_pos, 
-            indices=tgt_joint_idx,
-            drive=True,
-        )
-    else:
-        tgt_joint_vel = action[:3]
-        tgt_joint_idx = robot.base_control_idx
-        robot.set_joint_velocities(
-            tgt_joint_vel, 
-            indices=tgt_joint_idx, 
+            indices=tgt_joint_pos_idx,
             drive=True,
         )
     
-    file_log(f'''robot orientation: {robot.get_orientation()}
-quat2euler: {quat2euler(robot.get_orientation())}
-''')
+    # target velocities control
+    # robot movement control
+    if action is not None:
+        # base movement control
+        tgt_joint_vels.append(action[:3])
+        tgt_joint_vel_idxes.append(robot.base_control_idx)
+    # implement the velocity control
+    if len(tgt_joint_vels) > 0:
+        tgt_joint_vel = np.concatenate(tgt_joint_vels)
+        tgt_joint_vel_idx = np.concatenate(tgt_joint_vel_idxes)
+        robot.set_joint_velocities(
+            tgt_joint_vel, 
+            indices=tgt_joint_vel_idx, 
+            drive=True,
+        )
+    
+#     file_log(f'''robot orientation: {robot.get_orientation()}
+# quat2euler: {quat2euler(robot.get_orientation())}
+# ''')
     
     og.sim.step()
 

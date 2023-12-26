@@ -1,5 +1,5 @@
 """
-Define the reach skill.
+Define the moving gripper to skill.
 """
 from typing import Union
 import numpy as np
@@ -15,13 +15,13 @@ from omnigibson.custom_env.utils.physx_utils import get_pos_by_prim_path_physxAp
 from omnigibson.custom_env.utils.robot_utils import get_ik_solver
 from omnigibson.custom_env.utils.eular_utils import calculate_distance
 
-from omnigibson.utils.hand_skill_utils import check_joint_move
+from omnigibson.custom_env.utils.eular_utils import check_joint_still
 
 left_or_right = 'left'
 
 
-def emit_reach(pipe: PipeManager, global_states: dict, object: str):
-    """Control arm to reach a object.
+def emit_move_gripper_to(pipe: PipeManager, global_states: dict, object: str):
+    """Control arm to move gripper to a object
 
     Args:
         pipe: a wrapper of shared memory used to communicate between 
@@ -42,47 +42,80 @@ def emit_reach(pipe: PipeManager, global_states: dict, object: str):
     # eps means the max distance error to the waypoint we can tolerate
     waypoints = []
     waypoints_scratch = {
+        'pre_fetch_flag': False,
         'waypoints': waypoints,
         'current_waypoint_index': 0,
     }
     
+    # if object in ['trash_can']:
+    #     waypoints_scratch['pre_fetch_flag'] = True
+    
+    # pre fetch joint position
+    pre_fetch_joint_position = np.array([0.85500056, 0.06865133, 0.84170145, 
+                                         2.174793, -0.8766601, -0.9809551, -2.0943947])
+    
     # plan rule-based waypoints
     object_pos = get_pos_by_prim_path_physxApi(f'/World/{object}/base_link')
     if object in ['trash_can']:
-        waypoints.append((object_pos + np.array([0.0, 0.0, 0.3]), 1e-4))
+        waypoints.append((object_pos + np.array([0.0, 0.0, 0.4]), 5e-2))
     else:
-        waypoints.append((object_pos + np.array([0.0, 0.0, 0.15]), 1e-5))
-        waypoints.append((object_pos, 1e-1))
-        # waypoints.append((object, 5e-2))
+        waypoints.append((object_pos + np.array([0.0, 0.0, 0.1]), 1e-4))
+        # waypoints.append((object_pos, 3e-2))
+        # waypoints.append((object_pos, 5e-2))
+        waypoints.append((object_pos + np.array([-0.02, 0.02, -0.05]), 5e-2))
+        # waypoints.append((object, 3e-2))
     
-    # define single_reach_scratch init state generation function
-    def single_reach_scratch_init_func():
-        return {}
+    # define single_navigation_scratch init state generation function
+    def single_navigation_scratch_init_func():
+        return {
+            'still_times': 0
+        }
     
-    # define the object name to reach in local vars
+    # define the object name to move the gripper to in local vars
     global_states['active_actions']['hand_action'] = {
-        'func': 'reach',
+        'func': 'move_gripper_to',
         'args': {
             'object': object,
         },
+        
+        # store the target joint pos
+        'tgt_joint_pos': {},
+        
+        'ik_quat': None,
+        
         'ik_solver': ik_solver,
         
         'waypoints_scratch': waypoints_scratch,
         
-        'single_reach_scratch': None, # no use currently
-        'single_reach_scratch_init_func': single_reach_scratch_init_func, # no use currently
+        'single_navigation_scratch': None, # no use currently
+        'single_navigation_scratch_init_func': single_navigation_scratch_init_func, # no use currently
     }
     
     # hand action buffer
     buffer: dict = global_states['active_actions']['hand_action']
+    
+    # specify ik quat
+    if object in ['trash_can']:
+        buffer['ik_quat'] = None
+    else:
+        buffer['ik_quat'] = np.array([0, 0, 0, 1])
+
+    # pre fetch
+    buffer['tgt_joint_pos'] = {}
+    buffer['tgt_joint_pos']['ik'] = (pre_fetch_joint_position, robot.arm_control_idx[left_or_right])
+
+    # ugly implementation
+    if waypoints_scratch['pre_fetch_flag']:
+        start_navigate_to_waypoint(buffer, robot)
+        print('operator: start navigate to next waypoint')
 
     # start navigate to waypoint
-    start_navigate_to_waypoint(buffer, robot)
-    print('operator: start navigate to next waypoint')
+    # start_navigate_to_waypoint(buffer, robot)
+    # print('operator: start navigate to next waypoint')
 
 
-def execute_reach(pipe: PipeManager, global_states: dict, object: str):
-    """generate action for reach
+def execute_move_gripper_to(pipe: PipeManager, global_states: dict, object: str):
+    """generate action for move gripper to a object (the actual movement)
 
     Args:
         pipe: a wrapper of shared memory used to communicate between 
@@ -99,7 +132,7 @@ def execute_reach(pipe: PipeManager, global_states: dict, object: str):
     
     # hand action buffer
     buffer: dict = global_states['active_actions']['hand_action']
-    single_reach_scratch: dict = buffer['single_reach_scratch']
+    single_navigation_scratch: dict = buffer['single_navigation_scratch']
     
     # extract params from buffer
     ik_solver: IKSolver = buffer['ik_solver']
@@ -107,39 +140,65 @@ def execute_reach(pipe: PipeManager, global_states: dict, object: str):
     waypoints = waypoints_scratch['waypoints']
     current_waypoint_index = waypoints_scratch['current_waypoint_index']
     
+    # pre fetch
+    if not waypoints_scratch['pre_fetch_flag']:
+        if calculate_distance(robot.get_joint_positions()[buffer['tgt_joint_pos']['ik'][1]], 
+                              buffer['tgt_joint_pos']['ik'][0]) < 1e-3:
+            waypoints_scratch['pre_fetch_flag'] = True
+            start_navigate_to_waypoint(buffer, robot)
+            print('operator: start navigate to next waypoint')
+        return None
+    
     # check end of a ik according to the joint pos delta
     eef_name = robot.eef_link_names[robot.default_arm]
     this_tgt_waypoint = parse_waypoint_pos(waypoints[current_waypoint_index][0])
     eef_current_pos = get_pos_by_prim_path_physxApi(f'{robot.prim_path}/{eef_name}')
     to_move_distance = calculate_distance(this_tgt_waypoint, eef_current_pos)
-    # eps = 1e-5 # can not end, but can successfully reach
+    # eps = 1e-5 # can not end, but can successfully move gripper to
     eps = waypoints[current_waypoint_index][1]
-    reach_waypoint_flag = (to_move_distance < eps)
-    joint_move_flag = check_joint_move(robot, single_reach_scratch, robot.gripper_control_idx[left_or_right])
+    navigation_success_flag = (to_move_distance < eps)
+    joint_still_flag = check_joint_still(
+        robot, single_navigation_scratch, robot.arm_control_idx[left_or_right], 1e-4
+    )
+    
+    # update still_times
+    if joint_still_flag:
+        single_navigation_scratch['still_times'] += 1
+    else:
+        single_navigation_scratch['still_times'] = 0
     
     print(f'operator: to_move_distance: {to_move_distance}')
+    # print(f'operator: robot.joint_velocity_limits: {robot.max_joint_velocities[robot.arm_control_idx[left_or_right]]}')
+    # print(f'operator: robot jointpos: {robot.get_joint_positions()[robot.arm_control_idx[left_or_right]]}')
+    # print(f'operator: waypoint: {waypoints[current_waypoint_index]}')
     
     # this waypoint navigation ends
-    if reach_waypoint_flag:
+    if navigation_success_flag:
         end_navigation_of_a_waypoint(buffer, robot)
-        print('operator: reach waypoint success!')
+        print('operator: navigate to target waypoint success!')
     
         if check_waypoints_end(buffer):
             pipe.write(
-                data="reach success",
+                data="move_gripper_to success",
                 role="server"
             )
             global_states['active_actions']['hand_action'] = None
             
-            print(f'operator: reach {object} success')
+            print(f'operator: move_gripper_to {object} success')
             
             # hand action is over
             return action
         else:
             start_navigate_to_waypoint(buffer, robot)
             print('operator: start navigate to next waypoint')
-    elif not joint_move_flag:
-        execute_ik(ik_solver, robot, np.array(parse_waypoint_pos(waypoints[current_waypoint_index][0])), buffer)
+    elif single_navigation_scratch['still_times'] > 5:
+        # pass
+        print('operator: run ik!')
+        execute_ik(
+            ik_solver, robot, np.array(parse_waypoint_pos(waypoints[current_waypoint_index][0])), buffer,
+            quat=buffer['ik_quat'],
+        )
+        single_navigation_scratch['still_times'] = 0
     
     # return None means using hand_custom_step(robot, global_states['active_actions']['hand_action']) 
     # instead of env.step(action).
@@ -156,13 +215,16 @@ def start_navigate_to_waypoint(buffer: dict, robot: TiagoAdvanced):
     waypoints = waypoints_scratch['waypoints']
     current_waypoint_index = waypoints_scratch['current_waypoint_index']
     
-    # init single_reach_scratch
-    buffer['single_reach_scratch'] = buffer['single_reach_scratch_init_func']()
+    # init single_navigation_scratch
+    buffer['single_navigation_scratch'] = buffer['single_navigation_scratch_init_func']()
     
     # ik
-    execute_ik(buffer['ik_solver'], robot, np.array(parse_waypoint_pos(waypoints[current_waypoint_index][0])), buffer)
+    execute_ik(
+        buffer['ik_solver'], robot, np.array(parse_waypoint_pos(waypoints[current_waypoint_index][0])), buffer,
+        quat=buffer['ik_quat'],
+    )
     
-    # keep releasing when reach
+    # keep releasing when move gripper to
     buffer['tgt_joint_pos']['release'] = ([0.045, 0.045], robot.gripper_control_idx[left_or_right])
 
 def end_navigation_of_a_waypoint(buffer: dict, robot: TiagoAdvanced):
@@ -172,8 +234,8 @@ def end_navigation_of_a_waypoint(buffer: dict, robot: TiagoAdvanced):
     # increase current_waypoint_index
     waypoints_scratch['current_waypoint_index'] += 1
     
-    # empty single_reach_scratch
-    buffer['single_reach_scratch'] = None
+    # empty single_navigation_scratch
+    buffer['single_navigation_scratch'] = None
     
     # empty target joint pos
     if 'tgt_joint_pos' in buffer:
@@ -199,7 +261,7 @@ def execute_ik(ik_solver, robot: TiagoAdvanced, pos, buffer: dict, quat=None, ma
         target_quat=quat,
         max_iterations=max_iter,
         initial_joint_pos=robot.get_joint_positions()[control_idx],
-        tolerance_pos = 0.00001
+        # tolerance_pos = 0.00001
     )
 
     # set tgt position

@@ -2,6 +2,8 @@ import numpy as np
 
 from omnigibson.utils.transform_utils import quat2euler
 
+from omnigibson.robots import TiagoAdvanced
+
 
 def check_turn_end(init_z_radian, left_or_right, turn_radian, now_z_radian):
     '''
@@ -41,3 +43,26 @@ def calculate_distance(start_pos, end_pos):
         end_pos (list): the end position of the robot
     '''
     return np.linalg.norm(np.array(start_pos) - np.array(end_pos))
+
+def check_joint_still(robot: TiagoAdvanced, single_reach_scratch: dict, control_idx, eps=1e-4):
+    '''
+    check if joint move according to the joint pos delta
+    
+    Args:
+        robot: a instance of TiagoAdvanced.
+        single_reach_scratch: a dict serve as a scratch.
+        control_idx: control index of the joint of the robot.
+    
+    Returns:
+        end_ik_flag (bool): True if the joint keeps still.
+    '''
+    last_joint_pos = single_reach_scratch.get('last_joint_pos', None)
+    now_joint_pos = robot.get_joint_positions()[control_idx]
+    single_reach_scratch['last_joint_pos'] = now_joint_pos
+    end_ik_flag = False
+    if last_joint_pos is not None:
+        delta_distance = calculate_distance(now_joint_pos, last_joint_pos)
+        # print(f'operator: delta_distance: {delta_distance}')
+        end_ik_flag = (delta_distance < eps)
+    
+    return end_ik_flag

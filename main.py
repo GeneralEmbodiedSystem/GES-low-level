@@ -6,6 +6,7 @@ import sys
 import select
 import yaml
 import argparse
+import time
 
 from servers import start_server, PipeManager
 
@@ -67,11 +68,40 @@ def main(args=get_args()):
 
     # start communication with high level server
     try:
-        # pipe.write(
-        #     data=("reach", "box_of_yogurt"),
-        #     role="client"
-        # )
-        # start_server(pipe_manager)
+        time.sleep(13)
+        instructions = [
+            # fetch yogurt
+            ("move_gripper_to", "box_of_yogurt"),
+            ("close_gripper", ),
+            ("raise_gripper", ),
+            
+            # move to far trash_can
+            # ("turn_right", 90),
+            # ("turn_right", 90),
+            # ("move_forward", 1.35),
+            # ("turn_left", 90),
+            # ("move_forward", 0.5),
+            
+            # move to close trash_can
+            ("turn_left", 90),
+            ("move_forward", 0.5),
+            ("turn_right", 90),
+            
+            # throw the trash
+            ("move_gripper_to", "trash_can"),
+            ("open_gripper", ),
+        ]
+        for instruction in instructions:
+            pipe_manager.write(
+                data=instruction,
+                role="client",
+            )
+            while True:
+                data = pipe_manager.read(role="client")
+                if data is not None:
+                    print(data)
+                    break
+        start_server(pipe_manager)
 
         # ------------------ Start Test Skills ------------------
         pipe = pipe_manager
@@ -102,9 +132,9 @@ def main(args=get_args()):
                 ("move_left", 0.1)
                 ("move_right", 0.1)
                 ("get_velocity",)
-                ("reach", "box_of_yogurt")
-                ("grasp", )
-                ("release", )
+                ("move_gripper_to", "box_of_yogurt")
+                ("close_gripper", )
+                ("open_gripper", )
                 """
                 pipe.write(
                     data=result,

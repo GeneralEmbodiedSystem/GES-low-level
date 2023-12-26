@@ -6,7 +6,7 @@ from servers.utils import PipeManager
 import numpy as np
 
 from omnigibson.robots.tiago_advanced import TiagoAdvanced
-from omnigibson.utils.hand_skill_utils import check_joint_move
+from omnigibson.custom_env.utils.eular_utils import check_joint_still
 from omnigibson.utils.camera_skill_utils import execute_look_up
 
 
@@ -57,7 +57,7 @@ def execute_look_up(pipe: PipeManager, global_states: dict, degree: float):
     buffer: dict = global_states['active_actions'][ACTION_CATAGORY]
     
     # check end of a look up according to the joint pos delta
-    end_ik_flag = check_joint_move(robot, buffer, robot.camera_control_idx)
+    end_ik_flag = check_joint_still(robot, buffer, robot.camera_control_idx)
     
     # last ik do not move && last ik ends
     if end_ik_flag:
