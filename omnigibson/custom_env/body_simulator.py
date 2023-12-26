@@ -98,7 +98,7 @@ def main(random_selection=False, headless=False, short_exec=False, args=get_args
     
     # disable collision detection when recording demo
     # enable collision detection when use agent
-    collision_detection = True
+    collision_detection = False
 
     # Create environment configuration to use
     scene_cfg = sim_config["scene_cfg"]

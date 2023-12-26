@@ -105,3 +105,7 @@ OmniGibson需要在一个python 3.7的环境下运行。
     - Return:
         1. `success`: a bool indicating whether the operation is successful.
 
+
+# Demo
+# Grasping Demo
+    
