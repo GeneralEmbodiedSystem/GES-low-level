@@ -107,5 +107,10 @@ OmniGibson需要在一个python 3.7的环境下运行。
 
 
 # Demo
-# Grasping Demo
-    
+## Grasping Demo
+```
+# use simple_scene.yaml to generate scene
+
+git checkout 8a24d1e74cb9bbe43fb7cb90478060af657a345f
+python main.py -r 3800
+```

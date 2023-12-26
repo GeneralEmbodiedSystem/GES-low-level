@@ -31,6 +31,7 @@ def get_args():
     parser.add_argument("--simulator_path", "-sp", type=str, default=None, 
                         help="specify which body_simulator.py to use, for mk testing.")
     parser.add_argument("--record", "-r", type=int, default=None)
+    parser.add_argument("--config", "-c", type=str, default=None)
     args = parser.parse_args()
     
     return args
@@ -39,10 +40,12 @@ def start_simulator(*args):
     args = args[0]
     
     EXECUTE_FILE = start_up_config["system_cfg"]["EXECUTE_FILE"] if args.simulator_path is None else args.simulator_path
+    CONFIG_FILE = start_up_config["system_cfg"]["ENV_CONFIG_FILE"] if args.config is None else f'{args.config}.yaml'
+    
     bash_components = f'''#!/bin/bash
         source {join(start_up_config["system_cfg"]["CONDA_DIR_PATH"], 'bin/activate')} {start_up_config["system_cfg"]["CONDA_ENV_NAME"]}
         python --version
-        python {EXECUTE_FILE} --config_file {start_up_config["system_cfg"]["ENV_CONFIG_FILE"]}'''
+        python {EXECUTE_FILE} --config_file {CONFIG_FILE}'''
     if args.record is not None:
         bash_components += f' -r {args.record}'
     bash_path = 'omnigibson/custom_env/start_simulator.sh'
@@ -68,40 +71,40 @@ def main(args=get_args()):
 
     # start communication with high level server
     try:
-        time.sleep(13)
-        instructions = [
-            # fetch yogurt
-            ("move_gripper_to", "box_of_yogurt"),
-            ("close_gripper", ),
-            ("raise_gripper", ),
+        # time.sleep(13)
+        # instructions = [
+        #     # fetch yogurt
+        #     ("move_gripper_to", "box_of_yogurt"),
+        #     ("close_gripper", ),
+        #     ("raise_gripper", ),
             
-            # move to far trash_can
-            # ("turn_right", 90),
-            # ("turn_right", 90),
-            # ("move_forward", 1.35),
-            # ("turn_left", 90),
-            # ("move_forward", 0.5),
+        #     # move to far trash_can
+        #     # ("turn_right", 90),
+        #     # ("turn_right", 90),
+        #     # ("move_forward", 1.35),
+        #     # ("turn_left", 90),
+        #     # ("move_forward", 0.5),
             
-            # move to close trash_can
-            ("turn_left", 90),
-            ("move_forward", 0.5),
-            ("turn_right", 90),
+        #     # move to close trash_can
+        #     ("turn_left", 90),
+        #     ("move_forward", 0.5),
+        #     ("turn_right", 90),
             
-            # throw the trash
-            ("move_gripper_to", "trash_can"),
-            ("open_gripper", ),
-        ]
-        for instruction in instructions:
-            pipe_manager.write(
-                data=instruction,
-                role="client",
-            )
-            while True:
-                data = pipe_manager.read(role="client")
-                if data is not None:
-                    print(data)
-                    break
-        start_server(pipe_manager)
+        #     # throw the trash
+        #     ("move_gripper_to", "trash_can"),
+        #     ("open_gripper", ),
+        # ]
+        # for instruction in instructions:
+        #     pipe_manager.write(
+        #         data=instruction,
+        #         role="client",
+        #     )
+        #     while True:
+        #         data = pipe_manager.read(role="client")
+        #         if data is not None:
+        #             print(data)
+        #             break
+        # start_server(pipe_manager)
 
         # ------------------ Start Test Skills ------------------
         pipe = pipe_manager
