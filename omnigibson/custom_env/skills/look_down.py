@@ -7,10 +7,10 @@ import numpy as np
 
 from omnigibson.robots.tiago_advanced import TiagoAdvanced
 from omnigibson.custom_env.utils.eular_utils import check_joint_still
-from omnigibson.utils.camera_skill_utils import execute_look_down
+from omnigibson.utils.camera_skill_utils import execute_look_down as look_down_exp
 
 
-ACTION_CATAGORY = 'camera_action'
+ACTION_CATAGORY = 'head_action'
 TASK_NAME = 'look_down'
 
 def emit_look_down(pipe: PipeManager, global_states: dict, degree: float):
@@ -33,10 +33,11 @@ def emit_look_down(pipe: PipeManager, global_states: dict, degree: float):
         },
     }
     
-    # hand action buffer
+    # head action buffer
     buffer: dict = global_states['active_actions'][ACTION_CATAGORY]
 
-    execute_look_down(robot, buffer, degree)
+    look_down_exp(robot, buffer, degree)
+
 
 def execute_look_down(pipe: PipeManager, global_states: dict, degree: float):
     """generate action for look down
@@ -53,7 +54,7 @@ def execute_look_down(pipe: PipeManager, global_states: dict, degree: float):
     action = global_states['action']
     robot: TiagoAdvanced = global_states['robot']
     
-    # hand action buffer
+    # head action buffer
     buffer: dict = global_states['active_actions'][ACTION_CATAGORY]
     
     # check end of a look down according to the joint pos delta
@@ -67,9 +68,11 @@ def execute_look_down(pipe: PipeManager, global_states: dict, degree: float):
         )
         global_states['active_actions'][ACTION_CATAGORY] = None
         
-        # hand action is over
+        print(f'operator: look down end!')
+        
+        # head action is over
         return action
     
-    # return None means using hand_custom_step(robot, global_states['active_actions'][ACTION_CATAGORY]) 
+    # return None means using head_custom_step(robot, global_states['active_actions'][ACTION_CATAGORY]) 
     # instead of env.step(action).
     return None

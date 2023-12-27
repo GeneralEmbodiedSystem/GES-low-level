@@ -7,10 +7,10 @@ import numpy as np
 
 from omnigibson.robots.tiago_advanced import TiagoAdvanced
 from omnigibson.custom_env.utils.eular_utils import check_joint_still
-from omnigibson.utils.camera_skill_utils import execute_look_forward
+from omnigibson.utils.camera_skill_utils import execute_look_forward as look_forward_exp
 
 
-ACTION_CATAGORY = 'camera_action'
+ACTION_CATAGORY = 'head_action'
 TASK_NAME = 'look_forward'
 
 def emit_look_forward(pipe: PipeManager, global_states: dict):
@@ -30,10 +30,10 @@ def emit_look_forward(pipe: PipeManager, global_states: dict):
         'args': {},
     }
     
-    # hand action buffer
+    # head action buffer
     buffer: dict = global_states['active_actions'][ACTION_CATAGORY]
 
-    execute_look_forward(robot, buffer)
+    look_forward_exp(robot, buffer)
 
 def execute_look_forward(pipe: PipeManager, global_states: dict):
     """generate action for look forward
@@ -49,7 +49,7 @@ def execute_look_forward(pipe: PipeManager, global_states: dict):
     action = global_states['action']
     robot: TiagoAdvanced = global_states['robot']
     
-    # hand action buffer
+    # head action buffer
     buffer: dict = global_states['active_actions'][ACTION_CATAGORY]
     
     # check end of a look forward according to the joint pos delta
@@ -63,9 +63,11 @@ def execute_look_forward(pipe: PipeManager, global_states: dict):
         )
         global_states['active_actions'][ACTION_CATAGORY] = None
         
-        # hand action is over
+        print(f'operator: look forward end!')
+        
+        # head action is over
         return action
     
-    # return None means using hand_custom_step(robot, global_states['active_actions'][ACTION_CATAGORY]) 
+    # return None means using head_custom_step(robot, global_states['active_actions'][ACTION_CATAGORY]) 
     # instead of env.step(action).
     return None

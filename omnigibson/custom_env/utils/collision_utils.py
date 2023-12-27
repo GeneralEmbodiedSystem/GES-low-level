@@ -8,7 +8,10 @@ import numpy as np
 
 from omnigibson.object_states import ContactBodies
 from omnigibson.custom_env.exceptions import MoveException
+from omnigibson.utils.transform_utils import quat2euler
+from omnigibson.robots.tiago_advanced import TiagoAdvanced
 
+from omnigibson.custom_env.utils.eular_utils import check_walk_straight
 
 def detect_collision_by_lidar(lidar_depths: List[np.ndarray]) -> bool:
     """
@@ -28,6 +31,7 @@ def detect_collision_by_lidar(lidar_depths: List[np.ndarray]) -> bool:
     return min_depth < EPSILON
 
 
+# TODO: use velocity to detect collision, z radians
 def detect_collision_by_contact_bodies(robot: object, ignore_objs: tuple) -> bool:
     """
     Detect whether the robot collides with the environment by the ContactBodies state.
@@ -41,6 +45,16 @@ def detect_collision_by_contact_bodies(robot: object, ignore_objs: tuple) -> boo
     """
     return len(robot.states[ContactBodies].get_value(ignore_objs=ignore_objs)) > 0
 
+def detect_collision_by_pos_delta(robot: TiagoAdvanced, last_pos, eps=1e-4):
+    '''
+    check if robot move according to the pos delta
+    
+    Returns:
+        collision_flag (bool): True if the robot collision.
+    '''
+    now_pos = robot.get_position()
+    delta_pos = np.linalg.norm(np.array(now_pos) - np.array(last_pos))
+    return delta_pos < eps
 
 def handle_collision(global_states: dict, ignore_objs: tuple) -> None:
     """
@@ -59,13 +73,25 @@ def handle_collision(global_states: dict, ignore_objs: tuple) -> None:
         return
     
     if move_action['func'] not in ['move_forward', 'move_backward', 
-        'move_left', 'move_right']:
+            'move_left', 'move_right']:
+        # empty collision scratch
+        global_states['collision_scratch'] = {
+            'last_postion': None,
+            'init_orientation_z': None,
+        }
         return
     
+    # extra the params
     robot = global_states['robot']
     robot_exception = MoveException(move_action['func'][5:])
-
-    if detect_collision_by_contact_bodies(robot, ignore_objs):
+    collision_scratch = global_states['collision_scratch']
+    last_postion = collision_scratch.get('last_postion', None)
+    init_orientation_z = collision_scratch.get('init_orientation_z', None)
+    
+    # check collision if not at the first step
+    if last_postion is not None and \
+            (detect_collision_by_pos_delta(robot, last_postion) or \
+            not check_walk_straight(robot, init_orientation_z)):
         print("COLLISION!")
         # If the robot collides with the environment, raise an exception
         global_states['active_actions']['move_exception'] = robot_exception
@@ -75,6 +101,10 @@ def handle_collision(global_states: dict, ignore_objs: tuple) -> None:
         # Make the robot not ready
         robot.ready = False
         return
+
+    # update collision scratch
+    collision_scratch['last_postion'] = robot.get_position()
+    collision_scratch['init_orientation_z'] = quat2euler(robot.get_orientation())[2]
 
     lidar_depths = []
     if move_action['func'] == 'move_forward':

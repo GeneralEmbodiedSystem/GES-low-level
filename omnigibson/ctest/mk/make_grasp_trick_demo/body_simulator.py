@@ -1,12 +1,4 @@
 # -*- coding: UTF-8 -*-
-
-# make_grasp_trick_demo
-# body_simulator.py
-
-# mount tmpfs:
-# mkdir ~/tmpfs
-# sudo mount -t tmpfs -o size=512M tmpfs ~/tmpfs/
-
 """
 Example script demo'ing robot manipulation control with grasping.
 """
@@ -18,7 +10,6 @@ import omnigibson as og
 from omnigibson.macros import gm
 from omnigibson.sensors import VisionSensor
 from servers import PipeManager
-from omnigibson.custom_env.exceptions import MoveException
 from omnigibson.custom_env.utils import handle_collision
 from omnigibson.custom_env.skills.get_image import emit_get_image
 from omnigibson.custom_env.skills.move_forward import emit_move_forward, execute_move_forward
@@ -27,9 +18,19 @@ from omnigibson.custom_env.skills.move_left import emit_move_left, execute_move_
 from omnigibson.custom_env.skills.move_right import emit_move_right, execute_move_right
 from omnigibson.custom_env.skills.turn_left import emit_turn_left, execute_turn_left
 from omnigibson.custom_env.skills.turn_right import emit_turn_right, execute_turn_right
-from omnigibson.custom_env.skills.brake import emit_brake
-from omnigibson.custom_env.skills.get_velocity import emit_get_velocity
+from omnigibson.custom_env.skills.move_gripper_to import emit_move_gripper_to, execute_move_gripper_to
+from omnigibson.custom_env.skills.close_gripper import emit_close_gripper, execute_close_gripper
+from omnigibson.custom_env.skills.open_gripper import emit_open_gripper, execute_open_gripper
+from omnigibson.custom_env.skills.raise_gripper import emit_raise_gripper, execute_raise_gripper
+from omnigibson.custom_env.skills.look_up import emit_look_up, execute_look_up
+from omnigibson.custom_env.skills.look_forward import emit_look_forward, execute_look_forward
+from omnigibson.custom_env.skills.look_down import emit_look_down, execute_look_down
 
+from omnigibson.robots import TiagoAdvanced
+
+from omnigibson.utils.transform_utils import quat2euler
+
+from omnigibson.custom_env.utils.camera_utils import execute_record
 
 from omnigibson.utils.ui_utils import create_module_logger
 log = create_module_logger(module_name=__name__)
@@ -43,8 +44,13 @@ skillset = {
     'move_right': (emit_move_right, execute_move_right),
     'turn_left': (emit_turn_left, execute_turn_left),
     'turn_right': (emit_turn_right, execute_turn_right),
-    'brake': (emit_brake, ),
-    'get_velocity': (emit_get_velocity, )
+    'move_gripper_to': (emit_move_gripper_to, execute_move_gripper_to),
+    'close_gripper': (emit_close_gripper, execute_close_gripper),
+    'open_gripper': (emit_open_gripper, execute_open_gripper),
+    'raise_gripper': (emit_raise_gripper, execute_raise_gripper),
+    'look_up': (emit_look_up, execute_look_up),
+    'look_forward': (emit_look_forward, execute_look_forward),
+    'look_down': (emit_look_down, execute_look_down),
 }
 
 # Don't use GPU dynamics and Use flatcache for performance boost
@@ -60,16 +66,27 @@ TMP_PATH = server_config['tmp_path']
 SHM_NAME_INTER = server_config['shm_ser_sim']['name']
 SHM_SIZE_INTER = server_config['shm_ser_sim']['size']
 
+def lift_trunk_body(robot): # TiagoAdvanced
+    robot.set_joint_positions(
+        np.array([1.]),
+        indices=robot.trunk_control_idx,
+        # drive=True,  # if drive=True, the robot will gradually move to the target position. else it will be set to the target position immediately
+    )
 
-def main(random_selection=False, headless=False, short_exec=False):
+def get_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--config_file", "-c", type=str, default="table_food_trash_can_env.yaml")
+    parser.add_argument("--record", "-r", type=int, default=None)
+    args = parser.parse_args()
+    
+    return args
+
+def main(random_selection=False, headless=False, short_exec=False, args=get_args()):
     """
     Robot grasping mode demo with selection
     Queries the user to select a type of grasping mode
     """
     # environment config, including scene, robot, and objects
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--config_file", type=str, default="table_food_trash_can_env.yaml")
-    args = parser.parse_args()
     sim_config_path = './omnigibson/custom_env/configs/' + args.config_file
     with open(sim_config_path, 'r') as f:
         sim_config = yaml.load(f, Loader=yaml.FullLoader)
@@ -84,7 +101,7 @@ def main(random_selection=False, headless=False, short_exec=False):
         TMP_PATH, SHM_NAME_INTER, 
         SHM_SIZE_INTER, create=False
     )
-
+    
     # Create environment configuration to use
     scene_cfg = sim_config["scene_cfg"]
     robot0_cfg = sim_config["robot0_cfg"]
@@ -102,15 +119,27 @@ def main(random_selection=False, headless=False, short_exec=False):
     env = og.Environment(configs=cfg, action_timestep=1/60., physics_timestep=1/60.)
 
     # Reset the robot
-    robot = env.robots[0]
+    robot: TiagoAdvanced = env.robots[0]
 
     # TODO: remove hard code
     robot.set_position(sim_config["other_init_cfg"]["robot_position"])  # robot0_cfg["position"]
     robot.reset()
+    
+    lift_trunk_body(robot)
+    og.sim.step()
     # robot.keep_still()
 
     # Init Lidar sensors
     robot.init_scan_sensor()
+    
+    # limit the max joint velocities of the robot
+    robot.max_joint_velocities[robot.ik_control_idx] /= 1
+    robot.max_joint_efforts[robot.ik_control_idx] /= 1
+    
+    # Init record frames cache
+    if args.record is not None:
+        print(f'record {args.record} frames!')
+        record_frames = []
 
     # Make the robot's camera(s) high-res
     for sensor in robot.sensors.values():
@@ -124,6 +153,7 @@ def main(random_selection=False, headless=False, short_exec=False):
         position=np.array(sim_config["viewer_camera_cfg"]["position"]),
         orientation=np.array(sim_config["viewer_camera_cfg"]["orientation"]),
     )
+    og.sim.step()
 
     # Create teleop controller
     # action_generator = KeyboardRobotController(robot=robot)  
@@ -142,13 +172,21 @@ def main(random_selection=False, headless=False, short_exec=False):
         #     "timeout": 100
         # },
         # None means no action (still)
+        # Actions related to base movement
         "move_action": None,
-        # TODO: implement the action related to arm moving
-        "hand_action": None
+        # Exception related to base movement
+        "move_exception": None,
+        # Actions related to arm movement
+        "hand_action": None,
+        # robot_states
+        'robot_states': {
+            'gripper_state': 'open', # 'open' or 'close'
+        }
+        # TODO: Actions related to head movement
     }
 
     # Other helpful user info
-    print(f"Running demo with grasping mode {grasping_mode} and scene mode{scene_cfg['scene_model']}.")
+    print(f"Running demo with grasping mode {grasping_mode} and scene mode{scene_cfg.get('scene_model', None)}.")
     print("Use CTRL+C to quit")
 
     # Loop control until user quits
@@ -158,16 +196,36 @@ def main(random_selection=False, headless=False, short_exec=False):
     # action_random_selection = False
 
     # Ignore the floors when checking collision
-    ignore_objs = tuple(env.scene.object_registry("category", "floors", []))
+    ignore_objs = tuple(
+        env.scene.object_registry("category", "floors", []),
+        # env.scene.object_registry("category", "box_of_yogurt", []),
+    )
+    
+    # collision scratch
+    collision_scratch = {
+        'last_postion': None,
+        'init_orientation_z': None,
+    }
     
     # set GLOBAL_STATE buffer (dict)
     global_states = dict()
+    global_states_keys = ['env', 'robot', 'active_actions', 'collision_scratch']
+    if args.record is not None:
+        global_states_keys.append('record_frames')
+    
+    for global_states_key in global_states_keys:
+        global_states[global_states_key] = eval(global_states_key)
     
     try:
+        steps = 0
         while True:
-            action = np.zeros(robot.action_dim)
+            # If a collision happens, brake the robot
+            handle_collision(global_states, ignore_objs)
+            
+            # Prepare the action vector
+            global_states['action'] = np.zeros(robot.action_dim)
             if robot.ready:
-                execute_message(pipe, global_states)
+                emit_message(pipe, global_states)  # call emit_xxx and prepare for generate_action()
 
             """
             TiagoAdvance action idx (action_dim=19):
@@ -180,16 +238,24 @@ def main(random_selection=False, headless=False, short_exec=False):
             [5, 11]: left arm. for example, the dim 5 means left hand front/back 
             [12, 18]: right arm.
             """
-            generate_action(pipe, global_states)
-            # If a collision happens, brake the robot
-            handle_collision(global_states, ignore_objs)
-            env.step(action)
+            generate_action(pipe, global_states)  # call execute_xxx and set action
+            update_env(robot, global_states)
+            steps += 1
+            
+            if args.record is not None:
+                if steps < args.record:
+                    execute_record(og.sim.viewer_camera, global_states, './viewer.mp4')
+                elif steps == args.record:
+                    execute_record(og.sim.viewer_camera, global_states, './viewer.mp4', end=True)
     except KeyboardInterrupt:
         # Always shut down the environment cleanly at the end
         env.close()
 
 
-def execute_message(pipe: PipeManager, global_states: dict):
+
+
+
+def emit_message(pipe: PipeManager, global_states: dict):
     '''this function only set the low level to a given state. the actual movement(generate action at each time) is done in generate_action
     @param message(tuple): (CMD, *args)
         (get_image, ...)
@@ -202,7 +268,7 @@ def execute_message(pipe: PipeManager, global_states: dict):
         return
     
     og.log.info(f"message: {message}")
-    # `skillset[message[0]][0]` is like emit_xxx. 
+    # `skillset[message[0]][0]` is like run_xxx. 
     # It only set the action to be taken
     skillset[message[0]][0](pipe, global_states, *message[1:])
 
@@ -214,25 +280,111 @@ def generate_action(pipe: PipeManager, global_states: dict):
     """
     env, robot = global_states['env'], global_states['robot']
     action = global_states['action']
+    move_exception = global_states['active_actions']['move_exception']
 
     # Like execute_xxx, it applies the action to the robot action vector
-    skill_executed = global_states['active_actions']['move_action']
-    if isinstance(skill_executed, MoveException) and not skill_executed.recovered:
+    skill_executed_list = [global_states['active_actions']['move_action'],
+                            global_states['active_actions']['hand_action']]
+    
+    # Recover exception
+    if move_exception is not None:
+        if move_exception.cur_recover_step == 0:
+            # TODO: put this in specific skill
+            # Report the exception to the server
+            pipe.write(
+                data=str(move_exception),
+                role="server"
+            )
+        move_exception.cur_recover_step += 1
         # If the robot collides with the environment, get an recovery action
-        skill_executed = skill_executed.get_recovery_action()
-        global_states['active_actions']['move_action'].recovered_steps -= 1
-        if global_states['active_actions']['move_action'].recovered_steps <= 0:
+        action = move_exception.get_recovery_action(action)
+        if move_exception.cur_recover_step >= move_exception.recover_steps:
             # If the robot has recovered from the exception, make it ready
-            global_states['active_actions']['move_action'].recovered = True
+            global_states['active_actions']['move_exception'] = None
             robot.ready = True
-    if skill_executed is not None and not isinstance(skill_executed, MoveException):
-        skill_execute_func = skillset[skill_executed['func']][1]
-        args = skill_executed['args']
-        action = skill_execute_func(pipe, global_states, **args)
+    else:
+        # Execute the skills
+        for skill_executed in skill_executed_list:
+            if skill_executed is not None:
+                skill_execute_func = skillset[skill_executed['func']][1]
+                args = skill_executed['args']
+                action = skill_execute_func(pipe, global_states, **args)
     
     global_states['action'] = action
-    return
 
+
+def update_env(robot: TiagoAdvanced, global_states: dict):
+    """
+    Apply the robot action and step the simulation.
+
+    In this function, we use the physx interface (og.sim.step()) 
+    to step the action instead of using the env.step() function.
+    This is due to unknown compatibility issues.
+    """
+    # prior params
+    left_or_right = 'left'
+    
+    # extract vars
+    action = global_states['action']
+    
+    # init tgt positions and velocities list
+    tgt_joint_poses, tgt_joint_pos_idxes = [], []
+    tgt_joint_vels, tgt_joint_vel_idxes = [], []
+    
+    # target position control
+    # gripper movement control
+    if 'hand_action' in global_states['active_actions']:
+        physx_action = global_states['active_actions']['hand_action']
+        if isinstance(physx_action, dict):
+            # print("physx_action", physx_action)
+            if 'tgt_joint_pos' in physx_action:
+                for k, v in physx_action['tgt_joint_pos'].items():
+                    tgt_joint_poses.append(v[0])
+                    tgt_joint_pos_idxes.append(v[1])
+    # gripper open or close state control
+    if 'robot_states' in global_states['active_actions']:
+        if 'gripper_state' in global_states['active_actions']['robot_states']:
+            gripper_state = global_states['active_actions']['robot_states']['gripper_state']
+            if gripper_state == 'open':
+                tgt_joint_poses.append([0.045, 0.045])
+            else:
+                tgt_joint_poses.append([0.0, 0.0])
+            tgt_joint_pos_idxes.append(robot.gripper_control_idx[left_or_right])
+    # implement the position control
+    if len(tgt_joint_poses) > 0:
+        tgt_joint_pos = np.concatenate(tgt_joint_poses)
+        tgt_joint_pos_idx = np.concatenate(tgt_joint_pos_idxes)
+        robot.set_joint_positions(
+            tgt_joint_pos, 
+            indices=tgt_joint_pos_idx,
+            drive=True,
+        )
+    
+    # target velocities control
+    # robot movement control
+    if action is not None:
+        # base movement control
+        tgt_joint_vels.append(action[:3])
+        tgt_joint_vel_idxes.append(robot.base_control_idx)
+    # implement the velocity control
+    if len(tgt_joint_vels) > 0:
+        tgt_joint_vel = np.concatenate(tgt_joint_vels)
+        tgt_joint_vel_idx = np.concatenate(tgt_joint_vel_idxes)
+        robot.set_joint_velocities(
+            tgt_joint_vel, 
+            indices=tgt_joint_vel_idx, 
+            drive=True,
+        )
+    
+#     file_log(f'''robot orientation: {robot.get_orientation()}
+# quat2euler: {quat2euler(robot.get_orientation())}
+# ''')
+    
+    og.sim.step()
+
+def file_log(log: str):
+    with open('./tmp.log', 'w') as f:
+        f.write(log)
 
 if __name__ == "__main__":
     main()

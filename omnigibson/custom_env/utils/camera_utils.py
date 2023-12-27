@@ -19,15 +19,11 @@ def rgba2rgb(rgba, background=(255,255,255)):
 
     return np.asarray(rgb, dtype='uint8')
 
-def execute_record(vision_sensor: VisionSensor, buffer: dict, saved_vedio_path = None, fps = 60, end = False):
+def execute_record(vision_sensor: VisionSensor, record_frames: list, saved_vedio_path = None, fps = 60, end = False):
     '''
     record a frame when invoke with end=False
     empty cache & save vedio when end=True && saved_vedio_path is not None
     '''
-    if 'record_frames' not in buffer:
-        buffer['record_frames'] = list()
-    record_frames = buffer['record_frames']
-    
     sensor_obs = vision_sensor.get_obs()
     rgba_image = sensor_obs['rgb']
     rgb_image = rgba2rgb(rgba_image)
@@ -49,4 +45,4 @@ def execute_record(vision_sensor: VisionSensor, buffer: dict, saved_vedio_path =
             out.write(frame)
         out.release()
         
-        buffer.pop('record_frames')
+        record_frames.clear()

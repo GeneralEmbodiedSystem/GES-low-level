@@ -167,7 +167,7 @@ def execute_move_gripper_to(pipe: PipeManager, global_states: dict, object: str)
     else:
         single_navigation_scratch['still_times'] = 0
     
-    print(f'operator: to_move_distance: {to_move_distance}')
+    # print(f'operator: to_move_distance: {to_move_distance}')
     # print(f'operator: robot.joint_velocity_limits: {robot.max_joint_velocities[robot.arm_control_idx[left_or_right]]}')
     # print(f'operator: robot jointpos: {robot.get_joint_positions()[robot.arm_control_idx[left_or_right]]}')
     # print(f'operator: waypoint: {waypoints[current_waypoint_index]}')

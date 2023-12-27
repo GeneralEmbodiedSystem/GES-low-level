@@ -66,3 +66,17 @@ def check_joint_still(robot: TiagoAdvanced, single_reach_scratch: dict, control_
         end_ik_flag = (delta_distance < eps)
     
     return end_ik_flag
+
+def check_walk_straight(robot: TiagoAdvanced, init_orientation_z, eps=1e-1):
+    '''
+    check if robot walk straight according to the orientation_z
+    
+    Args:
+        robot: a instance of TiagoAdvanced.
+        init_orientation_z: orientation_z at first.
+    
+    Returns:
+        walk_straight_flag (bool): True if the robot walks straight.
+    '''
+    now_orientation_z = quat2euler(robot.get_orientation())[2]
+    return abs(now_orientation_z - init_orientation_z) < eps

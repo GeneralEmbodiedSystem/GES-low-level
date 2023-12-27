@@ -22,6 +22,9 @@ from omnigibson.custom_env.skills.move_gripper_to import emit_move_gripper_to, e
 from omnigibson.custom_env.skills.close_gripper import emit_close_gripper, execute_close_gripper
 from omnigibson.custom_env.skills.open_gripper import emit_open_gripper, execute_open_gripper
 from omnigibson.custom_env.skills.raise_gripper import emit_raise_gripper, execute_raise_gripper
+from omnigibson.custom_env.skills.look_up import emit_look_up, execute_look_up
+from omnigibson.custom_env.skills.look_forward import emit_look_forward, execute_look_forward
+from omnigibson.custom_env.skills.look_down import emit_look_down, execute_look_down
 
 from omnigibson.robots import TiagoAdvanced
 
@@ -45,6 +48,9 @@ skillset = {
     'close_gripper': (emit_close_gripper, execute_close_gripper),
     'open_gripper': (emit_open_gripper, execute_open_gripper),
     'raise_gripper': (emit_raise_gripper, execute_raise_gripper),
+    'look_up': (emit_look_up, execute_look_up),
+    'look_forward': (emit_look_forward, execute_look_forward),
+    'look_down': (emit_look_down, execute_look_down),
 }
 
 # Don't use GPU dynamics and Use flatcache for performance boost
@@ -96,10 +102,6 @@ def main(random_selection=False, headless=False, short_exec=False, args=get_args
         SHM_SIZE_INTER, create=False
     )
     
-    # disable collision detection when recording demo
-    # enable collision detection when use agent
-    collision_detection = True
-
     # Create environment configuration to use
     scene_cfg = sim_config["scene_cfg"]
     robot0_cfg = sim_config["robot0_cfg"]
@@ -128,17 +130,17 @@ def main(random_selection=False, headless=False, short_exec=False, args=get_args
     # robot.keep_still()
 
     # Init Lidar sensors
-    if collision_detection:
-        robot.init_scan_sensor()
+    robot.init_scan_sensor()
     
     # limit the max joint velocities of the robot
-    robot.max_joint_velocities[robot.ik_control_idx] /= 1
-    robot.max_joint_efforts[robot.ik_control_idx] /= 1
+    robot.max_joint_velocities[robot.ik_control_idx] *= 1
+    robot.max_joint_efforts[robot.ik_control_idx] *= 1
     
     # Init record frames cache
     if args.record is not None:
         print(f'record {args.record} frames!')
-        record_frames = []
+        viewer_record_frames = []
+        robot_camera_record_frames = []
 
     # Make the robot's camera(s) high-res
     for sensor in robot.sensors.values():
@@ -177,6 +179,8 @@ def main(random_selection=False, headless=False, short_exec=False, args=get_args
         "move_exception": None,
         # Actions related to arm movement
         "hand_action": None,
+        # Actions related to head movement
+        "head_action": None,
         # robot_states
         'robot_states': {
             'gripper_state': 'open', # 'open' or 'close'
@@ -200,11 +204,15 @@ def main(random_selection=False, headless=False, short_exec=False, args=get_args
         # env.scene.object_registry("category", "box_of_yogurt", []),
     )
     
+    # collision scratch
+    collision_scratch = {
+        'last_postion': None,
+        'init_orientation_z': None,
+    }
+    
     # set GLOBAL_STATE buffer (dict)
     global_states = dict()
-    global_states_keys = ['env', 'robot', 'active_actions']
-    if args.record is not None:
-        global_states_keys.append('record_frames')
+    global_states_keys = ['env', 'robot', 'active_actions', 'collision_scratch']
     
     for global_states_key in global_states_keys:
         global_states[global_states_key] = eval(global_states_key)
@@ -213,8 +221,7 @@ def main(random_selection=False, headless=False, short_exec=False, args=get_args
         steps = 0
         while True:
             # If a collision happens, brake the robot
-            if collision_detection:
-                handle_collision(global_states, ignore_objs)
+            handle_collision(global_states, ignore_objs)
             
             # Prepare the action vector
             global_states['action'] = np.zeros(robot.action_dim)
@@ -238,12 +245,17 @@ def main(random_selection=False, headless=False, short_exec=False, args=get_args
             
             if args.record is not None:
                 if steps < args.record:
-                    execute_record(og.sim.viewer_camera, global_states, './viewer.mp4')
+                    execute_record(og.sim.viewer_camera, viewer_record_frames, './viewer.mp4')
+                    execute_record(robot.vision_sensor, robot_camera_record_frames, './robot_camera.mp4')
                 elif steps == args.record:
-                    execute_record(og.sim.viewer_camera, global_states, './viewer.mp4', end=True)
+                    execute_record(og.sim.viewer_camera, viewer_record_frames, './viewer.mp4', end=True)
+                    execute_record(robot.vision_sensor, robot_camera_record_frames, './robot_camera.mp4', end=True)
     except KeyboardInterrupt:
         # Always shut down the environment cleanly at the end
         env.close()
+
+
+
 
 
 def emit_message(pipe: PipeManager, global_states: dict):
@@ -274,8 +286,7 @@ def generate_action(pipe: PipeManager, global_states: dict):
     move_exception = global_states['active_actions']['move_exception']
 
     # Like execute_xxx, it applies the action to the robot action vector
-    skill_executed_list = [global_states['active_actions']['move_action'],
-                            global_states['active_actions']['hand_action']]
+    skill_executed_list = ['move_action', 'hand_action', 'head_action']
     
     # Recover exception
     if move_exception is not None:
@@ -296,6 +307,7 @@ def generate_action(pipe: PipeManager, global_states: dict):
     else:
         # Execute the skills
         for skill_executed in skill_executed_list:
+            skill_executed = global_states['active_actions'].get(skill_executed, None)
             if skill_executed is not None:
                 skill_execute_func = skillset[skill_executed['func']][1]
                 args = skill_executed['args']
@@ -324,14 +336,16 @@ def update_env(robot: TiagoAdvanced, global_states: dict):
     
     # target position control
     # gripper movement control
-    if 'hand_action' in global_states['active_actions']:
-        physx_action = global_states['active_actions']['hand_action']
-        if isinstance(physx_action, dict):
-            # print("physx_action", physx_action)
-            if 'tgt_joint_pos' in physx_action:
-                for k, v in physx_action['tgt_joint_pos'].items():
-                    tgt_joint_poses.append(v[0])
-                    tgt_joint_pos_idxes.append(v[1])
+    skill_executed_list = ['hand_action', 'head_action']
+    for skill_executed in skill_executed_list:
+        if skill_executed in global_states['active_actions']:
+            physx_action = global_states['active_actions'][skill_executed]
+            if isinstance(physx_action, dict):
+                # print("physx_action", physx_action)
+                if 'tgt_joint_pos' in physx_action:
+                    for k, v in physx_action['tgt_joint_pos'].items():
+                        tgt_joint_poses.append(v[0])
+                        tgt_joint_pos_idxes.append(v[1])
     # gripper open or close state control
     if 'robot_states' in global_states['active_actions']:
         if 'gripper_state' in global_states['active_actions']['robot_states']:
