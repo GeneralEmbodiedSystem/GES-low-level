@@ -1,3 +1,6 @@
+import os
+from os.path import join
+
 from omni.isaac.kit import SimulationApp
 
 headless = False
@@ -11,12 +14,23 @@ from omni.isaac.core.utils.prims import get_prim_at_path, define_prim
 
 import carb
 
+# only valid in the same level of dir
+this_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+data_path = join(
+    this_path,
+    '../../data',
+)
+print(f'data_path: {os.path.abspath(data_path)}')
+
 my_world = World(stage_units_in_meters=1.0)
 my_world.scene.add_default_ground_plane()
 
 assets_root_path = get_assets_root_path()
 
-tiago_usd_path = '/home/mad0g4/Desktop/code/GES-low-level/omnigibson/data/assets/models/tiago/tiago_dual_omnidirectional_stanford/tiago_dual_omnidirectional_stanford_33.usd'
+tiago_usd_path = join(
+    data_path, 
+    '/assets/models/tiago/tiago_dual_omnidirectional_stanford/tiago_dual_omnidirectional_stanford_33.usd'
+)
 
 def attach_usd_to_prim(prim_path: str, usd_path: str):
     prim = get_prim_at_path(prim_path)

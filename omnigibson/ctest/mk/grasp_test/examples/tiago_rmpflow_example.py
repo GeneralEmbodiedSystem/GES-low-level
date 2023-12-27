@@ -36,7 +36,6 @@ from omni.isaac.motion_generation.interface_config_loader import (
     load_supported_motion_policy_config,
 )
 
-
 class TiagoRmpFlowExample():
     def __init__(self):
         self._rmpflow = None
@@ -49,7 +48,7 @@ class TiagoRmpFlowExample():
         
         self._visual_out = True
         
-        self._tiago_assets_root_path = '/home/mad0g4/Desktop/code/GES-low-level/omnigibson/ctest/mk/grasp_test/configs/rmpflow/tiago'
+        self._tiago_assets_root_path = './configs/rmpflow/tiago'
         
         self._tiago_dof_names = [
             'torso_lift_joint', 
