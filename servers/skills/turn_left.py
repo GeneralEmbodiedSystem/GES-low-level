@@ -22,10 +22,12 @@ def turn_left(socket_manager: SocketManager, pipe: PipeManager):
         role="client"
     )
     
-    while pipe.read(role="client") is None:
-        pass
+    while True:
+        data = pipe.read(role="client")
+        if data is not None:
+            break
 
     # Send the response
     socket_manager.write_request({
-        'success': True
+        'result': data
     })
