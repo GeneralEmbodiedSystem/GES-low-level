@@ -31,7 +31,8 @@ def detect_collision_by_lidar(lidar_depths: List[np.ndarray]) -> bool:
     return min_depth < EPSILON
 
 
-# TODO: use velocity to detect collision, z radians
+# Note: this function is deprecated since 
+# the collision will unexpectedly occur when grasping.
 def detect_collision_by_contact_bodies(robot: object, ignore_objs: tuple) -> bool:
     """
     Detect whether the robot collides with the environment by the ContactBodies state.
@@ -45,9 +46,11 @@ def detect_collision_by_contact_bodies(robot: object, ignore_objs: tuple) -> boo
     """
     return len(robot.states[ContactBodies].get_value(ignore_objs=ignore_objs)) > 0
 
-def detect_collision_by_pos_delta(robot: TiagoAdvanced, last_pos, eps=1e-4):
+
+def detect_collision_by_pos_delta(robot: TiagoAdvanced, last_pos, eps=1e-3):
     '''
-    check if robot move according to the pos delta
+    check if robot move according to the pos delta. If the robot moves significantly
+    slower than the expected speed, we consider it as a collision.
     
     Returns:
         collision_flag (bool): True if the robot collision.
@@ -55,6 +58,7 @@ def detect_collision_by_pos_delta(robot: TiagoAdvanced, last_pos, eps=1e-4):
     now_pos = robot.get_position()
     delta_pos = np.linalg.norm(np.array(now_pos) - np.array(last_pos))
     return delta_pos < eps
+
 
 def handle_collision(global_states: dict, ignore_objs: tuple) -> None:
     """
