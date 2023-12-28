@@ -62,7 +62,7 @@ def emit_move_gripper_to(pipe: PipeManager, global_states: dict, object: str):
         waypoints.append((object_pos + np.array([0.0, 0.0, 0.1]), 1e-4))
         # waypoints.append((object_pos, 3e-2))
         # waypoints.append((object_pos, 5e-2))
-        waypoints.append((object_pos + np.array([-0.02, 0.02, -0.05]), 5e-2))
+        waypoints.append((object_pos + np.array([-0.02, 0.02, -0.05]), 8e-2))
         # waypoints.append((object, 3e-2))
     
     # define single_navigation_scratch init state generation function

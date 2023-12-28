@@ -10,7 +10,7 @@ from servers.utils import PipeManager
 from omnigibson.utils.transform_utils import quat2euler
 
 from omnigibson.robots import TiagoAdvanced
-from omnigibson.custom_env.utils.constant_utils import MOVE_RIGHT_VEL
+from omnigibson.custom_env.utils.constant_utils import MOVE_LEFT_RIGHT_VEL
 from omnigibson.custom_env.utils.eular_utils import calculate_distance
 
 
@@ -59,8 +59,8 @@ def execute_move_right(pipe: PipeManager, global_states: dict, dist: float):
     # move_exception = global_states['active_actions']['move_exception']
 
     z_radian = quat2euler(robot.get_orientation())[2]
-    x_vel = MOVE_RIGHT_VEL * np.sin(z_radian)
-    y_vel = MOVE_RIGHT_VEL * np.cos(z_radian)
+    x_vel = MOVE_LEFT_RIGHT_VEL * np.sin(z_radian)
+    y_vel = -MOVE_LEFT_RIGHT_VEL * np.cos(z_radian)
 
     if calculate_distance(init_pos, robot.get_position()) <= dist:
         action[0] = x_vel; action[1] = y_vel

@@ -77,7 +77,8 @@ objects_cfg:
     name: box_of_yogurt
     category: box_of_yogurt
     model: jkemqc
-    size: 0.06
+    # size: 0.06
+    bounding_box: [0.06, 0.06, 0.08]
     position: [0.53, 0, 0.76]
 
   - type: PrimitiveObject
