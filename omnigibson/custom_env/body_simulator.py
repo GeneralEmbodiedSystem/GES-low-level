@@ -123,6 +123,7 @@ def main(random_selection=False, headless=False, short_exec=False, args=get_args
 
     # TODO: remove hard code
     robot.set_position(sim_config["other_init_cfg"]["robot_position"])  # robot0_cfg["position"]
+    robot.set_orientation(sim_config["other_init_cfg"]["robot_orientation"])  # robot0_cfg["orientation"]
     robot.reset()
     
     lift_trunk_body(robot)
