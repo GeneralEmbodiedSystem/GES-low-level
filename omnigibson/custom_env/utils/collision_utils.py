@@ -13,25 +13,74 @@ from omnigibson.robots.tiago_advanced import TiagoAdvanced
 
 from omnigibson.custom_env.utils.eular_utils import check_walk_straight
 
-def detect_collision_by_lidar(lidar_depths: List[np.ndarray]) -> bool:
+
+def detect_collision_by_lidar(global_states) -> bool:
     """
-    Detect whether the robot collides with the environment by the Lidar depth results.
+    Detect whether the robot collides with the environment by the Lidar point clouds.
 
     Args:
-        lidar_depth: the depth images obtained from the lidar, which are
-            normalized to [0, 1].
+        global_states: a dict used to store global variables, which are shared with
+            other functions.
 
     Returns:
         True if the robot collides with the environment, False otherwise.
     """
-    EPSILON = 1e-5
-    depth = np.concatenate(lidar_depths, axis=0)
-    min_depth = np.min(depth)
+    EPSILON = 2e-2  # Threshold for collision detection
 
-    return min_depth < EPSILON
+    move_action = global_states['active_actions']['move_action']
+    robot = global_states['robot']
+
+    # Get positions of the front right and rear left sensors
+    front_right_pos = robot.front_right_scan_sensor.get_position()
+    rear_left_pos = robot.rear_left_scan_sensor.get_position()
+
+    x_len, y_len = np.abs(front_right_pos - rear_left_pos)[:2]
+
+    if move_action['func'] == 'move_forward':
+        lidar = robot.front_right_scan_sensor
+        point_cloud = robot.get_scan_point_cloud(lidar, rotate=-np.pi/4)
+
+        within_front_bounds = (point_cloud[:, 0] >= -x_len) & \
+            (point_cloud[:, 0] <= 0) & \
+            (point_cloud[:, 1] >= 0) & \
+            (point_cloud[:, 1] <= EPSILON)
+        return np.any(within_front_bounds)
+    
+    elif move_action['func'] == 'move_right':
+        lidar = robot.front_right_scan_sensor
+        point_cloud = robot.get_scan_point_cloud(lidar, rotate=-np.pi/4)
+
+        within_right_bounds = (point_cloud[:, 0] >= 0) & \
+            (point_cloud[:, 0] <= EPSILON) & \
+            (point_cloud[:, 1] >= -y_len) & \
+            (point_cloud[:, 1] <= 0)
+        return np.any(within_right_bounds)
+
+    elif move_action['func'] == 'move_backward':
+        lidar = robot.rear_left_scan_sensor
+        point_cloud = robot.get_scan_point_cloud(lidar, rotate=3*np.pi/4)
+
+        within_rear_bounds = (point_cloud[:, 0] >= 0) & \
+            (point_cloud[:, 0] <= x_len) & \
+            (point_cloud[:, 1] >= -EPSILON) & \
+            (point_cloud[:, 1] <= 0)
+        return np.any(within_rear_bounds)
+    
+    elif move_action['func'] == 'move_left':
+        lidar = robot.rear_left_scan_sensor
+        point_cloud = robot.get_scan_point_cloud(lidar, rotate=3*np.pi/4)
+
+        within_left_bounds = (point_cloud[:, 0] >= -EPSILON) & \
+            (point_cloud[:, 0] <= 0) & \
+            (point_cloud[:, 1] >= 0) & \
+            (point_cloud[:, 1] <= y_len)
+        return np.any(within_left_bounds)
+
+    else:
+        return False
 
 
-# Note: this function is deprecated since 
+# Note: this function is DEPRECATED since 
 # the collision will unexpectedly occur when grasping.
 def detect_collision_by_contact_bodies(robot: object, ignore_objs: tuple) -> bool:
     """
@@ -47,7 +96,7 @@ def detect_collision_by_contact_bodies(robot: object, ignore_objs: tuple) -> boo
     return len(robot.states[ContactBodies].get_value(ignore_objs=ignore_objs)) > 0
 
 
-def detect_collision_by_pos_delta(robot: TiagoAdvanced, last_pos, eps=1e-3):
+def detect_collision_by_pos_delta(robot: TiagoAdvanced, last_pos, eps=1e-4):
     '''
     check if robot move according to the pos delta. If the robot moves significantly
     slower than the expected speed, we consider it as a collision.
@@ -60,15 +109,13 @@ def detect_collision_by_pos_delta(robot: TiagoAdvanced, last_pos, eps=1e-3):
     return delta_pos < eps
 
 
-def handle_collision(global_states: dict, ignore_objs: tuple) -> None:
+def handle_collision(global_states: dict) -> None:
     """
     Check whether the robot collides with the environment and handle the collision.
 
     Args:
         global_states: a dict used to store global variables, which are shared with
             other functions.
-        ignore_objs: the objects to be ignored when checking the collision.
-            It will be IGNORED by Lidar.
     """
 
     move_action = global_states['active_actions']['move_action']
@@ -96,7 +143,7 @@ def handle_collision(global_states: dict, ignore_objs: tuple) -> None:
     if last_postion is not None and \
             (detect_collision_by_pos_delta(robot, last_postion) or \
             not check_walk_straight(robot, init_orientation_z)):
-        print("COLLISION!")
+        print("COLLISION!1")
         # If the robot collides with the environment, raise an exception
         global_states['active_actions']['move_exception'] = robot_exception
         # The robot will stop moving
@@ -109,31 +156,9 @@ def handle_collision(global_states: dict, ignore_objs: tuple) -> None:
     # update collision scratch
     collision_scratch['last_postion'] = robot.get_position()
     collision_scratch['init_orientation_z'] = quat2euler(robot.get_orientation())[2]
-
-    lidar_depths = []
-    if move_action['func'] == 'move_forward':
-        lidar_depths = [
-            robot.front_right_scan_sensor.get_obs()['scan'],
-            robot.front_left_scan_sensor.get_obs()['scan']
-        ]
-    elif move_action['func'] == 'move_backward':
-        lidar_depths = [
-            robot.rear_right_scan_sensor.get_obs()['scan'],
-            robot.rear_left_scan_sensor.get_obs()['scan']
-        ]
-    elif move_action['func'] == 'move_left':
-        lidar_depths = [
-            robot.front_left_scan_sensor.get_obs()['scan'],
-            robot.rear_left_scan_sensor.get_obs()['scan']
-        ]
-    elif move_action['func'] == 'move_right':
-        lidar_depths = [
-            robot.front_right_scan_sensor.get_obs()['scan'],
-            robot.rear_right_scan_sensor.get_obs()['scan']
-        ]
     
-    if detect_collision_by_lidar(lidar_depths):
-        print("COLLISION!")
+    if detect_collision_by_lidar(global_states):
+        print("COLLISION!2")
         global_states['active_actions']['move_exception'] = robot_exception
         global_states['active_actions']['move_action'] = None 
         robot.ready = False

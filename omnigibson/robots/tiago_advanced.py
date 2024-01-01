@@ -270,23 +270,23 @@ class TiagoAdvanced(Tiago):
             setattr(self, 'rear_left_lidar', required_sensor)
         return getattr(self, 'rear_left_lidar')
     
-    @property
-    def front_left_scan_sensor(self):
-        '''
-        @return (VisionSensor, None): the Lidar sensor on the front left of TiagoAdvanced
-        '''
-        if not hasattr(self, 'front_left_lidar'):
-            raise ValueError("`front_left_lidar` has not been initialized. Please call `init_scan_sensor` first.")
-        return getattr(self, 'front_left_lidar')
+    # @property
+    # def front_left_scan_sensor(self):
+    #     '''
+    #     @return (VisionSensor, None): the Lidar sensor on the front left of TiagoAdvanced
+    #     '''
+    #     if not hasattr(self, 'front_left_lidar'):
+    #         raise ValueError("`front_left_lidar` has not been initialized. Please call `init_scan_sensor` first.")
+    #     return getattr(self, 'front_left_lidar')
     
-    @property
-    def rear_right_scan_sensor(self):
-        '''
-        @return (VisionSensor, None): the Lidar sensor on the rear right of TiagoAdvanced
-        '''
-        if not hasattr(self, 'rear_right_lidar'):
-            raise ValueError("`rear_right_lidar` has not been initialized. Please call `init_scan_sensor` first.")
-        return getattr(self, 'rear_right_lidar')
+    # @property
+    # def rear_right_scan_sensor(self):
+    #     '''
+    #     @return (VisionSensor, None): the Lidar sensor on the rear right of TiagoAdvanced
+    #     '''
+    #     if not hasattr(self, 'rear_right_lidar'):
+    #         raise ValueError("`rear_right_lidar` has not been initialized. Please call `init_scan_sensor` first.")
+    #     return getattr(self, 'rear_right_lidar')
     
     def init_scan_sensor(self):
         '''
@@ -294,86 +294,127 @@ class TiagoAdvanced(Tiago):
         '''
         front_right_pos = self.front_right_scan_sensor.get_position()
         rear_left_pos = self.rear_left_scan_sensor.get_position()
-        front_left_pos = front_right_pos.copy()
-        front_left_pos[1] = rear_left_pos[1]
-        rear_right_pos = rear_left_pos.copy()
-        rear_right_pos[1] = front_right_pos[1]
+        # front_left_pos = front_right_pos.copy()
+        # front_left_pos[1] = rear_left_pos[1]
+        # rear_right_pos = rear_left_pos.copy()
+        # rear_right_pos[1] = front_right_pos[1]
 
         # Set front right sensor
         self.front_right_scan_sensor.set_position(
-            front_right_pos + np.array([0.05, -0.05, 0])
+            front_right_pos + np.array([0.09, -0.06, 0])
         )
-        self.front_right_scan_sensor.horizontal_fov = 170.0
+        self.front_right_scan_sensor.horizontal_fov = 270.0
+        self.front_right_scan_sensor.min_range = 0.0
 
         # Set rear left sensor
         self.rear_left_scan_sensor.set_position(
-            rear_left_pos + np.array([-0.05, 0.05, 0])
+            rear_left_pos + np.array([-0.09, 0.06, 0])
         )
-        self.rear_left_scan_sensor.horizontal_fov = 170.0
+        self.rear_left_scan_sensor.horizontal_fov = 270.0
+        self.rear_left_scan_sensor.min_range = 0.0
 
-        # Get the prim path of the robot self
-        robot_prim_path = self._prim_path
-        print(robot_prim_path)
-        # Create an additional sensor: front left
-        lidar_front_left = create_sensor(
-            sensor_type="Lidar",
-            prim_path=robot_prim_path+"/base_front_laser_link/Lidar_left",
-            name="Lidar_left",
-            sensor_kwargs={
-                "horizontal_fov": 170.0,
-            }
-        )
-        lidar_front_left.load()
-        lidar_front_left._load()
-        lidar_front_left._post_load()
-        lidar_front_left._initialize()
-        lidar_front_left.load_observation_space()
-        lidar_front_left._load_observation_space()
-        lidar_front_left.set_position(
-            front_left_pos + np.array([0.05, 0.05, 0])
-        )
-        lidar_front_left.set_orientation(
-            np.array([0.92388, 0.38268, 0.0, 0])
-        )
-        setattr(self, 'front_left_lidar', lidar_front_left)
+        # # Get the prim path of the robot self
+        # robot_prim_path = self._prim_path
+        # print(robot_prim_path)
+        # # Create an additional sensor: front left
+        # lidar_front_left = create_sensor(
+        #     sensor_type="Lidar",
+        #     prim_path=robot_prim_path+"/base_front_laser_link/Lidar_left",
+        #     name="Lidar_left",
+        #     sensor_kwargs={
+        #         "horizontal_fov": 170.0,
+        #     }
+        # )
+        # lidar_front_left.load()
+        # lidar_front_left._load()
+        # lidar_front_left._post_load()
+        # lidar_front_left._initialize()
+        # lidar_front_left.load_observation_space()
+        # lidar_front_left._load_observation_space()
+        # lidar_front_left.set_position(
+        #     front_left_pos + np.array([0.05, 0.05, 0])
+        # )
+        # lidar_front_left.set_orientation(
+        #     np.array([0.92388, 0.38268, 0.0, 0])
+        # )
+        # setattr(self, 'front_left_lidar', lidar_front_left)
 
-        # Create an additional sensor: rear right
-        lidar_rear_right = create_sensor(
-            sensor_type="Lidar",
-            prim_path=robot_prim_path+"/base_rear_laser_link/Lidar_right",
-            name="Lidar_right",
-            sensor_kwargs={
-                "horizontal_fov": 170.0,
-            }
-        )
-        lidar_rear_right.load()
-        lidar_rear_right._load()
-        lidar_rear_right._post_load()
-        lidar_rear_right._initialize()
-        lidar_rear_right.load_observation_space()
-        lidar_rear_right._load_observation_space()
-        lidar_rear_right.set_position(
-            rear_right_pos + np.array([-0.05, -0.05, 0])
-        )
-        lidar_rear_right.set_orientation( 
-            np.array([0.38268, -0.92388, 0.0, 0.0])
-        )
-        setattr(self, 'rear_right_lidar', lidar_rear_right)
+        # # Create an additional sensor: rear right
+        # lidar_rear_right = create_sensor(
+        #     sensor_type="Lidar",
+        #     prim_path=robot_prim_path+"/base_rear_laser_link/Lidar_right",
+        #     name="Lidar_right",
+        #     sensor_kwargs={
+        #         "horizontal_fov": 170.0,
+        #     }
+        # )
+        # lidar_rear_right.load()
+        # lidar_rear_right._load()
+        # lidar_rear_right._post_load()
+        # lidar_rear_right._initialize()
+        # lidar_rear_right.load_observation_space()
+        # lidar_rear_right._load_observation_space()
+        # lidar_rear_right.set_position(
+        #     rear_right_pos + np.array([-0.05, -0.05, 0])
+        # )
+        # lidar_rear_right.set_orientation( 
+        #     np.array([0.38268, -0.92388, 0.0, 0.0])
+        # )
+        # setattr(self, 'rear_right_lidar', lidar_rear_right)
 
-    def get_scan(self) -> Dict:
+    @staticmethod
+    def get_scan_obs(sensor: ScanSensor) -> Dict:
         '''
-        @return (dict): the Lidar data in TiagoAdvanced{
+        @return (dict): the Lidar data in 
+        {
             'scan': np.ndarray,
             'scan_noise': np.ndarray, # May not exist
         }
         '''
-        scan_sensors = [
-            self.front_right_scan_sensor, self.rear_left_scan_sensor,
-            self.front_left_scan_sensor, self.rear_right_scan_sensor,
-        ]
-        scan_res = {}
-        for sensor in scan_sensors:
-            scan_res[sensor.name] = sensor.get_obs()
         
-        return scan_res
+        return sensor.get_obs()
+    
+    @staticmethod
+    def get_scan_point_cloud(
+            sensor: ScanSensor, rotate=0) -> np.ndarray:
+        '''
+        @return (dict): the Lidar data in 
+        point_cloud: np.ndarray
 
+        This function only support horizontal Lidar,
+        i.e., front_right_scan_sensor and rear_left_scan_sensor
+
+        For front_right_scan_sensor, please set rotate=-np.pi/4.
+        For rear_left_scan_sensor, please set rotate=3*np.pi/4.
+
+        The axis is aligned with the world coordinate system.
+        '''
+        lidar_interface = sensor._rs
+        lidar_prim_path = sensor.prim_path
+        depth = lidar_interface.get_linear_depth_data(lidar_prim_path)
+        depth = depth.reshape(-1, 1)
+        azimuth = lidar_interface.get_azimuth_data(lidar_prim_path)
+        azimuth += rotate
+        azimuth = azimuth.reshape(-1, 1)
+        point_cloud = np.concatenate([
+            depth * np.cos(azimuth),
+            -depth * np.sin(azimuth),   # In Tiago, all the Lidar are rotated-X 180, so we need to flip the y axis
+            np.zeros_like(depth)
+        ], axis=-1)
+        
+        return point_cloud
+    
+    @staticmethod
+    def get_scan_depth(sensor: ScanSensor) -> np.ndarray:
+        '''
+        @return (dict): the Lidar data in 
+        (depth: np.ndarray,
+        zenith: np.ndarray,
+        azimuth: np.ndarray)
+        '''
+        lidar_interface = sensor._rs
+        lidar_prim_path = sensor.prim_path
+        
+        return lidar_interface.get_linear_depth_data(lidar_prim_path), \
+            lidar_interface.get_zenith_data(lidar_prim_path), \
+            lidar_interface.get_azimuth_data(lidar_prim_path)

@@ -200,10 +200,10 @@ def main(random_selection=False, headless=False, short_exec=False, args=get_args
     # action_random_selection = False
 
     # Ignore the floors when checking collision
-    ignore_objs = tuple(
-        env.scene.object_registry("category", "floors", []),
-        # env.scene.object_registry("category", "box_of_yogurt", []),
-    )
+    # ignore_objs = tuple(
+    #     env.scene.object_registry("category", "floors", []),
+    #     # env.scene.object_registry("category", "box_of_yogurt", []),
+    # )
     
     # collision scratch
     collision_scratch = {
@@ -222,7 +222,7 @@ def main(random_selection=False, headless=False, short_exec=False, args=get_args
         steps = 0
         while True:
             # If a collision happens, brake the robot
-            handle_collision(global_states, ignore_objs)
+            handle_collision(global_states)
             
             # Prepare the action vector
             global_states['action'] = np.zeros(robot.action_dim)
