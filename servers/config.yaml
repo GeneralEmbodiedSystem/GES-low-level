@@ -32,6 +32,8 @@ tools:
 
     set_pitch:
 
+    grasp:
+
 # Shared memory for communication between 
 # server processes and simulation process
 shm_ser_sim: 

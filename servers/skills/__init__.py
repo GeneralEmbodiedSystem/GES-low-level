@@ -6,3 +6,4 @@ from servers.skills.move_right import move_right
 from servers.skills.turn_left import turn_left
 from servers.skills.turn_right import turn_right
 from servers.skills.set_pitch import set_pitch
+from servers.skills.grasp import grasp
