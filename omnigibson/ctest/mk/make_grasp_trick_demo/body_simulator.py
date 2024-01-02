@@ -201,15 +201,15 @@ def main(random_selection=False, headless=False, short_exec=False, args=get_args
         # env.scene.object_registry("category", "box_of_yogurt", []),
     )
     
-    # collision scratch
-    collision_scratch = {
-        'last_postion': None,
-        'init_orientation_z': None,
+    # Utility variables for collision detection
+    collision_vars = {
+        'last_position': None,
+        # 'init_orientation_z': None,
     }
     
     # set GLOBAL_STATE buffer (dict)
     global_states = dict()
-    global_states_keys = ['env', 'robot', 'active_actions', 'collision_scratch']
+    global_states_keys = ['env', 'robot', 'active_actions', 'collision_vars']
     if args.record is not None:
         global_states_keys.append('record_frames')
     

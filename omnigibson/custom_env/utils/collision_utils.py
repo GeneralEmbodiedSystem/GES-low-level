@@ -14,6 +14,9 @@ from omnigibson.robots.tiago_advanced import TiagoAdvanced
 from omnigibson.custom_env.utils.eular_utils import check_walk_straight
 
 
+# Lidar is DISABLED temporarily
+# because the orientation of lidar's axis
+# is absolute, not aware of robot's orientation
 def detect_collision_by_lidar(global_states) -> bool:
     """
     Detect whether the robot collides with the environment by the Lidar point clouds.
@@ -80,7 +83,7 @@ def detect_collision_by_lidar(global_states) -> bool:
         return False
 
 
-# Note: this function is DEPRECATED since 
+# Note: This function is DEPRECATED since 
 # the collision will unexpectedly occur when grasping.
 def detect_collision_by_contact_bodies(robot: object, ignore_objs: tuple) -> bool:
     """
@@ -96,7 +99,8 @@ def detect_collision_by_contact_bodies(robot: object, ignore_objs: tuple) -> boo
     return len(robot.states[ContactBodies].get_value(ignore_objs=ignore_objs)) > 0
 
 
-def detect_collision_by_pos_delta(robot: TiagoAdvanced, last_pos, eps=1e-4):
+# Robot's normal speed: 3.1~3.2e-3
+def detect_collision_by_pos_delta(robot: TiagoAdvanced, last_pos, eps=3e-3):
     '''
     check if robot move according to the pos delta. If the robot moves significantly
     slower than the expected speed, we consider it as a collision.
@@ -123,27 +127,28 @@ def handle_collision(global_states: dict) -> None:
     if move_action is None or move_exception is not None:
         return
     
+    # TODO: Add collision detection for turn_left and turn_right
     if move_action['func'] not in ['move_forward', 'move_backward', 
             'move_left', 'move_right']:
-        # empty collision scratch
-        global_states['collision_scratch'] = {
-            'last_postion': None,
-            'init_orientation_z': None,
+        # Restore collision_vars
+        global_states['collision_vars'] = {
+            'last_position': None,
+            # 'init_orientation_z': None,
         }
         return
     
     # extra the params
     robot = global_states['robot']
     robot_exception = MoveException(move_action['func'][5:])
-    collision_scratch = global_states['collision_scratch']
-    last_postion = collision_scratch.get('last_postion', None)
-    init_orientation_z = collision_scratch.get('init_orientation_z', None)
+    collision_vars = global_states['collision_vars']
+    last_position = collision_vars.get('last_position', None)
+    # init_orientation_z = collision_vars.get('init_orientation_z', None)
     
+    # check_walk_straight is not used because of unknown bugs
     # check collision if not at the first step
-    if last_postion is not None and \
-            (detect_collision_by_pos_delta(robot, last_postion) or \
-            not check_walk_straight(robot, init_orientation_z)):
-        print("COLLISION!1")
+    if last_position is not None and \
+            detect_collision_by_pos_delta(robot, last_position):
+        print("COLLISION!")
         # If the robot collides with the environment, raise an exception
         global_states['active_actions']['move_exception'] = robot_exception
         # The robot will stop moving
@@ -153,12 +158,15 @@ def handle_collision(global_states: dict) -> None:
         robot.ready = False
         return
 
-    # update collision scratch
-    collision_scratch['last_postion'] = robot.get_position()
-    collision_scratch['init_orientation_z'] = quat2euler(robot.get_orientation())[2]
+    # update collision vars
+    collision_vars['last_position'] = robot.get_position()
+    # collision_vars['init_orientation_z'] = quat2euler(robot.get_orientation())[2]
     
-    if detect_collision_by_lidar(global_states):
-        print("COLLISION!2")
-        global_states['active_actions']['move_exception'] = robot_exception
-        global_states['active_actions']['move_action'] = None 
-        robot.ready = False
+    # Lidar is DISABLED temporarily
+    # because the orientation of lidar's axis
+    # is absolute, not aware of robot's orientation
+    # if detect_collision_by_lidar(global_states):
+    #     print("COLLISION!")
+    #     global_states['active_actions']['move_exception'] = robot_exception
+    #     global_states['active_actions']['move_action'] = None 
+    #     robot.ready = False
