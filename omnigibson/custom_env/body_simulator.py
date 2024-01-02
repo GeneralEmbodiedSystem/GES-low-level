@@ -246,6 +246,7 @@ def main(random_selection=False, headless=False, short_exec=False, args=get_args
             update_env(robot, global_states)
             steps += 1
             
+            # Record video frames
             if args.record is not None:
                 if steps < args.record:
                     execute_record(og.sim.viewer_camera, viewer_record_frames, './viewer.mp4')
@@ -302,7 +303,7 @@ def generate_action(pipe: PipeManager, global_states: dict):
             )
         move_exception.cur_recover_step += 1
         # If the robot collides with the environment, get an recovery action
-        action = move_exception.get_recovery_action(action)
+        action = move_exception.get_recovery_action(action, global_states)
         if move_exception.cur_recover_step >= move_exception.recover_steps:
             # If the robot has recovered from the exception, make it ready
             global_states['active_actions']['move_exception'] = None
