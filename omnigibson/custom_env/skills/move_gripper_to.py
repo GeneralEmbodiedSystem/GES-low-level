@@ -11,11 +11,13 @@ from pxr import Gf
 from omnigibson.robots.tiago_advanced import TiagoAdvanced
 from omnigibson.utils.control_utils import IKSolver
 
+from omnigibson.utils.transform_utils import quat2euler
 from omnigibson.custom_env.utils.physx_utils import get_pos_by_prim_path_physxApi
 from omnigibson.custom_env.utils.robot_utils import get_ik_solver
 from omnigibson.custom_env.utils.eular_utils import calculate_distance
 
 from omnigibson.custom_env.utils.eular_utils import check_joint_still
+import omnigibson.utils.transform_utils as T
 
 left_or_right = 'left'
 
@@ -62,7 +64,8 @@ def emit_move_gripper_to(pipe: PipeManager, global_states: dict, object: str):
         waypoints.append(object_pos + np.array([0.0, 0.0, 0.1]))
         # waypoints.append((object_pos, 3e-2))
         # waypoints.append((object_pos, 5e-2))
-        waypoints.append(object_pos + np.array([-0.02, 0.02, -0.05]))
+        # waypoints.append(object_pos)
+        waypoints.append(object_pos + np.array([-0.02, 0.02, -0.05]))  # table-env
         # waypoints.append((object, 3e-2))
     
     # define single_navigation_scratch init state generation function
@@ -101,7 +104,9 @@ def emit_move_gripper_to(pipe: PipeManager, global_states: dict, object: str):
     if object in ['trash_can']:
         buffer['ik_quat'] = None
     else:
-        buffer['ik_quat'] = np.array([0, 0, 0, 1])
+        # print("robot.get_orientation()", robot.get_orientation())
+        buffer['ik_quat'] = [0.0, 0.0, 0.0, 1.0] # [0.0, 0.0, 0.0, 1.0]
+        # [0, 0, -0.707, 0.707] [0, 0, 0.707, 0.707]
 
     # pre fetch
     buffer['tgt_joint_pos'] = {}
@@ -261,8 +266,18 @@ def check_waypoints_end(buffer: dict):
 # Define a helper function for executing specific end-effector commands using the ik solver
 def execute_ik(ik_solver, robot: TiagoAdvanced, pos, buffer: dict, quat=None, max_iter=100):
     control_idx = robot.ik_control_idx
+    
+    # because robot may turn, so we need to rotate the target pos 
+    # TODO: use 3D rotation matrix
+    rel_pos = pos - robot.get_position()
+    z_radian = quat2euler(robot.get_orientation())[2]
+    rotate_mat_2D = np.array([[np.cos(z_radian), np.sin(z_radian)], [-np.sin(z_radian), np.cos(z_radian)]])
+    rotated_rel_pos_2D = np.matmul(rotate_mat_2D, rel_pos[:2])
+    rotated_rel_pos = np.array([rotated_rel_pos_2D[0], rotated_rel_pos_2D[1], rel_pos[2]])
+    # rotated_rel_pos += np.array([-0.02, -0.03, -0.10])
+    
     joint_pos = ik_solver.solve(
-        target_pos=pos - robot.get_position(), # local target quaternion orientation in robot's base coordinate frame
+        target_pos=rotated_rel_pos, # local target quaternion orientation in robot's base coordinate frame
         target_quat=quat,
         max_iterations=max_iter,
         initial_joint_pos=robot.get_joint_positions()[control_idx],
