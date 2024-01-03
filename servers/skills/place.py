@@ -8,7 +8,7 @@ def place(socket_manager: SocketManager, pipe: PipeManager):
     try:
         # Receive the request data
         response_data = socket_manager.read_request()
-        place_name = response_data['place_name']
+        target_position = response_data['target_position']
 
     except Exception as e:
         print("Error receive data: ", e)
@@ -17,14 +17,14 @@ def place(socket_manager: SocketManager, pipe: PipeManager):
     
     # Execute action
     # TODO: remove hard code
-    if "yogurt" in place_name.tolower():
-        place_name = "box_of_yogurt"
-    elif "trash" in place_name.tolower() and "can" in place_name.tolower():
-        place_name = "trash_can"
+    if "yogurt" in target_position.lower():
+        target_position = "box_of_yogurt"
+    elif "trash" in target_position.lower() and "can" in target_position.lower():
+        target_position = "trash_can"
     
     # First, move the gripper to the place
     pipe.write(
-        data=("move_gripper_to", place_name),
+        data=("move_gripper_to", target_position),
         role="client"
     )
     while pipe.read(role="client") is None:

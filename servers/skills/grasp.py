@@ -17,9 +17,9 @@ def grasp(socket_manager: SocketManager, pipe: PipeManager):
     
     # Execute action
     # TODO: remove hard code
-    if "yogurt" in object_name.tolower():
+    if "yogurt" in object_name.lower():
         object_name = "box_of_yogurt"
-    elif "trash" in object_name.tolower() and "can" in object_name.tolower():
+    elif "trash" in object_name.lower() and "can" in object_name.lower():
         object_name = "trash_can"
     
     # First, move the gripper to the object
