@@ -144,15 +144,15 @@ class TiagoRmpFlowExample():
             )
         )
 
-        # self._obstacle = self._my_world.scene.add(
-        #     FixedCuboid(
-        #         "/World/obstacle",
-        #         name='obstacle',
-        #         size=0.05,
-        #         position=np.array([0.4, 0.0, 0.65]),
-        #         color=np.array([0.0, 0.0, 1.0])
-        #     )
-        # )
+        self._obstacle = self._my_world.scene.add(
+            FixedCuboid(
+                "/World/obstacle",
+                name='obstacle',
+                size=0.05,
+                position=np.array([0.4, 0.0, 0.65]),
+                color=np.array([0.0, 0.0, 1.0])
+            )
+        )
         
         
         self._my_world.reset()
@@ -160,7 +160,7 @@ class TiagoRmpFlowExample():
         # print(f'dof_properties: {self._articulation.dof_properties}')
 
         # Return assets that were added to the stage so that they can be registered with the core.World
-        # return self._articulation, self._target, self._obstacle
+        return self._articulation, self._target, self._obstacle
 
     def setup(self):
         # Loading RMPflow can be done quickly for supported robots
