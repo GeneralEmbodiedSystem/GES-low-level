@@ -11,11 +11,13 @@ from pxr import Gf
 from omnigibson.robots.tiago_advanced import TiagoAdvanced
 from omnigibson.utils.control_utils import IKSolver
 
+from omnigibson.utils.transform_utils import quat2euler
 from omnigibson.custom_env.utils.physx_utils import get_pos_by_prim_path_physxApi
 from omnigibson.custom_env.utils.robot_utils import get_ik_solver
 from omnigibson.custom_env.utils.eular_utils import calculate_distance
 
 from omnigibson.custom_env.utils.eular_utils import check_joint_still
+import omnigibson.utils.transform_utils as T
 
 left_or_right = 'left'
 
@@ -38,7 +40,7 @@ def emit_move_gripper_to(pipe: PipeManager, global_states: dict, object: str):
     # define ik solver
     ik_solver = get_ik_solver(robot)
     
-    # waypoints: [((x1, y1, z1), eps1), ((x2, y2, z2), eps2)]
+    # waypoints: [(x1, y1, z1), (x2, y2, z2)]
     # eps means the max distance error to the waypoint we can tolerate
     waypoints = []
     waypoints_scratch = {
@@ -57,12 +59,13 @@ def emit_move_gripper_to(pipe: PipeManager, global_states: dict, object: str):
     # plan rule-based waypoints
     object_pos = get_pos_by_prim_path_physxApi(f'/World/{object}/base_link')
     if object in ['trash_can']:
-        waypoints.append((object_pos + np.array([0.0, 0.0, 0.4]), 5e-2))
+        waypoints.append(object_pos + np.array([0.0, 0.0, 0.4]))
     else:
-        waypoints.append((object_pos + np.array([0.0, 0.0, 0.1]), 1e-4))
+        waypoints.append(object_pos + np.array([0.0, 0.0, 0.1]))
         # waypoints.append((object_pos, 3e-2))
         # waypoints.append((object_pos, 5e-2))
-        waypoints.append((object_pos + np.array([-0.02, 0.02, -0.05]), 5e-2))
+        # waypoints.append(object_pos)
+        waypoints.append(object_pos + np.array([-0.02, 0.02, -0.05]))  # table-env
         # waypoints.append((object, 3e-2))
     
     # define single_navigation_scratch init state generation function
@@ -86,6 +89,9 @@ def emit_move_gripper_to(pipe: PipeManager, global_states: dict, object: str):
         'ik_solver': ik_solver,
         
         'waypoints_scratch': waypoints_scratch,
+
+        # The number of times running ik
+        'ik_times': 0,
         
         'single_navigation_scratch': None, # no use currently
         'single_navigation_scratch_init_func': single_navigation_scratch_init_func, # no use currently
@@ -98,7 +104,9 @@ def emit_move_gripper_to(pipe: PipeManager, global_states: dict, object: str):
     if object in ['trash_can']:
         buffer['ik_quat'] = None
     else:
-        buffer['ik_quat'] = np.array([0, 0, 0, 1])
+        # print("robot.get_orientation()", robot.get_orientation())
+        buffer['ik_quat'] = [0.0, 0.0, 0.0, 1.0] # [0.0, 0.0, 0.0, 1.0]
+        # [0, 0, -0.707, 0.707] [0, 0, 0.707, 0.707]
 
     # pre fetch
     buffer['tgt_joint_pos'] = {}
@@ -151,12 +159,12 @@ def execute_move_gripper_to(pipe: PipeManager, global_states: dict, object: str)
     
     # check end of a ik according to the joint pos delta
     eef_name = robot.eef_link_names[robot.default_arm]
-    this_tgt_waypoint = parse_waypoint_pos(waypoints[current_waypoint_index][0])
+    this_tgt_waypoint = parse_waypoint_pos(waypoints[current_waypoint_index])
     eef_current_pos = get_pos_by_prim_path_physxApi(f'{robot.prim_path}/{eef_name}')
     to_move_distance = calculate_distance(this_tgt_waypoint, eef_current_pos)
-    # eps = 1e-5 # can not end, but can successfully move gripper to
-    eps = waypoints[current_waypoint_index][1]
-    navigation_success_flag = (to_move_distance < eps)
+    # Wether the robot has reached the target waypoint
+    EPSILON = 1e-5
+    navigation_success_flag = (to_move_distance < EPSILON)
     joint_still_flag = check_joint_still(
         robot, single_navigation_scratch, robot.arm_control_idx[left_or_right], 1e-4
     )
@@ -173,7 +181,8 @@ def execute_move_gripper_to(pipe: PipeManager, global_states: dict, object: str)
     # print(f'operator: waypoint: {waypoints[current_waypoint_index]}')
     
     # this waypoint navigation ends
-    if navigation_success_flag:
+    MAX_IK_TIMES = 10
+    if navigation_success_flag or buffer['ik_times'] > MAX_IK_TIMES:
         end_navigation_of_a_waypoint(buffer, robot)
         print('operator: navigate to target waypoint success!')
     
@@ -195,10 +204,11 @@ def execute_move_gripper_to(pipe: PipeManager, global_states: dict, object: str)
         # pass
         print('operator: run ik!')
         execute_ik(
-            ik_solver, robot, np.array(parse_waypoint_pos(waypoints[current_waypoint_index][0])), buffer,
+            ik_solver, robot, np.array(parse_waypoint_pos(waypoints[current_waypoint_index])), buffer,
             quat=buffer['ik_quat'],
         )
         single_navigation_scratch['still_times'] = 0
+        buffer['ik_times'] += 1
     
     # return None means using hand_custom_step(robot, global_states['active_actions']['hand_action']) 
     # instead of env.step(action).
@@ -220,7 +230,7 @@ def start_navigate_to_waypoint(buffer: dict, robot: TiagoAdvanced):
     
     # ik
     execute_ik(
-        buffer['ik_solver'], robot, np.array(parse_waypoint_pos(waypoints[current_waypoint_index][0])), buffer,
+        buffer['ik_solver'], robot, np.array(parse_waypoint_pos(waypoints[current_waypoint_index])), buffer,
         quat=buffer['ik_quat'],
     )
     
@@ -256,8 +266,18 @@ def check_waypoints_end(buffer: dict):
 # Define a helper function for executing specific end-effector commands using the ik solver
 def execute_ik(ik_solver, robot: TiagoAdvanced, pos, buffer: dict, quat=None, max_iter=100):
     control_idx = robot.ik_control_idx
+    
+    # because robot may turn, so we need to rotate the target pos 
+    # TODO: use 3D rotation matrix
+    rel_pos = pos - robot.get_position()
+    z_radian = quat2euler(robot.get_orientation())[2]
+    rotate_mat_2D = np.array([[np.cos(z_radian), np.sin(z_radian)], [-np.sin(z_radian), np.cos(z_radian)]])
+    rotated_rel_pos_2D = np.matmul(rotate_mat_2D, rel_pos[:2])
+    rotated_rel_pos = np.array([rotated_rel_pos_2D[0], rotated_rel_pos_2D[1], rel_pos[2]])
+    # rotated_rel_pos += np.array([-0.02, -0.03, -0.10])
+    
     joint_pos = ik_solver.solve(
-        target_pos=pos - robot.get_position(), # local target quaternion orientation in robot's base coordinate frame
+        target_pos=rotated_rel_pos, # local target quaternion orientation in robot's base coordinate frame
         target_quat=quat,
         max_iterations=max_iter,
         initial_joint_pos=robot.get_joint_positions()[control_idx],

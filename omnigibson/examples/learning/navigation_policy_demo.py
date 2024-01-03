@@ -116,7 +116,9 @@ def main():
     seed = 0
 
     # Load config
-    with open(f"{example_config_path}/rl.yaml", "r") as f:
+    # with open(f"{example_config_path}/turtlebot_nav.yaml", "r") as f:
+    # with open(f"{example_config_path}/tiago_nav.yaml", "r") as f:
+    with open(f"{example_config_path}/fetch_nav.yaml", "r") as f:
         cfg = yaml.load(f, Loader=yaml.FullLoader)
 
     # Only use RGB obs

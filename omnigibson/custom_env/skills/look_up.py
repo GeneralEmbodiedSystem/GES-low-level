@@ -13,6 +13,7 @@ from omnigibson.utils.camera_skill_utils import execute_look_up as look_up_exp
 ACTION_CATAGORY = 'head_action'
 TASK_NAME = 'look_up'
 
+
 def emit_look_up(pipe: PipeManager, global_states: dict, degree: float):
     """Control the camera to look up.
 
@@ -62,7 +63,7 @@ def execute_look_up(pipe: PipeManager, global_states: dict, degree: float):
     # last ik do not move && last ik ends
     if end_ik_flag:
         pipe.write(
-            data=f"{TASK_NAME} success",
+            data=f"Robot has successfully set the given pitch angle.",
             role="server"
         )
         global_states['active_actions'][ACTION_CATAGORY] = None

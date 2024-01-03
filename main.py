@@ -127,17 +127,19 @@ def main(args=get_args()):
                         print("Input Error. Please input again: ", e)
                         continue
                 """skill is like: 
-                ("move_forward", 0.1)
-                ("move_backward", 0.1)
+                ("move_forward", 0.3)
+                ("move_backward", 0.3)
                 ("brake", )
                 ("turn_left", 90)
                 ("turn_right", 90)
-                ("move_left", 0.1)
-                ("move_right", 0.1)
+                ("move_left", 0.3)
+                ("move_right", 0.3)
                 ("get_velocity",)
                 ("move_gripper_to", "box_of_yogurt")
+                ("move_gripper_to", "trash_can")
                 ("close_gripper", )
                 ("open_gripper", )
+                ("raise_gripper", )
                 """
                 pipe.write(
                     data=result,

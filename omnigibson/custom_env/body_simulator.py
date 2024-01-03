@@ -121,16 +121,19 @@ def main(random_selection=False, headless=False, short_exec=False, args=get_args
     # Reset the robot
     robot: TiagoAdvanced = env.robots[0]
 
-    # TODO: remove hard code
     robot.set_position(sim_config["other_init_cfg"]["robot_position"])  # robot0_cfg["position"]
+    robot.set_orientation(sim_config["other_init_cfg"]["robot_orientation"])  # robot0_cfg["orientation"]
     robot.reset()
     
     lift_trunk_body(robot)
     og.sim.step()
     # robot.keep_still()
 
+    # Lidar is DISABLED temporarily
+    # because the orientation of lidar's axis
+    # is absolute, not aware of robot's orientation
     # Init Lidar sensors
-    robot.init_scan_sensor()
+    # robot.init_scan_sensor()
     
     # limit the max joint velocities of the robot
     robot.max_joint_velocities[robot.ik_control_idx] *= 1
@@ -199,20 +202,20 @@ def main(random_selection=False, headless=False, short_exec=False, args=get_args
     # action_random_selection = False
 
     # Ignore the floors when checking collision
-    ignore_objs = tuple(
-        env.scene.object_registry("category", "floors", []),
-        # env.scene.object_registry("category", "box_of_yogurt", []),
-    )
+    # ignore_objs = tuple(
+    #     env.scene.object_registry("category", "floors", []),
+    #     # env.scene.object_registry("category", "box_of_yogurt", []),
+    # )
     
-    # collision scratch
-    collision_scratch = {
-        'last_postion': None,
-        'init_orientation_z': None,
+    # Utility variables for collision detection
+    collision_vars = {
+        'last_position': None,
+        # 'init_orientation_z': None,
     }
     
     # set GLOBAL_STATE buffer (dict)
     global_states = dict()
-    global_states_keys = ['env', 'robot', 'active_actions', 'collision_scratch']
+    global_states_keys = ['env', 'robot', 'active_actions', 'collision_vars']
     
     for global_states_key in global_states_keys:
         global_states[global_states_key] = eval(global_states_key)
@@ -221,7 +224,7 @@ def main(random_selection=False, headless=False, short_exec=False, args=get_args
         steps = 0
         while True:
             # If a collision happens, brake the robot
-            handle_collision(global_states, ignore_objs)
+            handle_collision(global_states)
             
             # Prepare the action vector
             global_states['action'] = np.zeros(robot.action_dim)
@@ -243,6 +246,7 @@ def main(random_selection=False, headless=False, short_exec=False, args=get_args
             update_env(robot, global_states)
             steps += 1
             
+            # Record video frames
             if args.record is not None:
                 if steps < args.record:
                     execute_record(og.sim.viewer_camera, viewer_record_frames, './viewer.mp4')
@@ -299,7 +303,7 @@ def generate_action(pipe: PipeManager, global_states: dict):
             )
         move_exception.cur_recover_step += 1
         # If the robot collides with the environment, get an recovery action
-        action = move_exception.get_recovery_action(action)
+        action = move_exception.get_recovery_action(action, global_states)
         if move_exception.cur_recover_step >= move_exception.recover_steps:
             # If the robot has recovered from the exception, make it ready
             global_states['active_actions']['move_exception'] = None

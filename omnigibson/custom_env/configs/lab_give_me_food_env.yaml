@@ -35,6 +35,7 @@ robot0_cfg:
 
 other_init_cfg:
   robot_position: [0.0, -0.5, 0.0]  # do not move this line to robot0_cfg, it is not a robot property and will cause error (will be changed by og.env)
+  robot_orientation: [0, 0, 0.707, 0.707]  # do not move this line to robot0_cfg, it is not a robot property and will cause error (will be changed by og.env)
   camera_resolution:
     image_height: 720
     image_width: 720
@@ -121,8 +122,9 @@ objects_cfg:
     name: box_of_yogurt
     category: box_of_yogurt
     model: jkemqc
-    size: 0.06
-    position: [-0.6, 1.17, 0.47]
+    # size: 0.06
+    bounding_box: [0.06, 0.06, 0.08]
+    position: [-0.6, 1.10, 0.47]
 
 # to add: ./og_dataset/objects/boxed_cpu_board ./og_dataset/objects/electric_fan
 # ./og_dataset/objects/mousepad ./og_dataset/objects/mouse  
