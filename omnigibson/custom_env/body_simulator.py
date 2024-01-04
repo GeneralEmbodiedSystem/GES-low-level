@@ -73,6 +73,7 @@ def lift_trunk_body(robot): # TiagoAdvanced
         # drive=True,  # if drive=True, the robot will gradually move to the target position. else it will be set to the target position immediately
     )
 
+
 def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--config_file", "-c", type=str, default="table_food_trash_can_env.yaml")
@@ -80,6 +81,7 @@ def get_args():
     args = parser.parse_args()
     
     return args
+
 
 def main(random_selection=False, headless=False, short_exec=False, args=get_args()):
     """
@@ -257,9 +259,6 @@ def main(random_selection=False, headless=False, short_exec=False, args=get_args
         env.close()
 
 
-
-
-
 def emit_message(pipe: PipeManager, global_states: dict):
     '''this function only set the low level to a given state. the actual movement(generate action at each time) is done in generate_action
     @param message(tuple): (CMD, *args)
@@ -329,6 +328,15 @@ def update_env(robot: TiagoAdvanced, global_states: dict):
     # prior params
     left_or_right = 'left'
     
+    # Whether to use drive mode
+    use_drive = True
+    # If we have move_left or move_right,
+    # set use_drive to False to avoid bugs of air walls
+    if global_states['active_actions']['move_action'] is not None:
+        if global_states['active_actions']['move_action']['func'] in \
+            ['move_left', 'move_right']:
+            use_drive = False
+
     # extract vars
     action = global_states['action']
     
@@ -364,7 +372,7 @@ def update_env(robot: TiagoAdvanced, global_states: dict):
         robot.set_joint_positions(
             tgt_joint_pos, 
             indices=tgt_joint_pos_idx,
-            drive=True,
+            drive=use_drive,
         )
     
     # target velocities control
@@ -380,7 +388,7 @@ def update_env(robot: TiagoAdvanced, global_states: dict):
         robot.set_joint_velocities(
             tgt_joint_vel, 
             indices=tgt_joint_vel_idx, 
-            drive=True,
+            drive=use_drive,
         )
     
 #     file_log(f'''robot orientation: {robot.get_orientation()}
