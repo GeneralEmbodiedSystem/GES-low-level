@@ -151,7 +151,6 @@ def main(random_selection=False, headless=False, short_exec=False, args=get_args
             sensor.image_height = sim_config["other_init_cfg"]["camera_resolution"]["image_height"]
             sensor.image_width = sim_config["other_init_cfg"]["camera_resolution"]["image_width"]
     
-    # TODO: remove hard code
     # Update the simulator's viewer camera's pose so it points towards the robot
     og.sim.viewer_camera.set_position_orientation(
         position=np.array(sim_config["viewer_camera_cfg"]["position"]),
@@ -188,7 +187,6 @@ def main(random_selection=False, headless=False, short_exec=False, args=get_args
         'robot_states': {
             'gripper_state': 'open', # 'open' or 'close'
         }
-        # TODO: Actions related to head movement
     }
 
     # Other helpful user info
