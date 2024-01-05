@@ -7,6 +7,18 @@ from omnigibson.robots.fetch import Fetch
 from omnigibson.sensors import VisionSensor
 
 class FetchAdvanced(Fetch):
+    def _post_load(self):
+        super()._post_load()
+        # self._eyes = get_prim_at_path(f"{self._prim_path}/eyes")
+        self.focal_length = 10.0 # zoom out
+
+    @property
+    def focal_length(self):
+        return self.vision_sensor.focal_length
+
+    @focal_length.setter
+    def focal_length(self, value):
+        self.vision_sensor.focal_length = value
     
     @property
     def vision_sensor(self):
