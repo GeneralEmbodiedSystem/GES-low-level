@@ -25,6 +25,7 @@ from omnigibson.custom_env.skills.raise_gripper import emit_raise_gripper, execu
 from omnigibson.custom_env.skills.look_up import emit_look_up, execute_look_up
 from omnigibson.custom_env.skills.look_forward import emit_look_forward, execute_look_forward
 from omnigibson.custom_env.skills.look_down import emit_look_down, execute_look_down
+from omnigibson.custom_env.configs import ENV_CONFIG_PATH
 
 from omnigibson.robots import TiagoAdvanced
 
@@ -54,6 +55,7 @@ skillset = {
 }
 
 # Don't use GPU dynamics and Use flatcache for performance boost
+gm.ENABLE_OBJECT_STATES = True  # Make sure object states are enabled
 gm.USE_GPU_DYNAMICS = False
 gm.ENABLE_FLATCACHE = True
 
@@ -66,7 +68,7 @@ TMP_PATH = server_config['tmp_path']
 SHM_NAME_INTER = server_config['shm_ser_sim']['name']
 SHM_SIZE_INTER = server_config['shm_ser_sim']['size']
 
-def lift_trunk_body(robot): # TiagoAdvanced
+def lift_trunk_body(robot: TiagoAdvanced): # TiagoAdvanced
     robot.set_joint_positions(
         np.array([1.]),
         indices=robot.trunk_control_idx,
@@ -89,7 +91,7 @@ def main(random_selection=False, headless=False, short_exec=False, args=get_args
     Queries the user to select a type of grasping mode
     """
     # environment config, including scene, robot, and objects
-    sim_config_path = './omnigibson/custom_env/configs/' + args.config_file
+    sim_config_path = ENV_CONFIG_PATH + "/" + args.config_file
     with open(sim_config_path, 'r') as f:
         sim_config = yaml.load(f, Loader=yaml.FullLoader)
     
@@ -123,11 +125,11 @@ def main(random_selection=False, headless=False, short_exec=False, args=get_args
     # Reset the robot
     robot: TiagoAdvanced = env.robots[0]
 
-    robot.set_position(sim_config["other_init_cfg"]["robot_position"])  # robot0_cfg["position"]
-    robot.set_orientation(sim_config["other_init_cfg"]["robot_orientation"])  # robot0_cfg["orientation"]
+    robot.set_position(sim_config["other_init_cfg"]["robot_position"])  # robot0_cfg["position"] will be modified! DON'T USE IT!
+    robot.set_orientation(sim_config["other_init_cfg"]["robot_orientation"]) 
     robot.reset()
     
-    lift_trunk_body(robot)
+    robot.lift_trunk_body()
     og.sim.step()
     # robot.keep_still()
 

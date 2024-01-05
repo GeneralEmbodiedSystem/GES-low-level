@@ -418,3 +418,13 @@ class TiagoAdvanced(Tiago):
         return lidar_interface.get_linear_depth_data(lidar_prim_path), \
             lidar_interface.get_zenith_data(lidar_prim_path), \
             lidar_interface.get_azimuth_data(lidar_prim_path)
+
+    def lift_trunk_body(self):
+        '''
+        @return (None): lift the trunk of TiagoAdvanced
+        '''
+        self.set_joint_positions(
+            positions=np.array([1.]),
+            indices=self.trunk_control_idx,
+            # drive=True,  # if drive=True, the robot will gradually move to the target position. else it will be set to the target position immediately
+        )
