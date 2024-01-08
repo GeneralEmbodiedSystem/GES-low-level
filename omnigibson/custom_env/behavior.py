@@ -1,6 +1,7 @@
 import argparse
 import yaml
 import numpy as np
+import pkgutil
 
 
 import omnigibson as og
@@ -9,6 +10,8 @@ from omnigibson.sensors import VisionSensor
 from omnigibson.tasks.behavior_task import BehaviorTask
 from omnigibson.robots import TiagoAdvanced
 from omnigibson.custom_env.configs import ENV_CONFIG_PATH
+import bddl.activity_definitions
+from omnigibson.utils.python_utils import list_directories
 
 # activity_name = "boil_water"     # the activity you want to try, full list in activity_definitions
 # activity_definition_id = 0                         # the specific definition you want to use. As of BEHAVIOR100 2021, this should always be 0.
@@ -43,6 +46,12 @@ def main(random_selection=False, headless=False, short_exec=False, args=get_args
     objects_cfg = sim_config["objects_cfg"]
 
     task_cfg = sim_config["task_cfg"]
+    """
+    you can replace task_cfg["activity_name"] (in omnigibson/custom_env/configs/behavior_cfg.yaml) to any activity \in activities_list
+    activity_list is from https://github.com/StanfordVL/bddl/tree/master/bddl/activity_definitions
+    """
+    activities_list = list_directories(list(bddl.activity_definitions.__path__)[0])
+    print(activities_list)
 
     # Compile config
     cfg = dict(
@@ -91,10 +100,21 @@ def main(random_selection=False, headless=False, short_exec=False, args=get_args
     task: BehaviorTask = env.task
     print("task's instruction", task.show_instruction())
     entity0 = task.show_instruction()[2][0]  # it is BDDLEntity
-    print("entity0.name", entity0.name)
+    print("entity0.name", entity0.name) 
     print("entity0.wrapped_obj", entity0.wrapped_obj) 
-    # entity0.name is the name of object(like "swiss_cheese_32"), each similar object has a different number.; 
-    # entity0.wrapped_obj is a DatasetObject. You can use it to get the object's position, orientation, etc.
+    # env.step(np.zeros(robot.action_dim))
+    # print(task.done, '\n', task.info, '\n', task.name, '\n', task.reward)
+    # print(task.default_reward_config, '\n', task.default_termination_config)
+    """summary of task :    
+    task.name: BehaviorTask_assembling_gift_baskets_0_0
+    task.info: {'reward': {'potential': {}, 'reward_breakdown': {'potential': 0.0}}, 'done': {'success': False, 'goal_status': {'satisfied': [], 'unsatisfied': [0, 1, 2, 3]}}}
+    task.done is True/False, task.reward is a float number.
+    task.info, task.done, task.reward are given after each env.step.
+    
+    task-related objects are stored in task.show_instruction()[2], which is a list of BDDLEntity (like entity0).
+    entity0.name is the name of object(like "swiss_cheese_32"), each similar object has a different number.; 
+    entity0.wrapped_obj is a DatasetObject. You can use it to get the object's position, orientation, etc.
+    """
     
     # Other helpful user info
     # print("activity_name", task_cfg["activity_name"])
@@ -104,7 +124,7 @@ def main(random_selection=False, headless=False, short_exec=False, args=get_args
     while True:
         action = np.zeros(robot.action_dim)
         for _ in range(10):
-            env.step(action)
+            obs, reward, done, info = env.step(action)
             step += 1
 
     # Clear the sim
