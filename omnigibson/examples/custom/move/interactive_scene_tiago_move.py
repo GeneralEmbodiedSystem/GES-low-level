@@ -332,7 +332,7 @@ def execute_message(cache: dict, global_states: dict):
 
 def run_get_image(cache: dict, global_states: dict):
     robot: Union[FetchAdvanced, TiagoAdvanced] = global_states['robot']
-    image_res = robot.get_image()
+    image_res = robot.get_cam_obs()
     rgb_image, depth_image = image_res['rgb'], image_res['depth']
     print(convert_ndarray_in_dict_to_shape(image_res))
     # write rgb_image & depth_image to shared memory

@@ -101,7 +101,7 @@ def main(random_selection=False, headless=False, short_exec=False):
             sensor.image_height = 720
             sensor.image_width = 720
     
-    log.warning(f"vision_res: {omit_convert_dict(robot.get_image())}")
+    log.warning(f"vision_res: {omit_convert_dict(robot.get_cam_obs())}")
     
     # return
 
