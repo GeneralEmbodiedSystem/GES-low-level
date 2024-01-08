@@ -37,6 +37,9 @@ tools:
 
     place:
 
+    # Other skills
+    get_cam_state:
+
 # Shared memory for communication between 
 # server processes and simulation process
 shm_ser_sim: 

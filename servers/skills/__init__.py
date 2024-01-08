@@ -8,3 +8,6 @@ from servers.skills.turn_right import turn_right
 from servers.skills.set_pitch import set_pitch
 from servers.skills.grasp import grasp
 from servers.skills.place import place
+
+# Other skills
+from servers.skills.get_cam_state import get_cam_state
