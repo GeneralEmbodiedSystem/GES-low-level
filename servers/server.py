@@ -7,6 +7,8 @@ from servers.utils import SocketManager, PipeManager
 from servers.skills import get_image, move_forward, move_backward, \
     move_left, move_right, turn_left, turn_right, set_pitch, grasp, \
     place
+# Other skills
+from servers.skills.get_cam_state import get_cam_state
 
 
 # Functions
@@ -20,7 +22,9 @@ functions = [
     turn_right,
     set_pitch,
     grasp,
-    place
+    place,
+    # Other skills
+    get_cam_state,
 ]
 
 # Function codes
@@ -34,6 +38,8 @@ TURN_RIGHT = 6
 SET_PITCH = 7
 GRASP = 8
 PLACE = 9
+# Other skills
+GET_CAM_STATE = 10
 
 
 def check_port_occupied(port):

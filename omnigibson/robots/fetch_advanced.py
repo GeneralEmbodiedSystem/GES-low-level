@@ -32,7 +32,7 @@ class FetchAdvanced(Fetch):
                 break
         return required_sensor
     
-    def get_image(self) -> Dict:
+    def get_cam_obs(self) -> Dict:
         '''
         @return (dict): FetchAdvanced 上的摄像机的图像{
             'rgb': np.ndarray,

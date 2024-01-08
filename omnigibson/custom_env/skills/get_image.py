@@ -35,8 +35,8 @@ def emit_get_image(pipe: PipeManager, global_states: dict,
         return np.asarray(rgb, dtype='uint8')
     
     robot: Union[FetchAdvanced, TiagoAdvanced] = global_states['robot']
-    image_res = robot.get_image()
-    image_rgb, image_depth = image_res['rgb'], image_res['depth_linear']
+    obs_res = robot.get_cam_obs()
+    image_rgb, image_depth = obs_res['rgb'], obs_res['depth_linear']
     image_rgb = rgba2rgb(image_rgb)
     image_depth = np.expand_dims(image_depth, axis=-1)
     
@@ -56,4 +56,4 @@ def emit_get_image(pipe: PipeManager, global_states: dict,
         data="get_image success",
         role="server"
     )
-    og.log.info(convert_ndarray_in_dict_to_shape(image_res))
+    og.log.info(convert_ndarray_in_dict_to_shape(obs_res))

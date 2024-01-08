@@ -69,6 +69,7 @@ class TiagoAdvanced(Tiago):
         self.ready = True
         # Add more modalities
         self.vision_sensor.add_modality("depth_linear")
+        self.vision_sensor.add_modality("camera")
     
     def look_at(self, goal_pos: np.ndarray):
         '''
@@ -103,7 +104,7 @@ class TiagoAdvanced(Tiago):
     # def avoid_crop_when_zoom_in(self):
     #     pass
     
-    def get_image(self) -> Dict:
+    def get_cam_obs(self) -> Dict:
         '''
         @return (dict): TiagoAdvanced 上的摄像机的图像{
             'rgb': np.ndarray,
