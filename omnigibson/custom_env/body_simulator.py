@@ -12,6 +12,7 @@ from omnigibson.sensors import VisionSensor
 from servers import PipeManager
 from omnigibson.custom_env.utils import handle_collision
 from omnigibson.custom_env.skills.get_image import emit_get_image
+from omnigibson.custom_env.skills.get_cam_state import emit_get_cam_state
 from omnigibson.custom_env.skills.move_forward import emit_move_forward, execute_move_forward
 from omnigibson.custom_env.skills.move_backward import emit_move_backward, execute_move_backward
 from omnigibson.custom_env.skills.move_left import emit_move_left, execute_move_left
@@ -39,6 +40,7 @@ log = create_module_logger(module_name=__name__)
 # write your skills and corresponding function here!!
 skillset = {
     'get_image': (emit_get_image, ),
+    'get_cam_state': (emit_get_cam_state, ),
     'move_forward': (emit_move_forward, execute_move_forward),
     'move_backward': (emit_move_backward, execute_move_backward),
     'move_left': (emit_move_left, execute_move_left),
