@@ -8,12 +8,28 @@ from copy import deepcopy
 from collections.abc import Iterable
 from functools import wraps
 from importlib import import_module
+import os
 
 import numpy as np
 
 # Global dictionary storing all unique names
 NAMES = set()
 CLASS_NAMES = set()
+
+def list_directories(path):
+    """
+    列出指定路径下的所有一级目录名称。
+    :param path: 要遍历的目录路径。
+    :return: 一级目录名称的列表。
+    """
+    directories = []
+    for entry in os.listdir(path):
+        # 检查这个条目是否是一个目录
+        if os.path.isdir(os.path.join(path, entry)):
+            directories.append(entry)
+    # sort by name
+    directories.sort()
+    return directories
 
 
 class classproperty:

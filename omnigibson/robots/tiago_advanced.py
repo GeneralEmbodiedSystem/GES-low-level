@@ -69,6 +69,7 @@ class TiagoAdvanced(Tiago):
         self.ready = True
         # Add more modalities
         self.vision_sensor.add_modality("depth_linear")
+        self.vision_sensor.add_modality("camera")
     
     def look_at(self, goal_pos: np.ndarray):
         '''
@@ -103,7 +104,7 @@ class TiagoAdvanced(Tiago):
     # def avoid_crop_when_zoom_in(self):
     #     pass
     
-    def get_image(self) -> Dict:
+    def get_cam_obs(self) -> Dict:
         '''
         @return (dict): TiagoAdvanced 上的摄像机的图像{
             'rgb': np.ndarray,
@@ -418,3 +419,13 @@ class TiagoAdvanced(Tiago):
         return lidar_interface.get_linear_depth_data(lidar_prim_path), \
             lidar_interface.get_zenith_data(lidar_prim_path), \
             lidar_interface.get_azimuth_data(lidar_prim_path)
+
+    def lift_trunk_body(self):
+        '''
+        @return (None): lift the trunk of TiagoAdvanced
+        '''
+        self.set_joint_positions(
+            positions=np.array([1.]),
+            indices=self.trunk_control_idx,
+            # drive=True,  # if drive=True, the robot will gradually move to the target position. else it will be set to the target position immediately
+        )
