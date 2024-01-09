@@ -14,9 +14,6 @@ from omnigibson.robots.tiago_advanced import TiagoAdvanced
 from omnigibson.custom_env.utils.eular_utils import check_walk_straight
 
 
-# Lidar is DISABLED temporarily
-# because the orientation of lidar's axis
-# is absolute, not aware of robot's orientation
 def detect_collision_by_lidar(global_states) -> bool:
     """
     Detect whether the robot collides with the environment by the Lidar point clouds.
@@ -28,55 +25,53 @@ def detect_collision_by_lidar(global_states) -> bool:
     Returns:
         True if the robot collides with the environment, False otherwise.
     """
-    EPSILON = 2e-2  # Threshold for collision detection
+    EPS_FRONT_REAR = 2e-2  # Threshold for collision detection
+    EPS_LEFT_RIGHT = 4e-2
 
     move_action = global_states['active_actions']['move_action']
     robot = global_states['robot']
 
-    # Get positions of the front right and rear left sensors
-    front_right_pos = robot.front_right_scan_sensor.get_position()
-    rear_left_pos = robot.rear_left_scan_sensor.get_position()
-
-    x_len, y_len = np.abs(front_right_pos - rear_left_pos)[:2]
+    # Get the size of the robot's base
+    x_len, y_len = robot.base_x_length, robot.base_y_length
 
     if move_action['func'] == 'move_forward':
         lidar = robot.front_right_scan_sensor
-        point_cloud = robot.get_scan_point_cloud(lidar, rotate=-np.pi/4)
+        point_cloud = robot.get_scan_point_cloud(lidar)
 
-        within_front_bounds = (point_cloud[:, 0] >= -x_len) & \
-            (point_cloud[:, 0] <= 0) & \
+        within_front_bounds = (point_cloud[:, 0] >= 0) & \
+            (point_cloud[:, 0] <= EPS_FRONT_REAR) & \
             (point_cloud[:, 1] >= 0) & \
-            (point_cloud[:, 1] <= EPSILON)
+            (point_cloud[:, 1] <= y_len)
         return np.any(within_front_bounds)
     
     elif move_action['func'] == 'move_right':
         lidar = robot.front_right_scan_sensor
-        point_cloud = robot.get_scan_point_cloud(lidar, rotate=-np.pi/4)
-
-        within_right_bounds = (point_cloud[:, 0] >= 0) & \
-            (point_cloud[:, 0] <= EPSILON) & \
-            (point_cloud[:, 1] >= -y_len) & \
-            (point_cloud[:, 1] <= 0)
+        point_cloud = robot.get_scan_point_cloud(lidar)
+    
+        within_right_bounds = (point_cloud[:, 0] >= -x_len) & \
+            (point_cloud[:, 0] <= 0) & \
+            (point_cloud[:, 1] <= 0) & \
+            (point_cloud[:, 1] >= -EPS_LEFT_RIGHT)
         return np.any(within_right_bounds)
 
     elif move_action['func'] == 'move_backward':
         lidar = robot.rear_left_scan_sensor
-        point_cloud = robot.get_scan_point_cloud(lidar, rotate=3*np.pi/4)
+        point_cloud = robot.get_scan_point_cloud(lidar)
 
-        within_rear_bounds = (point_cloud[:, 0] >= 0) & \
-            (point_cloud[:, 0] <= x_len) & \
-            (point_cloud[:, 1] >= -EPSILON) & \
-            (point_cloud[:, 1] <= 0)
+        within_rear_bounds = (point_cloud[:, 0] >= -EPS_FRONT_REAR) & \
+            (point_cloud[:, 0] <= 0) & \
+            (point_cloud[:, 1] <= 0) & \
+            (point_cloud[:, 1] >= -y_len)
         return np.any(within_rear_bounds)
     
     elif move_action['func'] == 'move_left':
         lidar = robot.rear_left_scan_sensor
-        point_cloud = robot.get_scan_point_cloud(lidar, rotate=3*np.pi/4)
+        point_cloud = robot.get_scan_point_cloud(lidar)
 
-        within_left_bounds = (point_cloud[:, 0] >= -EPSILON) & \
-            (point_cloud[:, 0] <= 0) & \
-            (point_cloud[:, 1] >= 0) & \
-            (point_cloud[:, 1] <= y_len)
+        within_left_bounds = (point_cloud[:, 0] >= 0) & \
+            (point_cloud[:, 0] <= x_len) & \
+            (point_cloud[:, 1] <= EPS_LEFT_RIGHT) & \
+            (point_cloud[:, 1] >= 0)
         return np.any(within_left_bounds)
 
     else:
@@ -162,11 +157,8 @@ def handle_collision(global_states: dict) -> None:
     collision_vars['last_position'] = robot.get_position()
     # collision_vars['init_orientation_z'] = quat2euler(robot.get_orientation())[2]
     
-    # Lidar is DISABLED temporarily
-    # because the orientation of lidar's axis
-    # is absolute, not aware of robot's orientation
-    # if detect_collision_by_lidar(global_states):
-    #     print("COLLISION!")
-    #     global_states['active_actions']['move_exception'] = robot_exception
-    #     global_states['active_actions']['move_action'] = None 
-    #     robot.ready = False
+    if detect_collision_by_lidar(global_states):
+        print("COLLISION Lidar!")
+        global_states['active_actions']['move_exception'] = robot_exception
+        global_states['active_actions']['move_action'] = None 
+        robot.ready = False

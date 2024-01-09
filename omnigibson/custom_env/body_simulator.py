@@ -135,11 +135,8 @@ def main(random_selection=False, headless=False, short_exec=False, args=get_args
     og.sim.step()
     # robot.keep_still()
 
-    # Lidar is DISABLED temporarily
-    # because the orientation of lidar's axis
-    # is absolute, not aware of robot's orientation
     # Init Lidar sensors
-    # robot.init_scan_sensor()
+    robot.init_scan_sensor()
     
     # limit the max joint velocities of the robot
     robot.max_joint_velocities[robot.ik_control_idx] *= 1
