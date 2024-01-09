@@ -1301,6 +1301,17 @@
     <dynamics damping="80"/>
     <safety_controller k_position="20" k_velocity="20" soft_lower_limit="0.001" soft_upper_limit="0.044"/>
   </joint>
+
+
+  <!-- Add a new joint gripper_cente-->
+  <link name="gripper_center"/>
+    <joint name="gripper_center_joint" type="fixed">
+      <origin rpy="0 0 0" xyz="0.0 0.0 .05"/>
+      <parent link="gripper_left_link"/>
+      <child link="gripper_center"/>
+    </joint>
+
+
   <!-- Grasping frame -->
   <joint name="gripper_left_grasping_frame_joint" type="fixed">
     <parent link="gripper_left_link"/>

@@ -117,8 +117,8 @@ def main():
 
     # Load config
     # with open(f"{example_config_path}/turtlebot_nav.yaml", "r") as f:
-    # with open(f"{example_config_path}/tiago_nav.yaml", "r") as f:
     with open(f"{example_config_path}/fetch_nav.yaml", "r") as f:
+    # with open(f"{example_config_path}/fetch_nav.yaml", "r") as f:
         cfg = yaml.load(f, Loader=yaml.FullLoader)
 
     # Only use RGB obs
@@ -136,6 +136,13 @@ def main():
         flatten_obs_space=True,
     )
 
+
+    # Update the simulator's viewer camera's pose so it points towards the robot
+    # og.sim.viewer_camera.set_position_orientation(
+    #     position=np.array(sim_config["viewer_camera_cfg"]["position"]),
+    #     orientation=np.array(sim_config["viewer_camera_cfg"]["orientation"]),
+    # )
+
     # If we're evaluating, hide the ceilings and enable camera teleoperation so the user can easily
     # visualize the rollouts dynamically
     if args.eval:
@@ -145,7 +152,7 @@ def main():
 
     # Set the set
     set_random_seed(seed)
-    env.reset()
+    # env.reset()
 
     policy_kwargs = dict(
         features_extractor_class=CustomCombinedExtractor,

@@ -401,13 +401,13 @@
     <parent link="panda_hand"/>
     <child link="panda_face_back_right"/>
   </joint>
-  <!--<link name="left_gripper"/>
+  <link name="left_gripper"/>
   <joint name="left_gripper" type="fixed">
     <origin rpy="0 0 ${pi/2}" xyz="0 0 0.13"/>
     <axis xyz="0 0 1"/>
     <parent link="gripper_l_base"/>
     <child link="left_gripper"/>
   </joint>
-  -->
+ 
 </robot>
 

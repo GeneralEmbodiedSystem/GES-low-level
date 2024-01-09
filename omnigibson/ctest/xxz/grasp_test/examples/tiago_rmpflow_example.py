@@ -28,7 +28,7 @@ from omni.isaac.core.utils.nucleus import get_assets_root_path
 from omni.isaac.core.robots.robot import Robot
 from omni.isaac.core.prims import XFormPrim
 from omni.isaac.core.utils.numpy.rotations import euler_angles_to_quats
-from omni.isaac.core.objects import VisualCuboid, FixedCuboid
+from omni.isaac.core.objects import VisualCuboid, FixedCuboid, FixedCylinder
 
 from omni.isaac.motion_generation import RmpFlow, ArticulationMotionPolicy
 from omni.isaac.motion_generation.interface_config_loader import (
@@ -46,43 +46,43 @@ class TiagoRmpFlowExample():
 
         self._dbg_mode = True
         
-        self._visual_out = True
+        # self._visual_out = True
         
         self._tiago_assets_root_path = './configs/rmpflow/tiago'
         
-        self._tiago_dof_names = [
-            'torso_lift_joint', 
-            'arm_left_1_joint', # 1
-            'arm_right_1_joint', 
-            'head_1_joint', 
-            'arm_left_2_joint', # 4
-            'arm_right_2_joint', 
-            'head_2_joint', 
-            'arm_left_3_joint', # 7
-            'arm_right_3_joint', 
-            'base_footprint_rz_joint', 
-            'arm_left_4_joint', # 10
-            'arm_right_4_joint', 
-            'base_footprint_ry_joint', 
-            'arm_left_5_joint', # 13
-            'arm_right_5_joint', 
-            'base_footprint_rx_joint', 
-            'arm_left_6_joint', # 16
-            'arm_right_6_joint', 
-            'base_footprint_z_joint', 
-            'arm_left_7_joint', # 19
-            'arm_right_7_joint', 
-            'base_footprint_y_joint', 
-            'base_footprint_x_joint', 
-            'gripper_left_left_finger_joint', 
-            'gripper_left_right_finger_joint', 
-            'gripper_right_left_finger_joint', 
-            'gripper_right_right_finger_joint'
-        ]
+        # self._tiago_dof_names = [
+        #     'torso_lift_joint', 
+        #     'arm_left_1_joint', # 1
+        #     'arm_right_1_joint', 
+        #     'head_1_joint', 
+        #     'arm_left_2_joint', # 4
+        #     'arm_right_2_joint', 
+        #     'head_2_joint', 
+        #     'arm_left_3_joint', # 7
+        #     'arm_right_3_joint', 
+        #     'base_footprint_rz_joint', 
+        #     'arm_left_4_joint', # 10
+        #     'arm_right_4_joint', 
+        #     'base_footprint_ry_joint', 
+        #     'arm_left_5_joint', # 13
+        #     'arm_right_5_joint', 
+        #     'base_footprint_rx_joint', 
+        #     'arm_left_6_joint', # 16
+        #     'arm_right_6_joint', 
+        #     'base_footprint_z_joint', 
+        #     'arm_left_7_joint', # 19
+        #     'arm_right_7_joint', 
+        #     'base_footprint_y_joint', 
+        #     'base_footprint_x_joint', 
+        #     'gripper_left_left_finger_joint', 
+        #     'gripper_left_right_finger_joint', 
+        #     'gripper_right_left_finger_joint', 
+        #     'gripper_right_right_finger_joint'
+        # ]
         
         self._left_arm_indices = np.array([1, 4, 7, 10, 13, 16, 19])
-        # self._left_arm_indices = np.array([0, 1, 4, 7, 10, 13, 16, 19])
-        # self._right_arm_indices = self._left_arm_indices + 1
+        # # self._left_arm_indices = np.array([0, 1, 4, 7, 10, 13, 16, 19])
+        # # self._right_arm_indices = self._left_arm_indices + 1
         self._left_gripper_indices = np.array([23, 24])
         
         self._my_world = World(stage_units_in_meters=1.0)
@@ -146,15 +146,35 @@ class TiagoRmpFlowExample():
 
         self._obstacle = self._my_world.scene.add(
             FixedCuboid(
-                "/World/obstacle",
-                name='obstacle',
+                "/World/obstacle_1",
+                name='obstacle_1',
                 size=0.05,
-                position=np.array([0.4, 0.0, 0.65]),
-                color=np.array([0.0, 0.0, 1.0])
+                position=np.array([0.68, 0.12, 0.52]),
+                color=np.array([1.0, 0.0, 0.0])
             )
         )
-        
-        
+
+        # self._obstacle = self._my_world.scene.add(
+        #     FixedCuboid(
+        #         "/World/obstacle_2",
+        #         name='obstacle_2',
+        #         size=0.10,
+        #         position=np.array([0.4, 0.0, 0.65]),
+        #         color=np.array([0.0, 1.0, 0.0])
+        #     )
+        # )
+
+        # self._obstacle = self._my_world.scene.add(
+        #     FixedCuboid(
+        #         "/World/obstacle_3",
+        #         name='obstacle_3',
+        #         size=0.10,
+        #         position=np.array([0.47, 0.14, 0.43]),
+        #         color=np.array([1.0, 0.0, 0.0])
+        #     )
+        # )
+
+
         self._my_world.reset()
         
         # print(f'dof_properties: {self._articulation.dof_properties}')
@@ -194,23 +214,33 @@ class TiagoRmpFlowExample():
 
         #Initialize an RmpFlow object
         self._rmpflow = RmpFlow(**rmp_config)
-        # self._rmpflow.add_obstacle(self._obstacle)
+        self._rmpflow.add_obstacle(self._obstacle)
+        self._rmpflow.add_obstacle(self._target) # Add target into obstacles 
 
         if self._dbg_mode:
             self._rmpflow.set_ignore_state_updates(True)
-            if self._visual_out:
-                self._rmpflow.visualize_collision_spheres()
+            # if self._visual_out:
+            #     self._rmpflow.visualize_collision_spheres()
 
             # Set the robot gains to be deliberately poor
             # bad_proportional_gains = self._articulation.get_articulation_controller().get_gains()[0] / 50
             # print(f'gains: {self._articulation.get_articulation_controller().get_gains()}')
+                
+            # TODO: kp, kd
+
+            # kps=propostional gain, controls response speed
             kps = np.array(
                 # [1200000., 120000., 1200000., 120000., 5000., 3000., 10000., 1200., 1200.]
                 [1200000., 120000., 5000., 3000., 10000., 1200., 1200.]
+                # [1200000., 1200000., 50000., 30000., 100000., 12000., 12000.]
+
             )
+            # kds=derivative gain, controls damping effect and response speed
             kds = np.array(
                 # [600000., 60000., 300000., 30000., 3000., 3000., 3000., 1000., 1000.]
-                [300000., 30000., 3000., 3000., 3000., 1000., 1000.]
+                # [300000., 30000., 3000., 3000., 3000., 1000., 1000.]
+                # [2000, 2000, 2000, 2000, 2000, 2000, 2000]
+                [10, 10, 10, 10, 10, 10, 10]
             )
             now_gains = deepcopy(self._articulation.get_articulation_controller().get_gains())
             now_gains[0][self._left_arm_indices] = kps
@@ -254,7 +284,7 @@ class TiagoRmpFlowExample():
         # print(f'tgt joint pos: {action.joint_indices}')
         self._articulation.apply_action(action)
         
-        print(f'gains: {self._articulation.get_articulation_controller().get_gains()[0]}')
+        # print(f'gains: {self._articulation.get_articulation_controller().get_gains()[0]}')
         
         # self._articulation.set_joint_velocities(
         #     velocities=action.joint_velocities,
@@ -282,8 +312,11 @@ class TiagoRmpFlowExample():
         if self._dbg_mode:
             # RMPflow was set to roll out robot state internally, assuming that all returned joint targets were hit exactly.
             self._rmpflow.reset()
-            if self._visual_out:
-                self._rmpflow.visualize_collision_spheres()
+            self._rmpflow.get_collision_spheres_as_prims()
+            self._rmpflow.visualize_collision_spheres()
+            # if self._visual_out:
+            #     print('visualize collision spheres!')
+            #     self._rmpflow.visualize_collision_spheres()
 
         self._my_world.reset()
 

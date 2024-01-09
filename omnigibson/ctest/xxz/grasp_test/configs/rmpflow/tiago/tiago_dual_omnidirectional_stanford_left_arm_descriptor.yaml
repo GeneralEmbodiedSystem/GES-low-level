@@ -37,7 +37,10 @@ default_q: [
 ]
 
 acceleration_limits: [15.0, 7.5, 10.0, 12.5, 15.0, 20.0, 20.0]
-jerk_limits: [7500.0, 3750.0, 5000.0, 6250.0, 7500.0, 10000.0, 10000.0]
+# limit of rate of acceleration change
+jerk_limits: [
+  7500.0, 3750.0, 5000.0, 6250.0, 7500.0, 10000.0, 10000.0
+  ]
 
 # Most dimensions of the cspace have a direct corresponding element
 # in the URDF. This list of rules defines how unspecified coordinates
@@ -55,28 +58,36 @@ cspace_to_urdf_rules:
 composite_task_spaces: []
 
 # Just using dummy spheres for now for debugging
+# Related to collision avoidance, but irrelevent
+# to visialization
 collision_spheres:
-    # - torso_lift_joint:
-    #     - "center": [0.0, 0.0, 0.0]
-    #       "radius": 0.001
-    - arm_left_1_joint:
-        - "center": [ 0.0, 0.0, 0.0 ]
+    - torso_lift_joint:
+        - "center": [0.0, 0.0, 0.0]
           "radius": 0.001
-    - arm_left_2_joint:
+    - arm_left_1_link:
+        - "center": [0.02554, 0.19121, 0.69494 ]
+          "radius": 0.05
+    - arm_left_2_link:
         - "center": [ 0.0, 0.0, 0.0 ]
-          "radius": 0.001
-    - arm_left_3_joint:
+          "radius": 0.05
+    - arm_left_3_link:
         - "center": [ 0.0, 0.0, 0.0 ]
-          "radius": 0.001
-    - arm_left_4_joint:
+          "radius": 0.05
+    - arm_left_4_link:
         - "center": [ 0.0, 0.0, 0.0 ]
-          "radius": 0.001
-    - arm_left_5_joint:
+          "radius": 0.05
+    - arm_left_5_link:
         - "center": [ 0.0, 0.0, 0.0 ]
-          "radius": 0.001
-    - arm_left_6_joint:
+          "radius": 0.05
+    - arm_left_6_link:
         - "center": [ 0.0, 0.0, 0.0 ]
-          "radius": 0.001
-    - arm_left_7_joint:
+          "radius": 0.05
+    - arm_left_7_link:
         - "center": [ 0.0, 0.0, 0.0 ]
-          "radius": 0.001
+          "radius": 0.05
+    - gripper_left_link:
+        - "center": [ 0.06061, 0.64627, 0.3038 ]
+          "radius": 0.5
+        - "center": [ -0.03308, -0.011, -0.0120 ]
+          "radius": 0.05
+

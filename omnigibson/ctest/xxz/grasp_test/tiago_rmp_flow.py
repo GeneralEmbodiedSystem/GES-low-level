@@ -23,11 +23,11 @@ from examples.tiago_rmpflow_example import TiagoRmpFlowExample
 
 
 
-# def set_perspective_to_camera(position: tuple, orientation: tuple):
-#     from omni.isaac.core.utils.render_product import set_camera_prim_path
-#     from omni.kit.viewport.utility import get_active_viewport
+def set_perspective_to_camera(position: tuple, orientation: tuple):
+    from omni.isaac.core.utils.render_product import set_camera_prim_path
+    from omni.kit.viewport.utility import get_active_viewport
 
-#     from pxr import Gf, UsdGeom, Usd
+    from pxr import Gf, UsdGeom, Usd
 
 #     CAMERA_STAGE_PATH = "/Camera"
 
@@ -36,11 +36,11 @@ from examples.tiago_rmpflow_example import TiagoRmpFlowExample
 #     xform_api = UsdGeom.XformCommonAPI(camera_prim)
 #     xform_api.SetTranslate(Gf.Vec3d(*position))
 #     xform_api.SetRotate(orientation, UsdGeom.XformCommonAPI.RotationOrderXYZ)
-#     camera_prim.GetHorizontalApertureAttr().Set(21)
-#     camera_prim.GetVerticalApertureAttr().Set(16)
+#     # camera_prim.GetHorizontalApertureAttr().Set(21)
+#     # camera_prim.GetVerticalApertureAttr().Set(16)
 #     camera_prim.GetProjectionAttr().Set("perspective")
-#     camera_prim.GetFocalLengthAttr().Set(24)
-#     camera_prim.GetFocusDistanceAttr().Set(400)
+#     # camera_prim.GetFocalLengthAttr().Set(24)
+#     # camera_prim.GetFocusDistanceAttr().Set(400)
 
 #     simulation_app.update()
 
