@@ -95,7 +95,6 @@ def main(random_selection=False, headless=False, short_exec=False, args=get_args
     # robot = behavior_activity_instance.get_agent()
     # print("show_instruction", behavior_activity_instance.show_instruction())
     
-    # TODO: list all the tasks/activities
     
     task: BehaviorTask = env.task
     print("task's instruction", task.show_instruction())
