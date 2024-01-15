@@ -20,7 +20,7 @@ data_path = join(
     this_path,
     '../../data',
 )
-print(f'data_path: {os.path.abspath(data_path)}')
+data_path = os.path.abspath(data_path)
 
 my_world = World(stage_units_in_meters=1.0)
 my_world.scene.add_default_ground_plane()
@@ -29,8 +29,11 @@ assets_root_path = get_assets_root_path()
 
 tiago_usd_path = join(
     data_path, 
-    '/assets/models/tiago/tiago_dual_omnidirectional_stanford/tiago_dual_omnidirectional_stanford_33.usd'
+    'assets/models/tiago/tiago_dual_omnidirectional_stanford/tiago_dual_omnidirectional_stanford_33.usd'
 )
+
+print(f'data_path: {data_path}')
+print(f'tiago_usd_path: {tiago_usd_path}')
 
 def attach_usd_to_prim(prim_path: str, usd_path: str):
     prim = get_prim_at_path(prim_path)
