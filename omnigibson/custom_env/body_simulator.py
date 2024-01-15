@@ -328,15 +328,6 @@ def update_env(robot: TiagoAdvanced, global_states: dict):
     """
     # prior params
     left_or_right = 'left'
-    
-    # Whether to use drive mode
-    use_drive = True
-    # If we have move_left or move_right,
-    # set use_drive to False to avoid bugs of air walls
-    if global_states['active_actions']['move_action'] is not None:
-        if global_states['active_actions']['move_action']['func'] in \
-            ['move_left', 'move_right']:
-            use_drive = False
 
     # extract vars
     action = global_states['action']
@@ -373,7 +364,7 @@ def update_env(robot: TiagoAdvanced, global_states: dict):
         robot.set_joint_positions(
             tgt_joint_pos, 
             indices=tgt_joint_pos_idx,
-            drive=use_drive,
+            drive=True,
         )
     
     # target velocities control
@@ -389,7 +380,7 @@ def update_env(robot: TiagoAdvanced, global_states: dict):
         robot.set_joint_velocities(
             tgt_joint_vel, 
             indices=tgt_joint_vel_idx, 
-            drive=use_drive,
+            drive=True,
         )
     
 #     file_log(f'''robot orientation: {robot.get_orientation()}
