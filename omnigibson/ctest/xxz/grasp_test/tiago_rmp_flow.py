@@ -23,11 +23,11 @@ from examples.tiago_rmpflow_example import TiagoRmpFlowExample
 
 
 
-def set_perspective_to_camera(position: tuple, orientation: tuple):
-    from omni.isaac.core.utils.render_product import set_camera_prim_path
-    from omni.kit.viewport.utility import get_active_viewport
+# def set_perspective_to_camera(position: tuple, orientation: tuple):
+    # from omni.isaac.core.utils.render_product import set_camera_prim_path
+    # from omni.kit.viewport.utility import get_active_viewport
 
-    from pxr import Gf, UsdGeom, Usd
+    # from pxr import Gf, UsdGeom, Usd
 
 #     CAMERA_STAGE_PATH = "/Camera"
 

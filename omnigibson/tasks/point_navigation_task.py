@@ -370,6 +370,9 @@ class PointNavigationTask(BaseTask):
     def _get_obs(self, env):
         # Get relative position of goal with respect to the current agent position
         xy_pos_to_goal = self._global_pos_to_robot_frame(env, self._goal_pos)[:2]
+
+        import pdb
+        pdb.set_trace()
         if self._goal_in_polar:
             xy_pos_to_goal = np.array(T.cartesian_to_polar(*xy_pos_to_goal))
 
@@ -384,7 +387,6 @@ class PointNavigationTask(BaseTask):
             robot_lin_vel=lin_vel,
             robot_ang_vel=ang_vel,
         )
-
         # We have no non-low-dim obs, so return empty dict for those
         return low_dim_obs, dict()
 

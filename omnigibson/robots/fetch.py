@@ -61,8 +61,12 @@ class Fetch(ManipulationRobot, TwoWheelRobot, ActiveCameraRobot):
         grasping_mode="physical",
 
         # Unique to Fetch
-        rigid_trunk=False,
-        default_trunk_offset=0.365,
+        # rigid_trunk=False,
+        # default_trunk_offset=0.365,
+        # default_arm_pose="diagonal30",
+
+        rigid_trunk=True,
+        default_trunk_offset=0.165,
         default_arm_pose="diagonal30",
 
         **kwargs,

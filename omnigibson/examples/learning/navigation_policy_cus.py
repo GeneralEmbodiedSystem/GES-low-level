@@ -117,7 +117,7 @@ def main():
 
     # Load config
     # with open(f"{example_config_path}/turtlebot_nav.yaml", "r") as f:
-    with open(f"{example_config_path}/tiago_nav.yaml", "r") as f:
+    with open(f"{example_config_path}/fetch_nav_xxz.yaml", "r") as f:
     # with open(f"{example_config_path}/fetch_nav.yaml", "r") as f:
         cfg = yaml.load(f, Loader=yaml.FullLoader)
 
@@ -135,7 +135,10 @@ def main():
         flatten_action_space=True,
         flatten_obs_space=True,
     )
-
+    
+    obs = env.reset()
+    import pdb
+    pdb.set_trace()
 
     # Update the simulator's viewer camera's pose so it points towards the robot
     # og.sim.viewer_camera.set_position_orientation(
@@ -192,7 +195,8 @@ def main():
             callback=callback,
         )
         og.log.info("Finished training!")
-
+        
+        
 
 if __name__ == "__main__":
     main()

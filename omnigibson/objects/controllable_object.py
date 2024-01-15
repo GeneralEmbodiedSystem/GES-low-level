@@ -165,6 +165,7 @@ class ControllableObject(BaseObject):
 
         # Initialize controllers to create
         self._controllers = dict()
+
         # Loop over all controllers, in the order corresponding to @action dim
         for name in self.controller_order:
             assert_valid_key(key=name, valid_keys=self._controller_config, name="controller name")
@@ -180,7 +181,8 @@ class ControllableObject(BaseObject):
                 assert self._joints[self.dof_names_ordered[idx]].driven, "Controllers should only control driveable joints!"
             self._controllers[name] = controller
         self.update_controller_mode()
-
+        # import pdb
+        # pdb.set_trace()
     def update_controller_mode(self):
         """
         Helper function to force the joints to use the internal specified control mode and gains
