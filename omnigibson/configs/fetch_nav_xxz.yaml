@@ -36,6 +36,8 @@ robots:
     fixed_base: true
     action_type: continuous
     grasping_mode: physical
+    rigid_trunk: true
+    default_trunk_offset: 0.165
     controller_config:
       base:
         name: DifferentialDriveController
@@ -157,7 +159,8 @@ task:
   goal_tolerance: 0.001  
   goal_in_polar: false
   path_range: [1.0, 10.0]
-  height_range: [0, 10]
+  # If set None will raise error
+  height_range:
   visualize_goal: false
   visualize_path: false
   goal_height: 0.06

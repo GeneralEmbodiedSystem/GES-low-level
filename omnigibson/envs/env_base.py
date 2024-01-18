@@ -346,8 +346,8 @@ class Environment(gym.Env, GymObservable, Recreatable):
         # Add task observations
         obs["task"] = self._task.get_obs(env=self)
 
-        import pdb
-        pdb.set_trace()
+        # import pdb
+        # pdb.set_trace()
 
         # Possibly flatten obs if requested
         if self._flatten_obs_space:

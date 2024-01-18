@@ -137,8 +137,6 @@ def main():
     )
     
     obs = env.reset()
-    import pdb
-    pdb.set_trace()
 
     # Update the simulator's viewer camera's pose so it points towards the robot
     # og.sim.viewer_camera.set_position_orientation(

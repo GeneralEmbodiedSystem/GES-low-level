@@ -132,8 +132,6 @@ class PointReachingTask(PointNavigationTask):
         # Add local eef position as well
         low_dim_obs["eef_local_pos"] = self._global_pos_to_robot_frame(env=env, pos=env.robots[self._robot_idn].get_eef_position())
 
-        import pdb
-        pdb.set_trace()
         return low_dim_obs, obs
 
         # # Get relative goal position of goal with respect to the current agent position
@@ -152,8 +150,6 @@ class PointReachingTask(PointNavigationTask):
         #     robot_ang_vel=ang_vel,
         # )
 
-        # import pdb
-        # pdb.set_trace()
         return low_dim_obs, obs
 
 
