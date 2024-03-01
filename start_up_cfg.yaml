@@ -2,5 +2,5 @@ system_cfg:
   CONDA_ENV_NAME: 'sim'  # it is the name of the conda environment for running the simulator
   CONDA_DIR_PATH: '~/miniconda3/' # or anaconda3, or other conda path
   EXECUTE_FILE: 'omnigibson/custom_env/body_simulator.py'  # choose the environment file(in 'omnigibson/custom_env') to execute
-  ENV_CONFIG_FILE: 'lab_give_me_food_env.yaml'  # choose the environment config file(in 'omnigibson/custom_env/configs) to execute
+  ENV_CONFIG_FILE: 'table_food_trash_can_env.yaml'  # choose the environment config file(in 'omnigibson/custom_env/configs) to execute
   # e.g. lab_give_me_food_env.yaml, table_food_trash_can_env.yaml, living_room_give_me_food_env.yaml

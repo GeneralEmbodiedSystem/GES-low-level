@@ -104,53 +104,53 @@ def main(args=get_args()):
         #         if data is not None:
         #             print(data)
         #             break
-        # start_server(pipe_manager)
+        start_server(pipe_manager)
 
         # ------------------ Start Test Skills ------------------
-        pipe = pipe_manager
+        # pipe = pipe_manager
         
-        while True:
-            ready, _, _ = select.select([sys.stdin], [], [], 0.1)
-            if ready:  # If there is input to read
-                user_input = sys.stdin.readline().strip()
-                print("your operation is:", user_input)
-                while True: # check the legality of input
-                    try:
-                        result = eval(user_input)
-                        if not isinstance(result, tuple):
-                            print("The input is not a tuple, please input again:")
-                            continue
-                        else:
-                            print("ok")
-                            break
-                    except Exception as e:
-                        print("Input Error. Please input again: ", e)
-                        continue
-                """skill is like: 
-                ("move_forward", 0.3)
-                ("move_backward", 0.3)
-                ("brake", )
-                ("turn_left", 90)
-                ("turn_right", 90)
-                ("move_left", 0.3)
-                ("move_right", 0.3)
-                ("get_velocity",)
-                ("move_gripper_to", "box_of_yogurt")
-                ("move_gripper_to", "trash_can")
-                ("close_gripper", )
-                ("open_gripper", )
-                ("raise_gripper", )
-                """
-                pipe.write(
-                    data=result,
-                    role="client"
-                )
+        # while True:
+        #     ready, _, _ = select.select([sys.stdin], [], [], 0.1)
+        #     if ready:  # If there is input to read
+        #         user_input = sys.stdin.readline().strip()
+        #         print("your operation is:", user_input)
+        #         while True: # check the legality of input
+        #             try:
+        #                 result = eval(user_input)
+        #                 if not isinstance(result, tuple):
+        #                     print("The input is not a tuple, please input again:")
+        #                     continue
+        #                 else:
+        #                     print("ok")
+        #                     break
+        #             except Exception as e:
+        #                 print("Input Error. Please input again: ", e)
+        #                 continue
+        #         """skill is like: 
+        #         ("move_forward", 0.3)
+        #         ("move_backward", 0.3)
+        #         ("brake", )
+        #         ("turn_left", 90)
+        #         ("turn_right", 90)
+        #         ("move_left", 0.3)
+        #         ("move_right", 0.3)
+        #         ("get_velocity",)
+        #         ("move_gripper_to", "box_of_yogurt")
+        #         ("move_gripper_to", "trash_can")
+        #         ("close_gripper", )
+        #         ("open_gripper", )
+        #         ("raise_gripper", )
+        #         """
+        #         pipe.write(
+        #             data=result,
+        #             role="client"
+        #         )
             
-                while True:
-                    data = pipe_manager.read(role="client")
-                    if data is not None:
-                        print(data)
-                        break
+        #         while True:
+        #             data = pipe_manager.read(role="client")
+        #             if data is not None:
+        #                 print(data)
+        #                 break
         # ------------------ End Test Skills ------------------
 
     except KeyboardInterrupt:

@@ -48,7 +48,7 @@ other_init_cfg:
 objects_cfg: []
 
 task_cfg:
-  type: BehaviorTask
+  type: BehaviorTask  # PointReachingTask... refer to the doc of behavior-1k
   # BehaviorTask-specific
-  activity_name: assembling_gift_baskets
+  activity_name: assembling_gift_baskets  # assembling_gift_baskets, picking_up_trash are available
   online_object_sampling: True
