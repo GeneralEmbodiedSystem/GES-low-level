@@ -12,7 +12,7 @@ GES low level development based on OmniGibson.
 # 开发代码位置
 
 - `omnigibson/custom_env/body_simulator.py`: 模拟器环境的代码。如果要进行修改，可以复制一份，在复制的代码中进行修改，主要修改开头的技能集合`skillset`，按照样例增加需要的skill名和(开始函数，执行和结束函数)，在`omnigibson/custom_env/skills`这里写对应skill的实现。在`omnigibson/custom_env/body_simulator_cfg.yaml`中可以修改配置（包括机器人、物体、场景的config）。
-- `omnigibson/custom_env/behavior.py`运行Behavior-1k任务环境的示例代码，在`omnigibson/custom_env/`目录下运行`python behavior.py`即可。
+- `omnigibson/custom_env/behavior.py`是运行Behavior-1k任务环境的示例代码，他对应的config文件（可以修改task_cfg中的task `type`和`activity_name`等）在`omnigibson/custom_env/configs/behavior_cfg.yaml`。运行：在`omnigibson/custom_env/`目录下运行`python behavior.py`即可。
 - 一些历史开发代码在`omnigibson/examples/custom`中，可以参考。
   - Fetching example & FetchAdvanced get_image(rgb, depth) [omnigibson/examples/custom/grasping_mode_example.py]
   - Ik example（TODO） [omnigibson/examples/custom/ik_example.py]
