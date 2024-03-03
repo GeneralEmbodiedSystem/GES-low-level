@@ -3,6 +3,8 @@ from itertools import zip_longest
 from typing import Dict, List, Tuple, Type, Union
 
 import gym
+import os
+import omnigibson as og
 import torch as th
 from gym import spaces
 from torch import nn
