@@ -132,7 +132,7 @@ class OnPolicyAlgorithm(BaseAlgorithm):
             n_envs=self.n_envs,
         )
 
-        import pdb; pdb.set_trace()
+        # import pdb; pdb.set_trace()
         self.policy = self.policy_class(  # pytype:disable=not-instantiable
             self.observation_space,
             self.action_space,

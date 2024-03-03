@@ -668,7 +668,6 @@ class ActorCriticPolicy(BasePolicy):
             pi_features = super().extract_features(obs, self.pi_features_extractor)
             vf_features = super().extract_features(obs, self.vf_features_extractor)
             return pi_features, vf_features
-        
 
     def _get_action_dist_from_latent(self, latent_pi: th.Tensor) -> Distribution:
         """
@@ -900,7 +899,7 @@ class MultiInputActorCriticPolicy(ActorCriticPolicy):
 class GRUMultiInputActorCriticPolicy(ActorCriticPolicy):
 
     def __init__(
-        self,
+        self,                 
         observation_space: spaces.Dict,
         action_space: spaces.Space,
         lr_schedule: Schedule,
@@ -924,6 +923,10 @@ class GRUMultiInputActorCriticPolicy(ActorCriticPolicy):
         feature_size: int = 11, # To be adjusted
         gru_hidden_size: int = 5 # To be adjusted
     ):
+        
+        self.history_length = history_length
+        self.feature_size = feature_size
+        self.gru_hidden_size = gru_hidden_size
 
         super().__init__(
             observation_space,
@@ -944,10 +947,6 @@ class GRUMultiInputActorCriticPolicy(ActorCriticPolicy):
             optimizer_class,
             optimizer_kwargs,
         )
-
-        self.history_length = history_length
-        self.feature_size = feature_size
-        self.gru_hidden_size = gru_hidden_size
     
     def make_features_extractor(self) -> BaseFeaturesExtractor:
         """Helper method to create a features extractor."""
