@@ -13,7 +13,7 @@ from omnigibson.utils.control_utils import RMPflowSolver
 
 from omnigibson.utils.transform_utils import quat2euler
 from omnigibson.custom_env.utils.physx_utils import get_pos_by_prim_path_physxApi
-from omnigibson.custom_env.utils.robot_utils import get_ik_solver
+from omnigibson.custom_env.utils.robot_utils import get_rmpflow_solver
 from omnigibson.custom_env.utils.eular_utils import calculate_distance
 
 from omnigibson.custom_env.utils.eular_utils import check_joint_still
@@ -36,9 +36,6 @@ def emit_move_gripper_to(pipe: PipeManager, global_states: dict, object: str):
     
     # extract the robot
     robot: TiagoAdvanced = global_states['robot']
-    
-    # # define ik solver
-    # ik_solver = get_ik_solver(robot)
 
     # define rmpflow solver
     rmpflow_solver = get_rmpflow_solver(robot)
@@ -113,7 +110,7 @@ def emit_move_gripper_to(pipe: PipeManager, global_states: dict, object: str):
 
     # pre fetch
     buffer['tgt_joint_pos'] = {}
-    buffer['tgt_joint_pos']['ik'] = (pre_fetch_joint_position, robot.arm_control_idx[left_or_right])
+    buffer['tgt_joint_pos']['rmpflow'] = (pre_fetch_joint_position, robot.arm_control_idx[left_or_right])
 
     # ugly implementation
     if waypoints_scratch['pre_fetch_flag']:
@@ -154,7 +151,7 @@ def execute_move_gripper_to(pipe: PipeManager, global_states: dict, object: str)
     # pre fetch
     if not waypoints_scratch['pre_fetch_flag']:
         if calculate_distance(robot.get_joint_positions()[buffer['tgt_joint_pos']['ik'][1]], 
-                              buffer['tgt_joint_pos']['ik'][0]) < 1e-3:
+                              buffer['tgt_joint_pos']['rmpflow'][0]) < 1e-3:
             waypoints_scratch['pre_fetch_flag'] = True
             start_navigate_to_waypoint(buffer, robot)
             print('operator: start navigate to next waypoint')
@@ -232,9 +229,8 @@ def start_navigate_to_waypoint(buffer: dict, robot: TiagoAdvanced):
     buffer['single_navigation_scratch'] = buffer['single_navigation_scratch_init_func']()
     
     # ik
-    execute_ik(
-        buffer['ik_solver'], robot, np.array(parse_waypoint_pos(waypoints[current_waypoint_index])), buffer,
-        quat=buffer['ik_quat'],
+    execute_rmpflow(
+        buffer['rmpflow_solver'], robot, np.array(parse_waypoint_pos(waypoints[current_waypoint_index])), buffer
     )
     
     # keep releasing when move gripper to
@@ -252,7 +248,7 @@ def end_navigation_of_a_waypoint(buffer: dict, robot: TiagoAdvanced):
     
     # empty target joint pos
     if 'tgt_joint_pos' in buffer:
-        for to_pop in ['release', 'ik']:
+        for to_pop in ['release', 'rmpflow']:
             if to_pop in buffer['tgt_joint_pos']:
                 buffer['tgt_joint_pos'].pop(to_pop)
 
@@ -267,8 +263,8 @@ def check_waypoints_end(buffer: dict):
     return False
 
 # Define a helper function for executing specific end-effector commands using the ik solver
-def execute_ik(ik_solver, robot: TiagoAdvanced, pos, buffer: dict, quat=None, max_iter=100):
-    control_idx = robot.ik_control_idx
+def execute_rmpflow(rmpflow_solver, robot: TiagoAdvanced, pos, buffer: dict, max_iter=100):
+    control_idx = robot.rmpflow_control_idx
     
     # because robot may turn, so we need to rotate the target pos 
     # TODO: use 3D rotation matrix
@@ -279,9 +275,9 @@ def execute_ik(ik_solver, robot: TiagoAdvanced, pos, buffer: dict, quat=None, ma
     rotated_rel_pos = np.array([rotated_rel_pos_2D[0], rotated_rel_pos_2D[1], rel_pos[2]])
     # rotated_rel_pos += np.array([-0.02, -0.03, -0.10])
     
-    joint_pos = ik_solver.solve(
+    joint_pos = rmpflow_solver.solve(
         target_pos=rotated_rel_pos, # local target quaternion orientation in robot's base coordinate frame
-        target_quat=quat,
+        # target_quat=quat,
         max_iterations=max_iter,
         initial_joint_pos=robot.get_joint_positions()[control_idx],
         # tolerance_pos = 0.00001
@@ -291,7 +287,7 @@ def execute_ik(ik_solver, robot: TiagoAdvanced, pos, buffer: dict, quat=None, ma
     # robot.set_joint_positions(joint_pos, indices=control_idx, drive=True)
     if 'tgt_joint_pos' not in buffer: 
         buffer['tgt_joint_pos'] = {}
-    buffer['tgt_joint_pos']['ik'] = (joint_pos, control_idx)
+    buffer['tgt_joint_pos']['rmpflow'] = (joint_pos, control_idx)
 
 
 def get_pos_by_prim_path_physxApi(prim_path: str):

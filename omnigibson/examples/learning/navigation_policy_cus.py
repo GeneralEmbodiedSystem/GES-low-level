@@ -13,17 +13,25 @@ from omnigibson import example_config_path
 from omnigibson.macros import gm
 from omnigibson.utils.python_utils import meets_minimum_version
 
+
 try:
     import gym
     import torch as th
     import torch.nn as nn
     import tensorboard
-    from stable_baselines3 import PPO
-    from stable_baselines3.common.evaluation import evaluate_policy
-    from stable_baselines3.common.preprocessing import maybe_transpose
-    from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
-    from stable_baselines3.common.utils import set_random_seed
-    from stable_baselines3.common.callbacks import CallbackList, CheckpointCallback, EvalCallback
+    # from stable_baselines3 import PPO
+    # from stable_baselines3.common.evaluation import evaluate_policy
+    # from stable_baselines3.common.preprocessing import maybe_transpose
+    # from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
+    # from stable_baselines3.common.utils import set_random_seed
+    from stable_baselines3.common.callbacks import CallbackList, CheckpointCallback, EvalCallback # Run error if switch to local
+
+    from ppo import PPO 
+    from omnigibson.examples.learning.evaluation import evaluate_policy
+    from omnigibson.examples.learning.preprocessing import maybe_transpose
+    from omnigibson.examples.learning.torch_layers import BaseFeaturesExtractor,CustomCombinedExtractor, GRUCustomExtractor
+    from utils import set_random_seed
+    # from callbacks import CallbackList, CheckpointCallback, EvalCallback  
 
 except ModuleNotFoundError:
     og.log.error("torch, stable-baselines3, or tensorboard is not installed. "
@@ -53,7 +61,7 @@ class CustomCombinedExtractor(BaseFeaturesExtractor):
         os.makedirs(self.img_save_dir, exist_ok=True)
         total_concat_size = 0
         feature_size = 128
-        for key, subspace in observation_space.spaces.items():
+        for key, subspace in observation_space.spaces.items(): 
             # For now, only keep RGB observations
             if "rgb" in key:
                 og.log.info(f"obs {key} shape: {subspace.shape}")
@@ -79,6 +87,8 @@ class CustomCombinedExtractor(BaseFeaturesExtractor):
 
         # Update the features dim manually
         self._features_dim = total_concat_size
+
+        # import pdb; pdb.set_trace()
 
     def forward(self, observations) -> th.Tensor:
         encoded_tensor_list = []
@@ -123,7 +133,8 @@ def main():
 
     # Only use RGB obs
     cfg["robots"][0]["obs_modalities"] = ["rgb"]
-
+    # cfg["robots"][0]["obs_modalities"] = ["rgb", "depth"]
+        
     # If we're not eval, turn off the start / goal markers so the agent doesn't see them
     if not args.eval:
         cfg["task"]["visualize_goal"] = False
@@ -156,7 +167,8 @@ def main():
     # env.reset()
 
     policy_kwargs = dict(
-        features_extractor_class=CustomCombinedExtractor,
+        # features_extractor_class=CustomCombinedExtractor,
+        features_extractor_class=GRUCustomExtractor,
     )
 
     os.makedirs(tensorboard_log_dir, exist_ok=True)
@@ -171,11 +183,14 @@ def main():
 
     else:
         model = PPO(
-            "MultiInputPolicy",
+            # "MultiInputPolicy",
+            "GRUMultiInputPolicy",
             env,
             verbose=1,
             tensorboard_log=tensorboard_log_dir,
             policy_kwargs=policy_kwargs,
+            learning_rate = 3e-3,
+            ent_coef = 0.1,
             n_steps=20 * 10,
             batch_size=8,
             device='cuda',
