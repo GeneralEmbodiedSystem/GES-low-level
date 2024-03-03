@@ -2,6 +2,10 @@ GES low level development based on OmniGibson.
 
 # 运行
 
+xxz specified:
+- Run `python omnigibson/examples/learning/navigation_policy_cus.py` in `xxx/GES-low-level/`
+- all the related files are in `omnigibson/examples/learning`, `omnigibson/configs/fetch_nav_xxz.yaml`
+
 - 创建python 3.10的环境，用于运行high level（以及用于启动low level的程序）。（这个环境称作high level环境）。这个环境可能需要安装依赖`pip install pyyaml numpy psutil`。
 - 创建一个python 3.7的环境，安装isaac sim 2022.2.0（具体见模拟器安装文档），以及`pip install -e .`当前仓库。模拟器实际上是在这个环境中运行的。（这个环境称作low level环境）
 - 将conda的路径`CONDA_DIR_PATH`和**low level环境**的名字`CONDA_ENV_NAME`，希望运行的环境类型的config`ENV_CONFIG_FILE`写到根目录的`start_up_cfg.yaml`中

@@ -1,0 +1,163 @@
+env:
+  initial_pos_z_offset: 0.1
+
+render:
+  viewer_width: 1280
+  viewer_height: 720
+
+scene:
+  type: InteractiveTraversableScene
+  scene_model: Rs_int
+  load_object_categories:
+    - floors
+    - walls
+    - ceilings
+  trav_map_resolution: 0.1
+  trav_map_erosion: 2
+  trav_map_with_objects: true
+  build_graph: true
+  num_waypoints: 1
+  waypoint_resolution: 0.2
+  # load_object_categories: null
+  # not_load_object_categories: null
+  load_room_types: null
+  load_room_instances: null
+  seg_map_resolution: 0.1
+  scene_source: OG
+  include_robots: true
+
+robots:
+  - type: TiagoAdvanced
+    obs_modalities: [scan, rgb, depth]
+    prim_path': "/World/robot"
+    # scale: 1.0
+    self_collision: false 
+    # action_normalize: true
+    fixed_base: false
+    # action_type: continuous
+    grasping_mode: physical
+    controller_config:
+      # camera:
+      #   name: JointController
+      #   motor_type: position
+      # base:
+      #   name: JointController
+      #   motor_type: velocity
+
+      arm_left: 
+        name: JointController
+        motor_type: position
+
+      # arm_right: 
+      #   name: JointController
+      #   motor_type: position
+
+
+viewer_camera_cfg:
+  position: [1.66024,  1.49093,  2.30134]
+  orientation: [0.17299,  0.40222,  0.82587, 0.35529]  # note that it is (x, y, z, w) instead of (w, x, y, z)
+
+
+objects:
+  # working desk
+  - type: DatasetObject
+    name: conference_table
+    category: conference_table
+    model: jxixdw
+    fit_avg_dim_volume: false
+    fixed_base: true
+    position: [1.117, -0.1, 0.69]
+
+  - type: DatasetObject
+    name: alarm_clock
+    category: alarm_clock
+    model: cvknrh
+    size: 0.06
+    position: [1.17, 0.52, 0.870]
+
+  - type: DatasetObject
+    name: laptop
+    category: laptop
+    model: izydvb
+    size: 0.06
+    fixed_base: false
+    position: [1.0, -0.0, 0.95]
+    orientation: [0, 0, 1, 0]  # rotate 180 degree around z axis
+
+  - type: DatasetObject
+    name: mousepad
+    category: mousepad
+    model: mfrcto
+    size: 0.06
+    position: [0.86, -0.47, 0.72]
+    orientation: [0, 0, -0.707, -0.707]
+    
+  - type: DatasetObject
+    name: mouse
+    category: mouse
+    model: cduwda
+    size: 0.06
+    position: [0.86, -0.47, 0.75]
+    orientation: [0, 0, -0.707, 0.707]  # clockwise rotate 90 degree around z axis
+    # [0, 0, 0.707, 0.707] means anti-clockwise rotate 90 degree around z axis
+
+  - type: DatasetObject
+    name: boxed_cpu_board
+    category: boxed_cpu_board
+    model: xlqvil
+    size: 0.06
+    position: [1.17, 0.678, 0.870]
+
+  - type: DatasetObject
+    name: cup
+    category: cup
+    model: lfxtqa
+    size: 0.04
+    fixed_base: false
+    position: [1.00, -0.78, 0.80]
+    orientation: [0.707, 0, 0, 0.707]  # anti-clockwise rotate 90 degree around x axis
+
+  - type: DatasetObject
+    name: box_of_yogurt
+    category: box_of_yogurt
+    model: jkemqc
+    size: 0.06
+    position: [1.35, 0.127, 0.890]
+
+  - type: DatasetObject
+    name: apple
+    category: apple
+    model: agveuv
+    size: 0.08
+    position: [1.24, -0.46, 0.71]
+
+  - type: DatasetObject
+    name: baby_bottles
+    category: baby_bottle
+    model: mzedhe
+    size: 0.10
+    position: [0.82, 0.38, 0.82]
+
+task:
+  type: PointReachingTask
+  robot_idn: 0
+  floor: 0
+  initial_pos: [-0.1, 0, 0]
+  initial_quat: [0, 0, 0, 1]
+
+  goal_pos: [0.82, 0.38, 0.82] # Catch baby bottle
+  goal_tolerance: 0.001  
+  goal_in_polar: false
+  path_range: [1.0, 10.0]
+  visualize_goal: true
+  visualize_path: false
+  n_vis_waypoints: 25
+  reward_type: geodesic
+  termination_config:
+    max_collisions: 500
+    max_steps: 500
+    fall_height: 0.03
+  reward_config:
+    r_potential: 1.0
+    r_collision: 0.1
+    r_pointgoal: 10.0

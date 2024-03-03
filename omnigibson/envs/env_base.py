@@ -350,6 +350,10 @@ class Environment(gym.Env, GymObservable, Recreatable):
         if self._flatten_obs_space:
             obs = recursively_generate_flat_dict(dic=obs)
 
+        # if 'robot0::robot0:eyes_Camera_sensor_rgb' in obs.keys():
+        #     obs['robot0::robot0:eyes_Camera_sensor_rgb'] = np.array(obs['robot0::robot0:eyes_Camera_sensor_rgb'], dtype=np.float64)
+        #     obs['robot0::robot0:eyes_Camera_sensor_rgb'] /= 255.0
+
         return obs
 
     def _populate_info(self, info):

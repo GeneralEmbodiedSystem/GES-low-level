@@ -69,8 +69,8 @@ class FrankaRmpFlowExample():
                 "/World/obstacle",
                 name='obstacle',
                 size=0.05,
-                # position=np.array([0.4, 0.0, 0.65]),
-                position=np.array([0.4, 0.0, 4.65]),
+                position=np.array([0.4, 0.0, 0.65]),
+                # position=np.array([0.4, 0.0, 4.65]),
                 color=np.array([0.0, 0.0, 1.0])
             )
         )
@@ -155,7 +155,8 @@ class FrankaRmpFlowExample():
         if self._dbg_mode:
             # RMPflow was set to roll out robot state internally, assuming that all returned joint targets were hit exactly.
             self._rmpflow.reset()
-            # self._rmpflow.visualize_collision_spheres()
+            self._rmpflow.visualize_collision_spheres()
+            # self._rmpflow.visualize_end_effector_position()
 
         self._my_world.reset()
 

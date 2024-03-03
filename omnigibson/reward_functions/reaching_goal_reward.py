@@ -1,5 +1,6 @@
 from omnigibson.reward_functions.reward_function_base import BaseRewardFunction
 import omnigibson.utils.transform_utils as T
+from omnigibson.custom_env.utils.physx_utils import get_pos_by_prim_path_physxApi
 
 
 class ReachingGoalReward(BaseRewardFunction):
@@ -25,9 +26,16 @@ class ReachingGoalReward(BaseRewardFunction):
         super().__init__()
 
     def _step(self, task, env, action):
+        # # Sparse reward is received if distance between robot_idn robot's eef and goal is below the distance threshold
+        # success = T.l2_distance(env.robots[self._robot_idn].get_eef_position(), task.goal_pos) < \
+        #     self._distance_tol
+        # reward = self._r_reach if success else 0.0
+
         # Sparse reward is received if distance between robot_idn robot's eef and goal is below the distance threshold
-        success = T.l2_distance(env.robots[self._robot_idn].get_eef_position(), task.goal_pos) < \
-            self._distance_tol
-        reward = self._r_reach if success else 0.0
+        # distance = T.l2_distance(env.robots[self._robot_idn].get_eef_position(), task.goal_pos)
+        mouse_pos = get_pos_by_prim_path_physxApi("/World/mouse/base_link")
+        import pdb; pdb.set_trace()
+        distance = T.l2_distance(env.robots[self._robot_idn].get_eef_position(), mouse_pos)
+        reward = self._r_reach - distance
 
         return reward, {}

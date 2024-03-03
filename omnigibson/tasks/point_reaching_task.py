@@ -4,6 +4,8 @@ from omnigibson.tasks.point_navigation_task import PointNavigationTask
 from omnigibson.termination_conditions.point_goal import PointGoal
 import omnigibson.utils.transform_utils as T
 
+# from omnigibson.object_states import Pose
+
 
 # Valid point navigation reward types
 POINT_NAVIGATION_REWARD_TYPES = {"l2", "geodesic"}
@@ -131,6 +133,25 @@ class PointReachingTask(PointNavigationTask):
         low_dim_obs["eef_local_pos"] = self._global_pos_to_robot_frame(env=env, pos=env.robots[self._robot_idn].get_eef_position())
 
         return low_dim_obs, obs
+
+        # # Get relative goal position of goal with respect to the current agent position
+        # eef_to_goal = self._global_pos_to_robot_frame(env=env, pos=self._goal_pos)
+        # obs = dict()
+
+        # # linear velocity and angular velocity
+        # ori_t = T.quat2mat(env.robots[self._robot_idn].states[Pose].get_value()[1]).T
+        # lin_vel = ori_t @ env.robots[self._robot_idn].get_linear_velocity()
+        # ang_vel = ori_t @ env.robots[self._robot_idn].get_angular_velocity()
+
+        # # Compose observation dict
+        # low_dim_obs = dict(
+        #     eef_to_goal=eef_to_goal,
+        #     robot_lin_vel=lin_vel,
+        #     robot_ang_vel=ang_vel,
+        # )
+
+        return low_dim_obs, obs
+
 
     def get_current_pos(self, env):
         # Current position is the robot's EEF, not base!
