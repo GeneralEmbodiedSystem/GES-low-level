@@ -1,0 +1,54 @@
+# env description: there are some trash on the breakfast_table, robot needs to put them into the trash_can 
+scene_cfg:
+  type: InteractiveTraversableScene
+  scene_model: Rs_int
+  load_object_categories:  # this line means load_mode == "Quick". Comment it if you want to load all objects
+    - floors
+    - walls
+    - ceilings
+    - breakfast_table
+
+robot0_cfg:
+  type: TiagoAdvanced  # or FetchAdanced sth.
+  obs_modalities:
+    - scan
+    - rgb
+    - depth
+  action_type: continuous
+  action_normalize: true
+  self_collisions: false
+  prim_path': "/World/robot"
+  fixed_base: false
+  grasping_mode: sticky  # or physical
+  controller_config:
+      camera:
+        name: JointController
+        motor_type: position
+      base:
+        name: JointController
+        motor_type: velocity
+      arm_left: 
+        name: JointController
+        motor_type: velocity
+      arm_right: 
+        name: JointController
+        motor_type: velocity
+
+other_init_cfg:
+  robot_position: [0.0, -0.5, 0.0]  # do not move this line to robot0_cfg, it is not a robot property and will cause error (will be changed by og.env)
+  robot_orientation: [0, 0, 0.707, 0.707]  # do not move this line to robot0_cfg, it is not a robot property and will cause error (will be changed by og.env)
+  camera_resolution:
+    image_height: 720
+    image_width: 720
+
+# viewer_camera_cfg:
+#   position: [1.66024,  1.49093,  2.30134]
+#   orientation: [0.17299,  0.40222,  0.82587, 0.35529]  # note that it is (x, y, z, w) instead of (w, x, y, z)
+
+objects_cfg: []
+
+task_cfg:
+  type: BehaviorTask  # PointReachingTask... refer to the doc of behavior-1k
+  # BehaviorTask-specific
+  activity_name: assembling_gift_baskets  # assembling_gift_baskets, picking_up_trash are available
+  online_object_sampling: True
