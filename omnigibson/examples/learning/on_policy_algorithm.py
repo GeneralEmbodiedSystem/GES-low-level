@@ -270,7 +270,7 @@ class OnPolicyAlgorithm(BaseAlgorithm):
             total_timesteps,
             callback.callbacks[1].eval_env,
             callback,
-            reset_num_timesteps=reset_num_timesteps,
+            # reset_num_timesteps=reset_num_timesteps,
             tb_log_name=tb_log_name,
             progress_bar=progress_bar,
         )

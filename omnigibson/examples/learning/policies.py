@@ -152,6 +152,7 @@ class BaseModel(nn.Module):
         features_extractor = features_extractor or self.features_extractor
         assert features_extractor is not None, "No features extractor was set"
         preprocessed_obs = preprocess_obs(obs, self.observation_space, normalize_images=self.normalize_images)
+        # import pdb; pdb.set_trace()
         return features_extractor(preprocessed_obs)
 
     def _get_constructor_parameters(self) -> Dict[str, Any]:
@@ -954,6 +955,7 @@ class GRUMultiInputActorCriticPolicy(ActorCriticPolicy):
                                              self.history_length, self.feature_size,
                                              self.gru_hidden_size,**self.features_extractor_kwargs)
 
+    
     def extract_features_history(self, obs: th.tensor, obs_buffer: queue) -> Union[th.Tensor, Tuple[th.Tensor, th.Tensor]]:
         """
         Preprocess the both the observation and history_observation and extract features.

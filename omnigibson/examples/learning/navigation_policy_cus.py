@@ -19,18 +19,18 @@ try:
     import torch as th
     import torch.nn as nn
     import tensorboard
-    # from stable_baselines3 import PPO
-    # from stable_baselines3.common.evaluation import evaluate_policy
-    # from stable_baselines3.common.preprocessing import maybe_transpose
-    # from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
-    # from stable_baselines3.common.utils import set_random_seed
+    from stable_baselines3 import PPO
+    from stable_baselines3.common.evaluation import evaluate_policy
+    from stable_baselines3.common.preprocessing import maybe_transpose
+    from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
+    from stable_baselines3.common.utils import set_random_seed
     from stable_baselines3.common.callbacks import CallbackList, CheckpointCallback, EvalCallback # Run error if switch to local
 
-    from ppo import PPO 
-    from omnigibson.examples.learning.evaluation import evaluate_policy
-    from omnigibson.examples.learning.preprocessing import maybe_transpose
-    from omnigibson.examples.learning.torch_layers import BaseFeaturesExtractor,CustomCombinedExtractor, GRUCustomExtractor
-    from utils import set_random_seed
+    # from ppo import PPO 
+    # from omnigibson.examples.learning.evaluation import evaluate_policy
+    # from omnigibson.examples.learning.preprocessing import maybe_transpose
+    # from omnigibson.examples.learning.torch_layers import BaseFeaturesExtractor,CustomCombinedExtractor, GRUCustomExtractor
+    # from utils import set_random_seed
     # from callbacks import CallbackList, CheckpointCallback, EvalCallback  
 
 except ModuleNotFoundError:
@@ -167,8 +167,8 @@ def main():
     # env.reset()
 
     policy_kwargs = dict(
-        # features_extractor_class=CustomCombinedExtractor,
-        features_extractor_class=GRUCustomExtractor,
+        features_extractor_class=CustomCombinedExtractor,
+        # features_extractor_class=GRUCustomExtractor,
     )
 
     os.makedirs(tensorboard_log_dir, exist_ok=True)
@@ -183,8 +183,8 @@ def main():
 
     else:
         model = PPO(
-            # "MultiInputPolicy",
-            "GRUMultiInputPolicy",
+            "MultiInputPolicy",
+            # "GRUMultiInputPolicy",
             env,
             verbose=1,
             tensorboard_log=tensorboard_log_dir,

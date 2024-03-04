@@ -4,6 +4,10 @@ from omnigibson.tasks.point_navigation_task import PointNavigationTask
 from omnigibson.termination_conditions.point_goal import PointGoal
 import omnigibson.utils.transform_utils as T
 
+from omnigibson.reward_functions.collision_reward import CollisionReward
+from omnigibson.reward_functions.reaching_goal_reward import ReachingGoalReward
+from omnigibson.reward_functions.potential_reward import PotentialReward
+
 # from omnigibson.object_states import Pose
 
 
@@ -156,3 +160,19 @@ class PointReachingTask(PointNavigationTask):
     def get_current_pos(self, env):
         # Current position is the robot's EEF, not base!
         return env.robots[self._robot_idn].get_eef_position()
+    
+    
+    # def _create_reward_functions(self):
+    #     # Initialize reward functions dict and fill in with Potential, Collision, and PointGoal rewards
+    #     rewards = dict()
+
+    #     rewards["potential"] = PotentialReward(
+    #         potential_fcn=self.get_potential,
+    #         r_potential=self._reward_config["r_potential"],
+    #     )
+    #     rewards["collision"] = CollisionReward(r_collision=self._reward_config["r_collision"])
+    #     rewards["pointgoal"] = ReachingGoalReward(
+    #         pointgoal=self._termination_conditions["pointgoal"],
+    #         r_pointgoal=self._reward_config["r_pointgoal"],
+    #     )
+    #     return rewards

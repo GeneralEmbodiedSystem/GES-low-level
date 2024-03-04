@@ -34,6 +34,7 @@ class ReachingGoalReward(BaseRewardFunction):
         # Sparse reward is received if distance between robot_idn robot's eef and goal is below the distance threshold
         # distance = T.l2_distance(env.robots[self._robot_idn].get_eef_position(), task.goal_pos)
         mouse_pos = get_pos_by_prim_path_physxApi("/World/mouse/base_link")
+        
         import pdb; pdb.set_trace()
         distance = T.l2_distance(env.robots[self._robot_idn].get_eef_position(), mouse_pos)
         reward = self._r_reach - distance
