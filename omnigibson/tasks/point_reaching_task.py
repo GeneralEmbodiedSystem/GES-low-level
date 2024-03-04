@@ -1,12 +1,18 @@
 import numpy as np
 
 from omnigibson.tasks.point_navigation_task import PointNavigationTask
-from omnigibson.termination_conditions.point_goal import PointGoal
+# from omnigibson.termination_conditions.point_goal import PointGoal
+from omnigibson.termination_conditions.reaching_goal import ReachingGoal
 import omnigibson.utils.transform_utils as T
 
 from omnigibson.reward_functions.collision_reward import CollisionReward
 from omnigibson.reward_functions.reaching_goal_reward import ReachingGoalReward
 from omnigibson.reward_functions.potential_reward import PotentialReward
+
+from omnigibson.termination_conditions.max_collision import MaxCollision
+from omnigibson.termination_conditions.falling import Falling
+from omnigibson.termination_conditions.point_goal import PointGoal
+from omnigibson.termination_conditions.timeout import Timeout
 
 # from omnigibson.object_states import Pose
 
@@ -75,6 +81,7 @@ class PointReachingTask(PointNavigationTask):
     ):
         # Store inputs
         self._height_range = height_range
+        self._robot_idn = robot_idn
 
         # Run super
         super().__init__(
@@ -98,6 +105,7 @@ class PointReachingTask(PointNavigationTask):
         )
 
     def _create_termination_conditions(self):
+
         # Run super first
         terminations = super()._create_termination_conditions()
 
@@ -162,17 +170,20 @@ class PointReachingTask(PointNavigationTask):
         return env.robots[self._robot_idn].get_eef_position()
     
     
-    # def _create_reward_functions(self):
-    #     # Initialize reward functions dict and fill in with Potential, Collision, and PointGoal rewards
-    #     rewards = dict()
+    
+    def _create_reward_functions(self):
+        # Initialize reward functions dict and fill in with Potential, Collision, and PointGoal rewards
+        rewards = dict()
 
-    #     rewards["potential"] = PotentialReward(
-    #         potential_fcn=self.get_potential,
-    #         r_potential=self._reward_config["r_potential"],
-    #     )
-    #     rewards["collision"] = CollisionReward(r_collision=self._reward_config["r_collision"])
-    #     rewards["pointgoal"] = ReachingGoalReward(
-    #         pointgoal=self._termination_conditions["pointgoal"],
-    #         r_pointgoal=self._reward_config["r_pointgoal"],
-    #     )
-    #     return rewards
+        rewards["potential"] = PotentialReward(
+            potential_fcn=self.get_potential,
+            r_potential=self._reward_config["r_potential"],
+        )
+        rewards["collision"] = CollisionReward(r_collision=self._reward_config["r_collision"])
+        # import pdb;pdb.set_trace()
+        rewards["reachinggoal"] = ReachingGoalReward(
+            robot_idn = self._robot_idn,
+            distance_tol = self._goal_tolerance,
+            r_reach = self._reward_config["r_pointgoal"]
+        )
+        return rewards
