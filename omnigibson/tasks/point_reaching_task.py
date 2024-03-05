@@ -82,6 +82,7 @@ class PointReachingTask(PointNavigationTask):
         # Store inputs
         self._height_range = height_range
         self._robot_idn = robot_idn
+        self.goal_pos = goal_pos
 
         # Run super
         super().__init__(
@@ -170,7 +171,6 @@ class PointReachingTask(PointNavigationTask):
         return env.robots[self._robot_idn].get_eef_position()
     
     
-    
     def _create_reward_functions(self):
         # Initialize reward functions dict and fill in with Potential, Collision, and PointGoal rewards
         rewards = dict()
@@ -180,7 +180,6 @@ class PointReachingTask(PointNavigationTask):
             r_potential=self._reward_config["r_potential"],
         )
         rewards["collision"] = CollisionReward(r_collision=self._reward_config["r_collision"])
-        # import pdb;pdb.set_trace()
         rewards["reachinggoal"] = ReachingGoalReward(
             robot_idn = self._robot_idn,
             distance_tol = self._goal_tolerance,

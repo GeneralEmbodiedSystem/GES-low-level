@@ -204,7 +204,7 @@ class PointNavigationTask(BaseTask):
             # Store waypoints
             self._waypoint_markers = waypoints
 
-    def _sample_initial_pose_and_goal_pos(self, env, max_trials=100):
+    def _sample_initial_pose_and_goal_pos(self, env, max_trials=1):
         """
         Potentially sample the robot initial pos / ori and target pos, based on whether we're using randomized
         initial and goal states. If not randomzied, then this value will return the corresponding values inputted
@@ -248,6 +248,7 @@ class PointNavigationTask(BaseTask):
                 log.warning("Failed to sample initial and target positions within requested path range")
         else:
             goal_pos = self._goal_pos
+
 
         # Add additional logging info
         log.info("Sampled initial pose: {}, {}".format(initial_pos, initial_quat))

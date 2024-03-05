@@ -26,8 +26,8 @@ class ReachingGoal(SuccessCondition):
 
     def _step(self, task, env, action):
         # Terminate if point goal is reached (distance below threshold)
-        # return T.l2_distance(env.scene.robots[self._robot_idn].get_eef_position(), task.goal_pos) < \
-            #    self._distance_tol
-        mouse_pos = get_pos_by_prim_path_physxApi("/World/mouse/base_link")
-        return T.l2_distance(env.scene.robots[self._robot_idn].get_eef_position(), mouse_pos) < \
+        return T.l2_distance(env.scene.robots[self._robot_idn].get_eef_position(), task.goal_pos) < \
                self._distance_tol
+        # mouse_pos = get_pos_by_prim_path_physxApi("/World/mouse/base_link")
+        # return T.l2_distance(env.scene.robots[self._robot_idn].get_eef_position(), mouse_pos) < \
+        #        self._distance_tol
