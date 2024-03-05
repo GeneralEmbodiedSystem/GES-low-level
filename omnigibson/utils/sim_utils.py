@@ -232,7 +232,9 @@ def check_collision(prims=None, prims_check=None, prims_exclude=None, step_physi
 
     Returns:
         bool: True if a valid collision has occurred, else False
+
     """
+
     return len(get_collisions(
         prims=prims,
         prims_check=prims_check,
@@ -343,7 +345,7 @@ def land_object(obj, pos, quat=None, z_offset=None):
     for _ in range(max_simulator_step):
         # Run a sim step and see if we have any contacts
         og.sim.step()
-        land_success = check_collision(prims=obj)
+        land_success = not check_collision(prims=obj) # Fix the bug, no collision should refer to land success
         if land_success:
             # Once we're successful, we can break immediately
             log.info(f"Landed object {obj.name} successfully!")

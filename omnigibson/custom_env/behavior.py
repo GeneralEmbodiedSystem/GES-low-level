@@ -13,10 +13,6 @@ from omnigibson.custom_env.configs import ENV_CONFIG_PATH
 import bddl.activity_definitions
 from omnigibson.utils.python_utils import list_directories
 
-# activity_name = "boil_water"     # the activity you want to try, full list in activity_definitions
-# activity_definition_id = 0                         # the specific definition you want to use. As of BEHAVIOR100 2021, this should always be 0.
-# activity_instance_id = 0
-
 
 def get_args():
     parser = argparse.ArgumentParser()
@@ -94,7 +90,6 @@ def main(random_selection=False, headless=False, short_exec=False, args=get_args
     
     # robot = behavior_activity_instance.get_agent()
     # print("show_instruction", behavior_activity_instance.show_instruction())
-    
     
     task: BehaviorTask = env.task
     print("task's instruction", task.show_instruction())

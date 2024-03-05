@@ -2,6 +2,10 @@ GES low level development based on OmniGibson.
 
 # 运行
 
+xxz specified:
+- Run `python omnigibson/examples/learning/navigation_policy_cus.py` in `xxx/GES-low-level/`
+- all the related files are in `omnigibson/examples/learning`, `omnigibson/configs/fetch_nav_xxz.yaml`
+
 - 创建python 3.10的环境，用于运行high level（以及用于启动low level的程序）。（这个环境称作high level环境）。这个环境可能需要安装依赖`pip install pyyaml numpy psutil`。
 - 创建一个python 3.7的环境，安装isaac sim 2022.2.0（具体见模拟器安装文档），以及`pip install -e .`当前仓库。模拟器实际上是在这个环境中运行的。（这个环境称作low level环境）
 - 将conda的路径`CONDA_DIR_PATH`和**low level环境**的名字`CONDA_ENV_NAME`，希望运行的环境类型的config`ENV_CONFIG_FILE`写到根目录的`start_up_cfg.yaml`中
@@ -12,6 +16,7 @@ GES low level development based on OmniGibson.
 # 开发代码位置
 
 - `omnigibson/custom_env/body_simulator.py`: 模拟器环境的代码。如果要进行修改，可以复制一份，在复制的代码中进行修改，主要修改开头的技能集合`skillset`，按照样例增加需要的skill名和(开始函数，执行和结束函数)，在`omnigibson/custom_env/skills`这里写对应skill的实现。在`omnigibson/custom_env/body_simulator_cfg.yaml`中可以修改配置（包括机器人、物体、场景的config）。
+- `omnigibson/custom_env/behavior.py`是运行Behavior-1k任务环境的示例代码，他对应的config文件（可以修改task_cfg中的task `type`和`activity_name`等）在`omnigibson/custom_env/configs/behavior_cfg.yaml`。运行：在`omnigibson/custom_env/`目录下运行`python behavior.py`即可。
 - 一些历史开发代码在`omnigibson/examples/custom`中，可以参考。
   - Fetching example & FetchAdvanced get_image(rgb, depth) [omnigibson/examples/custom/grasping_mode_example.py]
   - Ik example（TODO） [omnigibson/examples/custom/ik_example.py]

@@ -29,7 +29,7 @@ assets_root_path = get_assets_root_path()
 
 tiago_usd_path = join(
     data_path, 
-    '/assets/models/tiago/tiago_dual_omnidirectional_stanford/tiago_dual_omnidirectional_stanford_33.usd'
+    'assets/models/tiago/tiago_dual_omnidirectional_stanford/tiago_dual_omnidirectional_stanford_33.usd'
 )
 
 def attach_usd_to_prim(prim_path: str, usd_path: str):

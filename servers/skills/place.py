@@ -48,5 +48,5 @@ def place(socket_manager: SocketManager, pipe: PipeManager):
 
     # Send the response
     socket_manager.write_request({
-        'result': "Robot placed the object on the hand successfully."
+        'result': "Robot placed the object successfully."
     })

@@ -204,7 +204,7 @@ class PointNavigationTask(BaseTask):
             # Store waypoints
             self._waypoint_markers = waypoints
 
-    def _sample_initial_pose_and_goal_pos(self, env, max_trials=100):
+    def _sample_initial_pose_and_goal_pos(self, env, max_trials=1):
         """
         Potentially sample the robot initial pos / ori and target pos, based on whether we're using randomized
         initial and goal states. If not randomzied, then this value will return the corresponding values inputted
@@ -249,9 +249,11 @@ class PointNavigationTask(BaseTask):
         else:
             goal_pos = self._goal_pos
 
+
         # Add additional logging info
         log.info("Sampled initial pose: {}, {}".format(initial_pos, initial_quat))
         log.info("Sampled goal position: {}".format(goal_pos))
+
         return initial_pos, initial_quat, goal_pos
 
     def _get_geodesic_potential(self, env):
@@ -334,6 +336,7 @@ class PointNavigationTask(BaseTask):
             self._initial_pos_marker.set_position(self._initial_pos)
             self._goal_pos_marker.set_position(self._goal_pos)
 
+
     def _reset_variables(self, env):
         # Run super first
         super()._reset_variables(env=env)
@@ -371,8 +374,6 @@ class PointNavigationTask(BaseTask):
         # Get relative position of goal with respect to the current agent position
         xy_pos_to_goal = self._global_pos_to_robot_frame(env, self._goal_pos)[:2]
 
-        import pdb
-        pdb.set_trace()
         if self._goal_in_polar:
             xy_pos_to_goal = np.array(T.cartesian_to_polar(*xy_pos_to_goal))
 
@@ -387,6 +388,7 @@ class PointNavigationTask(BaseTask):
             robot_lin_vel=lin_vel,
             robot_ang_vel=ang_vel,
         )
+        
         # We have no non-low-dim obs, so return empty dict for those
         return low_dim_obs, dict()
 

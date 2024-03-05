@@ -34,8 +34,8 @@ robot0_cfg:
         motor_type: position
 
 other_init_cfg:
-  robot_position: [0.0, -0.5, 0.0]  # do not move this line to robot0_cfg, it is not a robot property and will cause error (will be changed by og.env)
-  robot_orientation: [0, 0, 0.707, 0.707]  # do not move this line to robot0_cfg, it is not a robot property and will cause error (will be changed by og.env)
+  robot_position: [0.0, 0.0, 0.0]  # do not move this line to robot0_cfg, it is not a robot property and will cause error (will be changed by og.env)
+  robot_orientation: [0.0, 0.0, 0.0, 1.0]  # [0, 0, 0.707, 0.707]  # do not move this line to robot0_cfg, it is not a robot property and will cause error (will be changed by og.env)
   camera_resolution:
     image_height: 720
     image_width: 720
@@ -124,7 +124,8 @@ objects_cfg:
     model: jkemqc
     # size: 0.06
     bounding_box: [0.06, 0.06, 0.08]
-    position: [-0.6, 1.10, 0.47]
+    # position: [-0.6, 1.10, 0.47]  # on coffee_table
+    position: [0.86, 0.38, 0.75]  # on conference_table
 
 # to add: ./og_dataset/objects/boxed_cpu_board ./og_dataset/objects/electric_fan
 # ./og_dataset/objects/mousepad ./og_dataset/objects/mouse  

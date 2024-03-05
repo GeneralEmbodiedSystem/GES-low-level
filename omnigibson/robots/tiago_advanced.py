@@ -2,6 +2,7 @@ from typing import Dict, Optional, Union
 import os
 
 import numpy as np
+from scipy.spatial.transform import Rotation as R
 
 from omnigibson.macros import gm
 import omnigibson.utils.transform_utils as T
@@ -65,6 +66,10 @@ class TiagoAdvanced(Tiago):
         super()._post_load()
         # self._eyes = get_prim_at_path(f"{self._prim_path}/eyes")
         self.focal_length = 10.0 # zoom out
+        # length of the base along x-axis
+        self.base_x_length = 0.7302399802207946
+        # length of the base along y-axis
+        self.base_y_length = 0.4859400045871735
         # Whether the robot is ready to perform actions
         self.ready = True
         # Add more modalities
@@ -221,8 +226,8 @@ class TiagoAdvanced(Tiago):
         pos = np.zeros(self.n_dof)
         # Keep the current joint positions for the base joints
         pos[self.base_idx] = self.get_joint_positions()[self.base_idx]
-        pos[self.trunk_control_idx] = 0  # TODO
-        pos[self.camera_control_idx] = np.array([0.0, 0.0])   # TODO
+        pos[self.trunk_control_idx] = 0
+        pos[self.camera_control_idx] = np.array([0.0, 0.0])
         for arm in self.arm_names:
             pos[self.gripper_control_idx[arm]] = np.array([0.045, 0.045])  # open gripper
             pos[self.arm_control_idx[arm]] = np.array(
@@ -376,32 +381,34 @@ class TiagoAdvanced(Tiago):
         return sensor.get_obs()
     
     @staticmethod
-    def get_scan_point_cloud(
-            sensor: ScanSensor, rotate=0) -> np.ndarray:
+    def get_scan_point_cloud(sensor: ScanSensor) -> np.ndarray:
         '''
         @return (dict): the Lidar data in 
         point_cloud: np.ndarray
 
-        This function only support horizontal Lidar,
-        i.e., front_right_scan_sensor and rear_left_scan_sensor
-
-        For front_right_scan_sensor, please set rotate=-np.pi/4.
-        For rear_left_scan_sensor, please set rotate=3*np.pi/4.
-
-        The axis is aligned with the world coordinate system.
+        The point cloud is defined in the robot coordinate system,
+        but relative to the sensor's position.
         '''
+        # Rotate the point cloud by the quaternion
+        def rotate_point_cloud(point_cloud, quat):
+            # Convert quaternion to rotation matrix
+            rotation_matrix = R.from_quat(quat).as_matrix()
+
+            # Rotate each point in the point cloud
+            rotated_point_cloud = np.dot(point_cloud, rotation_matrix.T)
+
+            return rotated_point_cloud
+        
         lidar_interface = sensor._rs
         lidar_prim_path = sensor.prim_path
-        depth = lidar_interface.get_linear_depth_data(lidar_prim_path)
-        depth = depth.reshape(-1, 1)
-        azimuth = lidar_interface.get_azimuth_data(lidar_prim_path)
-        azimuth += rotate
-        azimuth = azimuth.reshape(-1, 1)
-        point_cloud = np.concatenate([
-            depth * np.cos(azimuth),
-            -depth * np.sin(azimuth),   # In Tiago, all the Lidar are rotated-X 180, so we need to flip the y axis
-            np.zeros_like(depth)
-        ], axis=-1)
+        point_cloud = lidar_interface.get_point_cloud_data(lidar_prim_path)
+        point_cloud = point_cloud.reshape(-1, 3)
+
+        # Transform from sensor coordinate system to robot coordinate system
+        quat = sensor.get_orientation()
+        quat = T.quat_inverse(quat)
+        # Rotate point cloud
+        point_cloud = rotate_point_cloud(point_cloud, quat)
         
         return point_cloud
     

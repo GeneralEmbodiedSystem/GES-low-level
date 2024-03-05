@@ -50,35 +50,35 @@ class TiagoRmpFlowExample():
         
         self._tiago_assets_root_path = './configs/rmpflow/tiago'
         
-        # self._tiago_dof_names = [
-        #     'torso_lift_joint', 
-        #     'arm_left_1_joint', # 1
-        #     'arm_right_1_joint', 
-        #     'head_1_joint', 
-        #     'arm_left_2_joint', # 4
-        #     'arm_right_2_joint', 
-        #     'head_2_joint', 
-        #     'arm_left_3_joint', # 7
-        #     'arm_right_3_joint', 
-        #     'base_footprint_rz_joint', 
-        #     'arm_left_4_joint', # 10
-        #     'arm_right_4_joint', 
-        #     'base_footprint_ry_joint', 
-        #     'arm_left_5_joint', # 13
-        #     'arm_right_5_joint', 
-        #     'base_footprint_rx_joint', 
-        #     'arm_left_6_joint', # 16
-        #     'arm_right_6_joint', 
-        #     'base_footprint_z_joint', 
-        #     'arm_left_7_joint', # 19
-        #     'arm_right_7_joint', 
-        #     'base_footprint_y_joint', 
-        #     'base_footprint_x_joint', 
-        #     'gripper_left_left_finger_joint', 
-        #     'gripper_left_right_finger_joint', 
-        #     'gripper_right_left_finger_joint', 
-        #     'gripper_right_right_finger_joint'
-        # ]
+        self._tiago_dof_names = [
+            'torso_lift_joint', 
+            'arm_left_1_joint', # 1
+            'arm_right_1_joint', 
+            'head_1_joint', 
+            'arm_left_2_joint', # 4
+            'arm_right_2_joint', 
+            'head_2_joint', 
+            'arm_left_3_joint', # 7
+            'arm_right_3_joint', 
+            'base_footprint_rz_joint', 
+            'arm_left_4_joint', # 10
+            'arm_right_4_joint', 
+            'base_footprint_ry_joint', 
+            'arm_left_5_joint', # 13
+            'arm_right_5_joint', 
+            'base_footprint_rx_joint', 
+            'arm_left_6_joint', # 16
+            'arm_right_6_joint', 
+            'base_footprint_z_joint', 
+            'arm_left_7_joint', # 19
+            'arm_right_7_joint', 
+            'base_footprint_y_joint', 
+            'base_footprint_x_joint', 
+            'gripper_left_left_finger_joint', 
+            'gripper_left_right_finger_joint', 
+            'gripper_right_left_finger_joint', 
+            'gripper_right_right_finger_joint'
+        ]
         
         self._left_arm_indices = np.array([1, 4, 7, 10, 13, 16, 19])
         # # self._left_arm_indices = np.array([0, 1, 4, 7, 10, 13, 16, 19])
@@ -219,8 +219,8 @@ class TiagoRmpFlowExample():
 
         if self._dbg_mode:
             self._rmpflow.set_ignore_state_updates(True)
-            # if self._visual_out:
-            #     self._rmpflow.visualize_collision_spheres()
+            if self._visual_out:
+                self._rmpflow.visualize_collision_spheres()
 
             # Set the robot gains to be deliberately poor
             # bad_proportional_gains = self._articulation.get_articulation_controller().get_gains()[0] / 50

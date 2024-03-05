@@ -1,8 +1,18 @@
 import numpy as np
 
 from omnigibson.tasks.point_navigation_task import PointNavigationTask
-from omnigibson.termination_conditions.point_goal import PointGoal
+# from omnigibson.termination_conditions.point_goal import PointGoal
+from omnigibson.termination_conditions.reaching_goal import ReachingGoal
 import omnigibson.utils.transform_utils as T
+
+from omnigibson.reward_functions.collision_reward import CollisionReward
+from omnigibson.reward_functions.reaching_goal_reward import ReachingGoalReward
+from omnigibson.reward_functions.potential_reward import PotentialReward
+
+from omnigibson.termination_conditions.max_collision import MaxCollision
+from omnigibson.termination_conditions.falling import Falling
+from omnigibson.termination_conditions.point_goal import PointGoal
+from omnigibson.termination_conditions.timeout import Timeout
 
 # from omnigibson.object_states import Pose
 
@@ -71,6 +81,8 @@ class PointReachingTask(PointNavigationTask):
     ):
         # Store inputs
         self._height_range = height_range
+        self._robot_idn = robot_idn
+        self.goal_pos = goal_pos
 
         # Run super
         super().__init__(
@@ -94,6 +106,7 @@ class PointReachingTask(PointNavigationTask):
         )
 
     def _create_termination_conditions(self):
+
         # Run super first
         terminations = super()._create_termination_conditions()
 
@@ -132,8 +145,6 @@ class PointReachingTask(PointNavigationTask):
         # Add local eef position as well
         low_dim_obs["eef_local_pos"] = self._global_pos_to_robot_frame(env=env, pos=env.robots[self._robot_idn].get_eef_position())
 
-        import pdb
-        pdb.set_trace()
         return low_dim_obs, obs
 
         # # Get relative goal position of goal with respect to the current agent position
@@ -152,11 +163,26 @@ class PointReachingTask(PointNavigationTask):
         #     robot_ang_vel=ang_vel,
         # )
 
-        # import pdb
-        # pdb.set_trace()
         return low_dim_obs, obs
 
 
     def get_current_pos(self, env):
         # Current position is the robot's EEF, not base!
         return env.robots[self._robot_idn].get_eef_position()
+    
+    
+    def _create_reward_functions(self):
+        # Initialize reward functions dict and fill in with Potential, Collision, and PointGoal rewards
+        rewards = dict()
+
+        rewards["potential"] = PotentialReward(
+            potential_fcn=self.get_potential,
+            r_potential=self._reward_config["r_potential"],
+        )
+        rewards["collision"] = CollisionReward(r_collision=self._reward_config["r_collision"])
+        rewards["reachinggoal"] = ReachingGoalReward(
+            robot_idn = self._robot_idn,
+            distance_tol = self._goal_tolerance,
+            r_reach = self._reward_config["r_pointgoal"]
+        )
+        return rewards
