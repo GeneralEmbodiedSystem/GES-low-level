@@ -47,6 +47,8 @@ checkpoint
 *.model.*
 examples/train/models/
 
+runs/
+
 log_*/
 baselines/
 aws/
