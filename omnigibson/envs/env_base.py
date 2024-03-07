@@ -414,6 +414,7 @@ class Environment(gym.Env, GymObservable, Recreatable):
         if done and self._automatic_reset:
             # Add lost observation to our information dict, and reset
             info["last_observation"] = obs
+
             obs = self.reset()
 
         # Increment step

@@ -172,6 +172,7 @@ class BaseTask(GymObservable, Registerable, metaclass=ABCMeta):
         """
         # Reset the scene, agent, and variables
         self._reset_scene(env)
+
         self._reset_agent(env)
         self._reset_variables(env)
 

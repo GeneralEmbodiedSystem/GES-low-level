@@ -1,4 +1,5 @@
 from omnigibson.reward_functions.reward_function_base import BaseRewardFunction
+import numpy as np
 
 
 class PotentialReward(BaseRewardFunction):
@@ -40,11 +41,17 @@ class PotentialReward(BaseRewardFunction):
         self._potential = self._potential_fcn(env)
 
     def _step(self, task, env, action):
-        # Reward is proportional to the potential difference between the current and previous timestep
-        new_potential = self._potential_fcn(env)
-        reward = (self._potential - new_potential) * self._r_potential
+        # # Reward is proportional to the potential difference between the current and previous timestep
+        # new_potential = self._potential_fcn(env)
+        # reward = (self._potential - new_potential) * self._r_potential
+        # # Update internal potential
+        # self._potential = new_potential
 
-        # Update internal potential
-        self._potential = new_potential
+        # Potential is calculated via the dot product of action
+        current_potential = np.dot(action, action)
+        reward = current_potential * self._r_potential
+
+        # print("Potential_reward:", reward)
+
 
         return reward, {}

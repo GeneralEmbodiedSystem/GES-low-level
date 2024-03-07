@@ -132,6 +132,7 @@ class PointReachingTask(PointNavigationTask):
 
     def _get_l2_potential(self, env):
         # Distance calculated from robot EEF, not base!
+
         return T.l2_distance(env.robots[self._robot_idn].get_eef_position(), self._goal_pos)
 
     def _get_obs(self, env):

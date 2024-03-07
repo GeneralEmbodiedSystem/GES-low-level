@@ -197,7 +197,8 @@ def main():
         )
         checkpoint_callback = CheckpointCallback(save_freq=1000, save_path=tensorboard_log_dir, name_prefix=prefix)
         eval_callback = EvalCallback(eval_env=env, eval_freq=1000, n_eval_episodes=20)
-        callback = CallbackList([checkpoint_callback, eval_callback])
+        # callback = CallbackList([checkpoint_callback, eval_callback])
+        callback = CallbackList([checkpoint_callback])
 
         og.log.debug(model.policy)
         og.log.info(f"model: {model}")

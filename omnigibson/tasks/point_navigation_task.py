@@ -204,7 +204,7 @@ class PointNavigationTask(BaseTask):
             # Store waypoints
             self._waypoint_markers = waypoints
 
-    def _sample_initial_pose_and_goal_pos(self, env, max_trials=1):
+    def _sample_initial_pose_and_goal_pos(self, env, max_trials=100):
         """
         Potentially sample the robot initial pos / ori and target pos, based on whether we're using randomized
         initial and goal states. If not randomzied, then this value will return the corresponding values inputted
@@ -279,6 +279,8 @@ class PointNavigationTask(BaseTask):
         Returns:
             float: L2 distance to the target position
         """
+
+        import pdb; pdb.set_trace()
         return T.l2_distance(env.robots[self._robot_idn].states[Pose].get_value()[0][:2], self._goal_pos[:2])
 
     def get_potential(self, env):
@@ -469,7 +471,7 @@ class PointNavigationTask(BaseTask):
     @classproperty
     def default_termination_config(cls):
         return {
-            "max_collisions": 500,
+            "max_collisions": 5,
             "max_steps": 500,
             "fall_height": 0.03,
         }
