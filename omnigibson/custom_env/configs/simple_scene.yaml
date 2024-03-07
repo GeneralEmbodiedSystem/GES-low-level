@@ -30,6 +30,7 @@ robot0_cfg:
 
 other_init_cfg:
   robot_position: [-0.1, 0.0, 0.0]  # do not move this line to robot0_cfg, it is not a robot property and will cause error (will be changed by og.env)
+  robot_orientation: [0.0, 0.0, 0.0, 1.0]  # do not move this line to robot0_cfg, it is not a robot property and will cause error (will be changed by og.env)
   camera_resolution:
     image_height: 1080
     image_width: 1920
