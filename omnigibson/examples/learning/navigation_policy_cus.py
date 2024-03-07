@@ -83,6 +83,14 @@ class CustomCombinedExtractor(BaseFeaturesExtractor):
                 fc = nn.Sequential(nn.Linear(n_flatten, feature_size), nn.ReLU())
                 extractors[key] = nn.Sequential(cnn, fc)
                 total_concat_size += feature_size
+            elif "low_dim" in key:
+                og.log.info(f"obs {key} shape: {subspace.shape}")
+                n_input_channels = subspace.shape[0]
+                fc = nn.Sequential(nn.Linear(n_input_channels, feature_size), nn.ReLU())
+                extractors[key] = fc
+                total_concat_size += feature_size    
+            else:
+                pass
         self.extractors = nn.ModuleDict(extractors)
 
         # Update the features dim manually
@@ -132,7 +140,7 @@ def main():
         cfg = yaml.load(f, Loader=yaml.FullLoader)
 
     # Only use RGB obs
-    cfg["robots"][0]["obs_modalities"] = ["rgb"]
+    cfg["robots"][0]["obs_modalities"] = ["rgb", "low_dim"]
     # cfg["robots"][0]["obs_modalities"] = ["rgb", "depth"]
         
     # If we're not eval, turn off the start / goal markers so the agent doesn't see them
