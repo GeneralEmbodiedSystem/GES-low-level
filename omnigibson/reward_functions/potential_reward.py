@@ -48,10 +48,12 @@ class PotentialReward(BaseRewardFunction):
         # self._potential = new_potential
 
         # Potential is calculated via the dot product of action
+    
         current_potential = np.dot(action, action)
         reward = current_potential * self._r_potential
 
         # print("Potential_reward:", reward)
+        # print("action:", action)
 
 
         return reward, {}
