@@ -147,7 +147,9 @@ def main():
     # Only use RGB obs
     # cfg["robots"][0]["obs_modalities"] = ["rgb", "low_dim"]
     # cfg["robots"][0]["obs_modalities"] = ["rgb", "depth"]
-    cfg["robots"][0]["obs_modalities"] = ["rgb", "low_dim", "proprio"]
+    # cfg["robots"][0]["obs_modalities"] = ["rgb", "low_dim", "proprio"]
+    cfg["robots"][0]["obs_modalities"] = ["low_dim", "proprio"]
+    
     
         
     # If we're not eval, turn off the start / goal markers so the agent doesn't see them
@@ -207,7 +209,7 @@ def main():
             # learning_rate = 3e-3,
             learning_rate = 1e-4,
             # ent_coef = 0.1,
-            ent_coef = 0.05,
+            ent_coef = 0.00,
             max_grad_norm = 1.0,
             n_steps=20 * 10,
             batch_size=8,
