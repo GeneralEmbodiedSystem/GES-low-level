@@ -210,7 +210,7 @@ def main():
             learning_rate = 1e-4,
             # ent_coef = 0.1,
             ent_coef = 0.00,
-            max_grad_norm = 1.0,
+            max_grad_norm = 0.5,
             n_steps=20 * 10,
             batch_size=8,
             device='cuda',

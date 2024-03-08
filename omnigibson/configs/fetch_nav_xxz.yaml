@@ -179,7 +179,7 @@ task:
   waypoint_width: 0.1
   n_vis_waypoints: 10
   reward_config:
-    r_potential: -0.00
+    r_potential: -0.001
     r_collision: 0.00001
     r_pointgoal: 0.0
   termination_config:
