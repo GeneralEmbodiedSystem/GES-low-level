@@ -62,7 +62,6 @@ class CustomCombinedExtractor(BaseFeaturesExtractor):
         total_concat_size = 0
         feature_size = 128
         for key, subspace in observation_space.spaces.items(): 
-            # For now, only keep RGB observations
             if "rgb" in key:
                 og.log.info(f"obs {key} shape: {subspace.shape}")
                 n_input_channels = subspace.shape[0]  # channel first
@@ -88,7 +87,13 @@ class CustomCombinedExtractor(BaseFeaturesExtractor):
                 n_input_channels = subspace.shape[0]
                 fc = nn.Sequential(nn.Linear(n_input_channels, feature_size), nn.ReLU())
                 extractors[key] = fc
-                total_concat_size += feature_size    
+                total_concat_size += feature_size
+            elif "proprio" in key:
+                og.log.info(f"obs {key} shape: {subspace.shape}")
+                n_input_channels = subspace.shape[0]
+                fc = nn.Sequential(nn.Linear(n_input_channels, feature_size), nn.ReLU())
+                extractors[key] = fc
+                total_concat_size += feature_size
             else:
                 pass
         self.extractors = nn.ModuleDict(extractors)
@@ -140,8 +145,10 @@ def main():
         cfg = yaml.load(f, Loader=yaml.FullLoader)
 
     # Only use RGB obs
-    cfg["robots"][0]["obs_modalities"] = ["rgb", "low_dim"]
+    # cfg["robots"][0]["obs_modalities"] = ["rgb", "low_dim"]
     # cfg["robots"][0]["obs_modalities"] = ["rgb", "depth"]
+    cfg["robots"][0]["obs_modalities"] = ["rgb", "low_dim", "proprio"]
+    
         
     # If we're not eval, turn off the start / goal markers so the agent doesn't see them
     if not args.eval:
@@ -197,8 +204,11 @@ def main():
             verbose=1,
             tensorboard_log=tensorboard_log_dir,
             policy_kwargs=policy_kwargs,
-            learning_rate = 3e-3,
-            ent_coef = 0.1,
+            # learning_rate = 3e-3,
+            learning_rate = 1e-4,
+            # ent_coef = 0.1,
+            ent_coef = 0.05,
+            max_grad_norm = 1.0,
             n_steps=20 * 10,
             batch_size=8,
             device='cuda',

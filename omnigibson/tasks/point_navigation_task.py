@@ -249,7 +249,6 @@ class PointNavigationTask(BaseTask):
         else:
             goal_pos = self._goal_pos
 
-
         # Add additional logging info
         log.info("Sampled initial pose: {}, {}".format(initial_pos, initial_quat))
         log.info("Sampled goal position: {}".format(goal_pos))
@@ -280,7 +279,6 @@ class PointNavigationTask(BaseTask):
             float: L2 distance to the target position
         """
 
-        import pdb; pdb.set_trace()
         return T.l2_distance(env.robots[self._robot_idn].states[Pose].get_value()[0][:2], self._goal_pos[:2])
 
     def get_potential(self, env):

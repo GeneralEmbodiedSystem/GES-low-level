@@ -14,6 +14,8 @@ from omnigibson.termination_conditions.falling import Falling
 from omnigibson.termination_conditions.point_goal import PointGoal
 from omnigibson.termination_conditions.timeout import Timeout
 
+from omnigibson.custom_env.utils.physx_utils import get_pos_by_prim_path_physxApi
+
 # from omnigibson.object_states import Pose
 
 
@@ -82,7 +84,7 @@ class PointReachingTask(PointNavigationTask):
         # Store inputs
         self._height_range = height_range
         self._robot_idn = robot_idn
-        self.goal_pos = goal_pos
+        # self.goal_pos = goal_pos
 
         # Run super
         super().__init__(
@@ -127,7 +129,7 @@ class PointReachingTask(PointNavigationTask):
         # Sample goal position to be within requested height range if specified
         if self._height_range is not None:
             goal_pos[2] += np.random.uniform(*self._height_range)
-
+        
         return initial_pos, initial_ori, goal_pos
 
     def _get_l2_potential(self, env):
@@ -141,7 +143,12 @@ class PointReachingTask(PointNavigationTask):
 
         # Remove xy-pos and replace with full xyz relative distance between current and goal pos
         low_dim_obs.pop("xy_pos_to_goal")
-        low_dim_obs["eef_to_goal"] = self._global_pos_to_robot_frame(env=env, pos=self._goal_pos)
+
+        # low_dim_obs["eef_to_goal"] = self._global_pos_to_robot_frame(env=env, pos=self._goal_pos)
+        
+        # Update low_dim_obs goal
+        mouse_pos = get_pos_by_prim_path_physxApi("/World/mouse/base_link")
+        low_dim_obs["eef_to_goal"] = self._global_pos_to_robot_frame(env=env, pos=mouse_pos)
 
         # Add local eef position as well
         low_dim_obs["eef_local_pos"] = self._global_pos_to_robot_frame(env=env, pos=env.robots[self._robot_idn].get_eef_position())

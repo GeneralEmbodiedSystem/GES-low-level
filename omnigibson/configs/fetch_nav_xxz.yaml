@@ -79,22 +79,22 @@ objects:
     fixed_base: true
     position: [1.117, -0.1, 0.69]
 
-  - type: DatasetObject
-    name: alarm_clock
-    category: alarm_clock
-    model: cvknrh
-    size: 0.06
-    fixed_base: True
-    position: [1.17, 0.52, 0.870]
+  # - type: DatasetObject
+  #   name: alarm_clock
+  #   category: alarm_clock
+  #   model: cvknrh
+  #   size: 0.06
+  #   fixed_base: True
+  #   position: [1.17, 0.52, 0.870]
 
-  - type: DatasetObject
-    name: laptop
-    category: laptop
-    model: izydvb
-    size: 0.06
-    fixed_base: False
-    position: [1.0, -0.0, 0.95]
-    orientation: [0, 0, 1, 0]  # rotate 180 degree around z axis
+  # - type: DatasetObject
+  #   name: laptop
+  #   category: laptop
+  #   model: izydvb
+  #   size: 0.06
+  #   fixed_base: False
+  #   position: [1.0, -0.0, 0.95]
+  #   orientation: [0, 0, 1, 0]  # rotate 180 degree around z axis
 
   # - type: DatasetObject
   #   name: mousepad
@@ -113,35 +113,35 @@ objects:
     orientation: [0, 0, -0.707, 0.707]  # clockwise rotate 90 degree around z axis
     # [0, 0, 0.707, 0.707] means anti-clockwise rotate 90 degree around z axis
 
-  - type: DatasetObject
-    name: boxed_cpu_board
-    category: boxed_cpu_board
-    model: xlqvil
-    size: 0.06
-    position: [1.17, 0.678, 0.870]
+  # - type: DatasetObject
+  #   name: boxed_cpu_board
+  #   category: boxed_cpu_board
+  #   model: xlqvil
+  #   size: 0.06
+  #   position: [1.17, 0.678, 0.870]
 
-  - type: DatasetObject
-    name: cup
-    category: cup
-    model: lfxtqa
-    size: 0.04
-    fixed_base: false
-    position: [1.00, -0.78, 0.80]
-    orientation: [0.707, 0, 0, 0.707]  # anti-clockwise rotate 90 degree around x axis
+  # - type: DatasetObject
+  #   name: cup
+  #   category: cup
+  #   model: lfxtqa
+  #   size: 0.04
+  #   fixed_base: false
+  #   position: [1.00, -0.78, 0.80]
+  #   orientation: [0.707, 0, 0, 0.707]  # anti-clockwise rotate 90 degree around x axis
 
-  - type: DatasetObject
-    name: box_of_yogurt
-    category: box_of_yogurt
-    model: jkemqc
-    size: 0.06
-    position: [1.35, 0.127, 0.890]
+  # - type: DatasetObject
+  #   name: box_of_yogurt
+  #   category: box_of_yogurt
+  #   model: jkemqc
+  #   size: 0.06
+  #   position: [1.35, 0.127, 0.890]
 
-  - type: DatasetObject
-    name: apple
-    category: apple
-    model: agveuv
-    size: 0.08
-    position: [1.24, -0.46, 0.71]
+  # - type: DatasetObject
+  #   name: apple
+  #   category: apple
+  #   model: agveuv
+  #   size: 0.08
+  #   position: [1.24, -0.46, 0.71]
 
   # - type: DatasetObject
   #   name: baby_bottles
@@ -150,13 +150,13 @@ objects:
   #   size: 0.10
   #   position: [0.90, -0.60, 0.85]
 
-  - type: DatasetObject
-    name: bottle_of_water
-    category: bottle_of_water
-    model: cyzaue
-    scale: 1.5
-    fixed_base: True
-    position: [0.90, -0.60, 0.85]
+  # - type: DatasetObject
+  #   name: bottle_of_water
+  #   category: bottle_of_water
+  #   model: cyzaue
+  #   scale: 1.5
+  #   fixed_base: True
+  #   position: [0.90, -0.60, 0.85]
 
 task:
   type: PointReachingTask
@@ -164,7 +164,9 @@ task:
   floor: 0
   initial_pos: [0, 0, 0]
   initial_quat: [0, 0, 0, 1]
-  goal_pos: [0.90, -0.60, 0.85] # Catch baby_bottle
+  # goal_pos: [0.90, -0.60, 0.85] # Catch bottle_of_water
+  goal_pos: [0.82, 0.38, 0.82] # Catch mouse
+
   goal_tolerance: 0.001  
   goal_in_polar: false
   path_range: [1.0, 10.0]
@@ -177,7 +179,7 @@ task:
   waypoint_width: 0.1
   n_vis_waypoints: 10
   reward_config:
-    r_potential: -0.01
+    r_potential: -0.00
     r_collision: 0.00001
     r_pointgoal: 0.0
   termination_config:

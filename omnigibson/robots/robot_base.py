@@ -173,7 +173,6 @@ class BaseRobot(USDObject, ControllableObject, GymObservable):
         # Since proprioception isn't an actual sensor, we need to possibly manually add it here as well
         if self._obs_modalities == "all" or "proprio" in self._obs_modalities:
             obs_modalities.add("proprio")
-
         # Update our overall obs modalities
         self._obs_modalities = obs_modalities
 
@@ -217,7 +216,8 @@ class BaseRobot(USDObject, ControllableObject, GymObservable):
         # Have to handle proprio separately since it's not an actual sensor
         if "proprio" in self._obs_modalities:
             obs_dict["proprio"] = self.get_proprioception()
-
+        
+        # import pdb;pdb.set_trace()
         return obs_dict
 
     def get_proprioception(self):
