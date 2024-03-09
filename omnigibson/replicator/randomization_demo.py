@@ -1,9 +1,10 @@
 from omni.isaac.kit import SimulationApp
+
 simulation_app = SimulationApp({"headless": False})
 
 import numpy as np
 from omni.isaac.core import World
-from omni.isaac.core.prims.rigid_prim_view import RigidPrimView
+from omni.isaac.core.prims import RigidPrimView
 from omni.isaac.core.articulations import ArticulationView
 from omni.isaac.core.utils.prims import get_prim_at_path, define_prim
 from omni.isaac.core.utils.stage import get_current_stage, add_reference_to_stage
@@ -17,15 +18,13 @@ world.scene.add_default_ground_plane()
 
 # set up grid cloner
 cloner = GridCloner(spacing=1.5)
-
 cloner.define_base_env("/World/envs")
 define_prim("/World/envs/env_0")
 
 # set up the first environment
 DynamicSphere(prim_path="/World/envs/env_0/object", radius=0.1, position=np.array([0.75, 0.0, 0.2]))
 add_reference_to_stage(
-    usd_path=get_assets_root_path()+ "/Isaac/Robots/Franka/franka.usd",
-    prim_path="/World/envs/env_0/franka",
+    usd_path=get_assets_root_path() + "/Isaac/Robots/Franka/franka.usd", prim_path="/World/envs/env_0/franka"
 )
 
 # clone environments
@@ -53,20 +52,17 @@ dr.physics_view.register_articulation_view(franka_view)
 with dr.trigger.on_rl_frame(num_envs=num_envs):
     with dr.gate.on_interval(interval=20):
         dr.physics_view.randomize_simulation_context(
-            operation="scaling",
-            gravity=rep.distribution.uniform((1, 1, 0.0), (1, 1, 2.0)),
+            operation="scaling", gravity=rep.distribution.uniform((1, 1, 0.0), (1, 1, 2.0))
         )
     with dr.gate.on_interval(interval=50):
         dr.physics_view.randomize_rigid_prim_view(
-            view_name=object_view.name,
-            operation="direct",
-            force=rep.distribution.uniform((0, 0, 2.5), (0, 0, 5.0)),
+            view_name=object_view.name, operation="direct", force=rep.distribution.uniform((0, 0, 2.5), (0, 0, 5.0))
         )
     with dr.gate.on_interval(interval=10):
         dr.physics_view.randomize_articulation_view(
             view_name=franka_view.name,
             operation="direct",
-            joint_velocities=rep.distribution.uniform(tuple([-2]*num_dof), tuple([2]*num_dof)),
+            joint_velocities=rep.distribution.uniform(tuple([-2] * num_dof), tuple([2] * num_dof)),
         )
     with dr.gate.on_env_reset():
         dr.physics_view.randomize_rigid_prim_view(
@@ -78,7 +74,7 @@ with dr.trigger.on_rl_frame(num_envs=num_envs):
         dr.physics_view.randomize_articulation_view(
             view_name=franka_view.name,
             operation="additive",
-            joint_positions=rep.distribution.uniform(tuple([-0.5]*num_dof), tuple([0.5]*num_dof)),
+            joint_positions=rep.distribution.uniform(tuple([-0.5] * num_dof), tuple([0.5] * num_dof)),
             position=rep.distribution.normal((0.0, 0.0, 0.0), (0.2, 0.2, 0.0)),
         )
 rep.orchestrator.run()
@@ -94,3 +90,5 @@ while simulation_app.is_running():
         dr.physics_view.step_randomization(reset_inds)
         world.step(render=True)
         frame_idx += 1
+
+simulation_app.close()
